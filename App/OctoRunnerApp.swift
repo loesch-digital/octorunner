@@ -7,13 +7,7 @@ import SwiftUI
 struct OctoRunnerApp: App {
     @State private var preferences = AppPreferencesStore()
 
-    private let modelContainer: ModelContainer = {
-        do {
-            return try ModelContainer(for: RunnerEntity.self, JobRunEntity.self, GitHubAccountEntity.self)
-        } catch {
-            fatalError("Failed to initialize SwiftData ModelContainer: \(error)")
-        }
-    }()
+    private let modelContainer: ModelContainer = OctoRunnerPersistence.makeSharedContainer()
 
     var body: some Scene {
         WindowGroup("OctoRunner", id: "main-dashboard") {
