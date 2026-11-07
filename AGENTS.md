@@ -5,7 +5,7 @@ These rules apply permanently to all agents working in `/Users/frank/Documents/a
 ## 1. Git Branching, Worktrees & Commit Discipline
 - **Feature Branches & Worktrees:** Never develop features directly on `main`. Always develop each feature/milestone on a dedicated feature branch (e.g. `feat/step-01-infrastructure`, `feat/step-02-github-auth`) or isolated git worktree (`git worktree` / subagent `Workspace: "share"` or `"branch"`).
 - **Frequent Commits & Pushes:** Commit and push progress regularly after logical sub-steps using semantic commit messages (`feat:`, `fix:`, `docs:`, `chore:`).
-- **Merging & Releases:** Only merge into `main` when tests (`swift test`) and the macOS app build succeed, followed by creating the executable release (`v0.1.0`, `v0.2.0`, etc.) via `release-it`.
+- **Pull Requests, Merging & Automated Releases:** Always open a GitHub Pull Request (`gh pr create`) to merge feature branches into `main` (`gh pr merge --merge --delete-branch`) so `main` is always the consolidated, verified state. Creating/pushing a release tag `v*` on `main` (via GitHub UI, `git tag v0.X.0 && git push origin v0.X.0`, or `npx release-it`) automatically triggers `.github/workflows/release.yml`, which builds `OctoRunner.app`, publishes the GitHub Release, and updates the Homebrew Tap (`loesch-digital/homebrew-octorunner`).
 
 ## 2. Critical Thinking & Architecture Validation
 - Always question and verify technical assumptions from mockups/specs before implementing them (see `docs/01-architecture-and-modules.md` § 4 ADRs).
