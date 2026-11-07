@@ -15,6 +15,7 @@ public struct MainShellView: View {
     @State private var searchText: String = ""
     @State private var hostSnapshot: HostTelemetrySnapshot?
     @State private var isShowingAuthSheet: Bool = false
+    @State private var isShowingAccountPopover: Bool = false
     @State private var updateInfo: AppUpdateInfo?
     @State private var isCheckingForUpdates: Bool = false
     @State private var isInstallingUpdate: Bool = false
@@ -29,10 +30,7 @@ public struct MainShellView: View {
     public var body: some View {
         NavigationSplitView {
             sidebarContent
-                .navigationSplitViewColumnWidth(min: 220, ideal: 245, max: 290)
-                .safeAreaInset(edge: .bottom) {
-                    sidebarAccountProfileCard
-                }
+                .navigationSplitViewColumnWidth(min: 210, ideal: 235, max: 270)
         } detail: {
             detailContent
         }
@@ -54,9 +52,6 @@ public struct MainShellView: View {
         .sheet(isPresented: $isShowingAuthSheet) {
             OAuthDeviceFlowSheet()
         }
-        .safeAreaInset(edge: .bottom) {
-            statusFooterBar
-        }
         .task {
             hostSnapshot = await telemetryActor.currentSnapshot()
             if accounts.isEmpty {
@@ -66,7 +61,7 @@ public struct MainShellView: View {
         }
     }
 
-    // MARK: - Sidebar + App Store Style Bottom Account Card
+    // MARK: - Native macOS Sidebar
 
     private var sidebarContent: some View {
         List(selection: $selectedSection) {
@@ -86,158 +81,41 @@ public struct MainShellView: View {
         .listStyle(.sidebar)
     }
 
-    private var sidebarAccountProfileCard: some View {
-        VStack(spacing: 0) {
-            Divider()
-            accountMenuTrigger(compact: false)
-                .padding(10)
-                .background(OctoTheme.surfaceLow)
-        }
-    }
-
-    @ViewBuilder
-    private func accountMenuTrigger(compact: Bool) -> some View {
-        if let activeAccount = accounts.first {
-            Menu {
-                Section("GitHub Account") {
-                    if let displayName = activeAccount.displayName, !displayName.isEmpty {
-                        Text("\(displayName) (@\(activeAccount.login))")
-                    } else {
-                        Text("Signed in as @\(activeAccount.login)")
-                    }
-                    Text("Auth: \(activeAccount.authMethodRaw == "oauth_device" ? "OAuth Device Flow" : "Personal Access Token")")
-                    Text("Scopes: \(activeAccount.scopes.isEmpty ? "repo, workflow, admin:org" : activeAccount.scopes.joined(separator: ", "))")
-                }
-
-                Divider()
-
-                Section("Application & Updates") {
-                    if let update = updateInfo, update.isUpdateAvailable {
-                        Button("Install Update v\(update.latestVersion) & Relaunch", systemImage: "arrow.down.circle.fill") {
-                            Task { await installAvailableUpdate(update) }
-                        }
-                    } else {
-                        Button("Check for Updates… (v\(AppUpdaterActor.currentBundleVersion))", systemImage: "arrow.triangle.2.circlepath") {
-                            Task { await checkForAppUpdates(manual: true) }
-                        }
-                    }
-
-                    Button("Open Settings & LaunchAgents", systemImage: "gearshape.fill") {
-                        selectedSection = .launchdSettings
-                    }
-                }
-
-                Divider()
-
-                Button("Switch / Re-authenticate Account…", systemImage: "person.badge.key.fill") {
-                    isShowingAuthSheet = true
-                }
-                Button("Sign Out @\(activeAccount.login)", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
-                    signOut(activeAccount)
-                }
-            } label: {
-                if compact {
-                    HStack(spacing: 6) {
-                        accountAvatarView(urlString: activeAccount.avatarUrlString, size: 18)
-                        Text(activeAccount.displayName ?? "@\(activeAccount.login)")
-                            .font(.system(size: 11, weight: .semibold))
-                        Text("(@\(activeAccount.login))")
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    HStack(spacing: 10) {
-                        accountAvatarView(urlString: activeAccount.avatarUrlString, size: 30)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(activeAccount.displayName ?? activeAccount.login)
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                            Text("@\(activeAccount.login)")
-                                .font(.system(size: 10, design: .monospaced))
-                                .foregroundStyle(OctoTheme.accentBlue)
-                                .lineLimit(1)
-                        }
-                        Spacer()
-                        Image(systemName: "ellipsis.circle")
-                            .font(.system(size: 14))
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-            .menuStyle(.borderlessButton)
-        } else {
-            Button {
-                isShowingAuthSheet = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "person.crop.circle.badge.plus")
-                        .font(.system(size: compact ? 13 : 20))
-                        .foregroundStyle(OctoTheme.accentBlue)
-                    Text("Sign in with GitHub…")
-                        .font(.system(size: compact ? 11 : 12, weight: .semibold))
-                    Spacer()
-                }
-            }
-            .buttonStyle(.borderless)
-        }
-    }
-
-    @ViewBuilder
-    private func accountAvatarView(urlString: String?, size: CGFloat) -> some View {
-        if let urlString, let url = URL(string: urlString) {
-            AsyncImage(url: url) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Image(systemName: "person.crop.circle.fill")
-                    .resizable()
-                    .foregroundStyle(OctoTheme.accentBlue)
-            }
-            .frame(width: size, height: size)
-            .clipShape(.circle)
-        } else {
-            Image(systemName: "person.crop.circle.fill")
-                .resizable()
-                .scaledToFit()
-                .frame(width: size, height: size)
-                .foregroundStyle(OctoTheme.accentBlue)
-        }
-    }
-
-    // MARK: - Detail Content
+    // MARK: - Detail Content + Fixed Bottom Footer
 
     private var detailContent: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if let update = updateInfo, update.isUpdateAvailable {
-                    updateAvailableBanner(update)
-                } else if let updateStatusMessage {
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark.seal.fill")
-                            .foregroundStyle(OctoTheme.onlineGreen)
-                        Text(updateStatusMessage)
-                            .font(.system(size: 12, weight: .medium))
-                        Spacer()
-                        Button("Dismiss", systemImage: "xmark") {
-                            self.updateStatusMessage = nil
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    if let update = updateInfo, update.isUpdateAvailable {
+                        updateAvailableBanner(update)
+                    } else if let updateStatusMessage {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundStyle(OctoTheme.onlineGreen)
+                            Text(updateStatusMessage)
+                                .font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            Button("Dismiss", systemImage: "xmark") {
+                                self.updateStatusMessage = nil
+                            }
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.borderless)
                         }
-                        .labelStyle(.iconOnly)
-                        .buttonStyle(.borderless)
+                        .padding(10)
+                        .background(OctoTheme.surface, in: .rect(cornerRadius: 8))
                     }
-                    .padding(10)
-                    .background(OctoTheme.surface, in: .rect(cornerRadius: 8))
-                }
 
-                kpiHeaderRow
-                runnerListCard
+                    kpiHeaderRow
+                    runnerListCard
+                }
+                .padding(20)
             }
-            .padding(20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            Divider()
+
+            statusFooterBar
         }
         .background(OctoTheme.surfaceLowest)
     }
@@ -404,7 +282,7 @@ public struct MainShellView: View {
         .background(OctoTheme.surfaceLow, in: .rect(cornerRadius: 8))
     }
 
-    // MARK: - Bottom Status Bar (Engine Status Left, Hardware Center, Account Menu Right)
+    // MARK: - Bottom Status Bar with Bottom-Right Account & Settings Menu
 
     private var statusFooterBar: some View {
         HStack(spacing: 14) {
@@ -424,13 +302,137 @@ public struct MainShellView: View {
                 .foregroundStyle(.secondary)
 
             Divider()
-                .frame(height: 14)
+                .frame(height: 16)
 
-            accountMenuTrigger(compact: true)
+            bottomRightAccountButton
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 6)
+        .frame(height: 36)
         .background(OctoTheme.surface)
+    }
+
+    @ViewBuilder
+    private var bottomRightAccountButton: some View {
+        if let activeAccount = accounts.first {
+            Button {
+                isShowingAccountPopover.toggle()
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(OctoTheme.accentBlue)
+
+                    if let displayName = activeAccount.displayName, !displayName.isEmpty {
+                        Text(displayName)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.primary)
+                        Text("(@\(activeAccount.login))")
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("@\(activeAccount.login)")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.primary)
+                    }
+
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(OctoTheme.surfaceHigh, in: .capsule)
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $isShowingAccountPopover, arrowEdge: .bottom) {
+                accountPopoverContent(activeAccount)
+            }
+        } else {
+            Button {
+                isShowingAuthSheet = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "person.crop.circle.badge.plus")
+                        .foregroundStyle(OctoTheme.accentBlue)
+                    Text("Sign in with GitHub…")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(OctoTheme.surfaceHigh, in: .capsule)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func accountPopoverContent(_ account: GitHubAccountEntity) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: "person.crop.circle.badge.checkmark")
+                    .font(.system(size: 28))
+                    .foregroundStyle(OctoTheme.accentBlue)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(account.displayName ?? account.login)
+                        .font(.system(size: 13, weight: .bold))
+                    Text("@\(account.login)")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(OctoTheme.accentBlue)
+                }
+                Spacer()
+            }
+
+            Text("Scopes: \(account.scopes.isEmpty ? "repo, workflow, admin:org" : account.scopes.joined(separator: ", "))")
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(.secondary)
+
+            Divider()
+
+            Button {
+                isShowingAccountPopover = false
+                selectedSection = .launchdSettings
+            } label: {
+                Label("Settings & LaunchAgents", systemImage: "gearshape.fill")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                isShowingAccountPopover = false
+                Task { await checkForAppUpdates(manual: true) }
+            } label: {
+                Label("Check for Updates (v\(AppUpdaterActor.currentBundleVersion))", systemImage: "arrow.triangle.2.circlepath")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                isShowingAccountPopover = false
+                isShowingAuthSheet = true
+            } label: {
+                Label("Switch / Re-authenticate Account…", systemImage: "person.badge.key.fill")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+
+            Divider()
+
+            Button(role: .destructive) {
+                isShowingAccountPopover = false
+                signOut(account)
+            } label: {
+                Label("Sign Out @\(account.login)", systemImage: "rectangle.portrait.and.arrow.right")
+                    .foregroundStyle(OctoTheme.errorRed)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+        .frame(width: 260)
     }
 
     private var activeRunnerCount: Int {
