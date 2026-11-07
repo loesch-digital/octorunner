@@ -23,6 +23,6 @@ Before writing or reviewing code in their respective domains, follow the guideli
 
 ## 5. TDD, CI/CD & Latest Versions Policy
 - **Strict Latest Versions Only:** Never hardcode outdated versions from memory. Always verify and use the latest available versions (e.g., `Xcode 27.2`, `Swift 6.4`, `release-it ^21.1.2`, `actions/checkout@v7`).
-- **Test-Driven Development (TDD):** Every feature/module must include comprehensive unit tests (`Swift Testing` `@Suite` / `@Test`) covering models, actors, security/keychain, and API decoding before merging and releasing.
+- **Test-Driven Development (Strict Red → Green → Refactor):** For every new feature, module, or bugfix, always write or update the failing unit/UI test first (`swift test` → Red), then implement the production code until the test passes (`swift test` → Green), covering models, actors, security/keychain, UI layout (`NSHostingView`), and API decoding before merging and releasing.
 - **CI/CD Verification:** Every push and merge must pass the GitHub Actions CI pipeline (`.github/workflows/ci.yml`).
 

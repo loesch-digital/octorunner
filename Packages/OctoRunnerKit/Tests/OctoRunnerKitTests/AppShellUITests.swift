@@ -6,6 +6,7 @@ import Foundation
 import GitHubAPI
 import SwiftData
 import SwiftUI
+import SyncKit
 import Testing
 
 @Suite("AppShell UI, Layout & Preview Rendering Tests")
@@ -135,5 +136,54 @@ struct AppShellUITests {
             host.layoutSubtreeIfNeeded()
             #expect(host.bounds.width == 100)
         }
+    }
+
+    @Test("MainShellView.upsertDiscoveredRunners imports local runner and updates existing entry idempotently")
+    @MainActor
+    func upsertDiscoveredRunnersIdempotency() throws {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: RunnerEntity.self,
+            JobRunEntity.self,
+            GitHubAccountEntity.self,
+            configurations: config
+        )
+        let context = container.mainContext
+
+        let discovered = DiscoveredLocalRunner(
+            rootDirectory: URL(fileURLWithPath: "/Users/frank/Documents/apps/actions-runner"),
+            config: LocalDotRunnerConfig(
+                agentId: 21,
+                agentName: "macbook-pro-frank",
+                gitHubUrl: URL(string: "https://github.com/loesch-digital/itemflux-ios-app")!,
+                workFolder: "_work"
+            ),
+            workDirectory: URL(fileURLWithPath: "/Users/frank/Documents/apps/actions-runner/_work"),
+            runnerVersion: "2.338.2",
+            listenerPID: 87558,
+            isWorkerActive: false,
+            labels: ["self-hosted", "macOS", "ARM64"]
+        )
+
+        // First sync imports the runner
+        let importedCount = MainShellView.upsertDiscoveredRunners([discovered], into: context)
+        #expect(importedCount == 1)
+
+        var allRunners = try context.fetch(FetchDescriptor<RunnerEntity>())
+        #expect(allRunners.count == 1)
+        #expect(allRunners.first?.name == "macbook-pro-frank")
+        #expect(allRunners.first?.githubRunnerId == 21)
+        #expect(allRunners.first?.pid == 87558)
+        #expect(allRunners.first?.status == .idle)
+
+        // Second sync updates in-place (no duplicate created)
+        var busyDiscovered = discovered
+        busyDiscovered.localStatus = .busy
+        let secondCount = MainShellView.upsertDiscoveredRunners([busyDiscovered], into: context)
+        #expect(secondCount == 1)
+
+        allRunners = try context.fetch(FetchDescriptor<RunnerEntity>())
+        #expect(allRunners.count == 1)
+        #expect(allRunners.first?.status == .busy)
     }
 }
