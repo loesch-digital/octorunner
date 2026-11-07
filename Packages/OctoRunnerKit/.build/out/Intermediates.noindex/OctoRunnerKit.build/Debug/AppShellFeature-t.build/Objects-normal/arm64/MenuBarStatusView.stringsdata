@@ -1,0 +1,48 @@
+{
+  "source": "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/Sources/AppShellFeature/MenuBarStatusView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "No local runners configured.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 28
+        }
+      },
+      {
+        "comment": "",
+        "key": "OctoRunner Desktop",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 17
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld Runners",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 20
+        }
+      },
+      {
+        "comment": "",
+        "key": "Open Dashboard",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "Quit",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 50
+        }
+      }
+    ]
+  },
+  "version": 1
+}

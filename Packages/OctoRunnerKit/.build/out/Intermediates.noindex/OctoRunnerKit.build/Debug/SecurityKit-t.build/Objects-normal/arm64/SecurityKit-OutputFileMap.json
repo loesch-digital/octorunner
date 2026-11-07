@@ -1,0 +1,19 @@
+{
+  "" : {
+    "diagnostics" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/SecurityKit-primary.dia",
+    "emit-module-dependencies" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/SecurityKit-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/SecurityKit-primary-emit-module.dia",
+    "pch" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/SecurityKit-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/SecurityKit-primary.swiftdeps"
+  },
+  "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/Sources/SecurityKit/KeychainVaultActor.swift" : {
+    "const-values" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/KeychainVaultActor.swiftconstvalues",
+    "dependencies" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/KeychainVaultActor.d",
+    "diagnostics" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/KeychainVaultActor.dia",
+    "index-unit-output-path" : "/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/KeychainVaultActor.o",
+    "llvm-bc" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/KeychainVaultActor.bc",
+    "object" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/KeychainVaultActor.o",
+    "swift-dependencies" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/KeychainVaultActor.swiftdeps",
+    "swiftmodule" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/SecurityKit-t.build/Objects-normal/arm64/KeychainVaultActor~partial.swiftmodule"
+  }
+}

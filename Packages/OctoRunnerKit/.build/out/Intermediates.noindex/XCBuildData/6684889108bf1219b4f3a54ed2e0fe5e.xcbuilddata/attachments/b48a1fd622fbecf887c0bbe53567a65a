@@ -1,0 +1,4 @@
+module AppShellFeature {
+header "AppShellFeature-Swift.h"
+export *
+}

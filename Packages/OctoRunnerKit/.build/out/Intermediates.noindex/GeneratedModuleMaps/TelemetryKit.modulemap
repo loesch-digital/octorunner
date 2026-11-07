@@ -1,0 +1,4 @@
+module TelemetryKit {
+header "TelemetryKit-Swift.h"
+export *
+}

@@ -1,0 +1,4 @@
+module GitHubAPI {
+header "GitHubAPI-Swift.h"
+export *
+}

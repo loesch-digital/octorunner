@@ -1,0 +1,29 @@
+{
+  "" : {
+    "diagnostics" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/DesignSystem-primary.dia",
+    "emit-module-dependencies" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/DesignSystem-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/DesignSystem-primary-emit-module.dia",
+    "pch" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/DesignSystem-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/DesignSystem-primary.swiftdeps"
+  },
+  "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/Sources/DesignSystem/OctoTheme.swift" : {
+    "const-values" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/OctoTheme.swiftconstvalues",
+    "dependencies" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/OctoTheme.d",
+    "diagnostics" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/OctoTheme.dia",
+    "index-unit-output-path" : "/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/OctoTheme.o",
+    "llvm-bc" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/OctoTheme.bc",
+    "object" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/OctoTheme.o",
+    "swift-dependencies" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/OctoTheme.swiftdeps",
+    "swiftmodule" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/OctoTheme~partial.swiftmodule"
+  },
+  "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/Sources/DesignSystem/RunnerStatusBadge.swift" : {
+    "const-values" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/RunnerStatusBadge.swiftconstvalues",
+    "dependencies" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/RunnerStatusBadge.d",
+    "diagnostics" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/RunnerStatusBadge.dia",
+    "index-unit-output-path" : "/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/RunnerStatusBadge.o",
+    "llvm-bc" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/RunnerStatusBadge.bc",
+    "object" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/RunnerStatusBadge.o",
+    "swift-dependencies" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/RunnerStatusBadge.swiftdeps",
+    "swiftmodule" : "/Users/frank/Documents/apps/octorunner/Packages/OctoRunnerKit/.build/out/Intermediates.noindex/OctoRunnerKit.build/Debug/DesignSystem-t.build/Objects-normal/arm64/RunnerStatusBadge~partial.swiftmodule"
+  }
+}
