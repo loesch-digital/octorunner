@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "SecurityKit", targets: ["SecurityKit"]),
         .library(name: "GitHubAPI", targets: ["GitHubAPI"]),
         .library(name: "RunnerEngine", targets: ["RunnerEngine"]),
+        .library(name: "SyncKit", targets: ["SyncKit"]),
         .library(name: "TelemetryKit", targets: ["TelemetryKit"]),
         .library(name: "AppShellFeature", targets: ["AppShellFeature"])
     ],
@@ -42,6 +43,11 @@ let package = Package(
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .target(
+            name: "SyncKit",
+            dependencies: ["CoreModels", "SecurityKit", "GitHubAPI"],
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        ),
+        .target(
             name: "TelemetryKit",
             dependencies: ["CoreModels"],
             swiftSettings: [.swiftLanguageMode(.v6)]
@@ -54,6 +60,7 @@ let package = Package(
                 "SecurityKit",
                 "GitHubAPI",
                 "RunnerEngine",
+                "SyncKit",
                 "TelemetryKit"
             ],
             swiftSettings: [.swiftLanguageMode(.v6)]
@@ -66,6 +73,7 @@ let package = Package(
                 "SecurityKit",
                 "GitHubAPI",
                 "RunnerEngine",
+                "SyncKit",
                 "TelemetryKit",
                 "AppShellFeature"
             ],

@@ -4,6 +4,7 @@ import DesignSystem
 import GitHubAPI
 import SwiftData
 import SwiftUI
+import SyncKit
 import TelemetryKit
 
 public struct MainShellView: View {
@@ -16,6 +17,7 @@ public struct MainShellView: View {
     @State private var hostSnapshot: HostTelemetrySnapshot?
     @State private var isShowingAuthSheet: Bool = false
     @State private var isShowingAccountPopover: Bool = false
+    @State private var isSyncingRunners: Bool = false
     @State private var updateInfo: AppUpdateInfo?
     @State private var isCheckingForUpdates: Bool = false
     @State private var isInstallingUpdate: Bool = false
@@ -24,13 +26,14 @@ public struct MainShellView: View {
     private let telemetryActor = HostTelemetryActor()
     private let oauthActor = GitHubOAuthActor()
     private let updaterActor = AppUpdaterActor()
+    private let syncActor = GitHubRunnerSyncActor()
 
     public init() {}
 
     public var body: some View {
         NavigationSplitView {
             sidebarContent
-                .navigationSplitViewColumnWidth(min: 210, ideal: 235, max: 270)
+                .navigationSplitViewColumnWidth(min: 215, ideal: 240, max: 280)
         } detail: {
             detailContent
         }
@@ -38,12 +41,13 @@ public struct MainShellView: View {
         .searchable(text: $searchText, prompt: "Search runners, labels...")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                Button("Check for Updates", systemImage: "arrow.triangle.2.circlepath") {
-                    Task { await checkForAppUpdates(manual: true) }
+                Button("Sync Runners", systemImage: "arrow.triangle.2.circlepath.circle") {
+                    Task { await syncLocalAndRemoteRunners(manual: true) }
                 }
-                .disabled(isCheckingForUpdates || isInstallingUpdate)
+                .disabled(isSyncingRunners)
 
-                Button("Seed Demo Runner", systemImage: "sparkles", action: seedDemoRunnerIfEmpty)
+                Button("Import Folder…", systemImage: "folder.badge.plus", action: importRunnerFolderViaOpenPanel)
+
                 Button("New Runner", systemImage: "plus", action: seedDemoRunnerIfEmpty)
                     .buttonStyle(.borderedProminent)
                     .tint(OctoTheme.accentBlue)
@@ -57,28 +61,103 @@ public struct MainShellView: View {
             if accounts.isEmpty {
                 isShowingAuthSheet = true
             }
+            await syncLocalAndRemoteRunners(manual: false)
             await checkForAppUpdates(manual: false)
         }
     }
 
-    // MARK: - Native macOS Sidebar
+    // MARK: - Left Sidebar + Bottom-Left Account & Settings Card (macOS App Store Style)
 
     private var sidebarContent: some View {
-        List(selection: $selectedSection) {
-            Section("RUNNER STATUS") {
-                ForEach(SidebarSection.allCases) { section in
-                    HStack {
-                        Label(section.title, systemImage: section.systemImage)
-                        Spacer()
-                        Text("\(count(for: section))")
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.secondary)
+        VStack(spacing: 0) {
+            List(selection: $selectedSection) {
+                Section("RUNNER STATUS") {
+                    ForEach(SidebarSection.allCases) { section in
+                        HStack {
+                            Label(section.title, systemImage: section.systemImage)
+                            Spacer()
+                            Text("\(count(for: section))")
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                        }
+                        .tag(section)
                     }
-                    .tag(section)
                 }
             }
+            .listStyle(.sidebar)
+
+            Divider()
+
+            sidebarBottomAccountCard
         }
-        .listStyle(.sidebar)
+    }
+
+    private var sidebarBottomAccountCard: some View {
+        Group {
+            if let activeAccount = accounts.first {
+                Button {
+                    isShowingAccountPopover.toggle()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.system(size: 26))
+                            .foregroundStyle(OctoTheme.accentBlue)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(activeAccount.displayName ?? activeAccount.login)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Text("@\(activeAccount.login)")
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(OctoTheme.accentBlue)
+                                .lineLimit(1)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(maxWidth: .infinity, minHeight: 50, maxHeight: 50)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $isShowingAccountPopover, arrowEdge: .trailing) {
+                    accountPopoverContent(activeAccount)
+                }
+            } else {
+                Button {
+                    isShowingAuthSheet = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.crop.circle.badge.plus")
+                            .font(.system(size: 24))
+                            .foregroundStyle(OctoTheme.accentBlue)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Sign in with GitHub")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.primary)
+                            Text("Connect OAuth or PAT")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(maxWidth: .infinity, minHeight: 50, maxHeight: 50)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .background(OctoTheme.surfaceLow)
     }
 
     // MARK: - Detail Content + Fixed Bottom Footer
@@ -221,10 +300,17 @@ public struct MainShellView: View {
                 ContentUnavailableView {
                     Label("No Runners Registered Yet", systemImage: "server.rack")
                 } description: {
-                    Text("Click 'New Runner' in the toolbar to add a runner instance.")
+                    Text("Click 'Sync Runners' to auto-import local runners or 'New Runner' to register a new instance.")
                 } actions: {
-                    Button("Add Demo Runner Instance", systemImage: "plus.circle.fill", action: seedDemoRunnerIfEmpty)
+                    HStack(spacing: 10) {
+                        Button("Sync Local & GitHub Runners", systemImage: "arrow.triangle.2.circlepath") {
+                            Task { await syncLocalAndRemoteRunners(manual: true) }
+                        }
                         .buttonStyle(.borderedProminent)
+
+                        Button("Import Runner Folder…", systemImage: "folder.badge.plus", action: importRunnerFolderViaOpenPanel)
+                            .buttonStyle(.bordered)
+                    }
                 }
                 .frame(maxWidth: .infinity, minHeight: 220)
             } else {
@@ -254,6 +340,11 @@ public struct MainShellView: View {
                     Text(runner.name)
                         .font(.system(size: 13, weight: .semibold))
                     RunnerStatusBadge(status: runner.status)
+                    if let pid = runner.pid {
+                        Text("PID \(pid)")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Text(runner.scopeUrlString)
                     .font(.system(size: 11, design: .monospaced))
@@ -282,7 +373,7 @@ public struct MainShellView: View {
         .background(OctoTheme.surfaceLow, in: .rect(cornerRadius: 8))
     }
 
-    // MARK: - Bottom Status Bar with Bottom-Right Account & Settings Menu
+    // MARK: - Bottom Status Bar
 
     private var statusFooterBar: some View {
         HStack(spacing: 14) {
@@ -300,73 +391,10 @@ public struct MainShellView: View {
             Text("\(hostSnapshot?.cpuSummary ?? "Apple Silicon") • \(String(format: "%.0f", hostSnapshot?.physicalMemoryGB ?? 32)) GB Unified RAM")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.secondary)
-
-            Divider()
-                .frame(height: 16)
-
-            bottomRightAccountButton
         }
         .padding(.horizontal, 14)
-        .frame(height: 36)
+        .frame(height: 32)
         .background(OctoTheme.surface)
-    }
-
-    @ViewBuilder
-    private var bottomRightAccountButton: some View {
-        if let activeAccount = accounts.first {
-            Button {
-                isShowingAccountPopover.toggle()
-            } label: {
-                HStack(spacing: 7) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(OctoTheme.accentBlue)
-
-                    if let displayName = activeAccount.displayName, !displayName.isEmpty {
-                        Text(displayName)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.primary)
-                        Text("(@\(activeAccount.login))")
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("@\(activeAccount.login)")
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.primary)
-                    }
-
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-
-                    Image(systemName: "chevron.up")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(OctoTheme.surfaceHigh, in: .capsule)
-            }
-            .buttonStyle(.plain)
-            .popover(isPresented: $isShowingAccountPopover, arrowEdge: .bottom) {
-                accountPopoverContent(activeAccount)
-            }
-        } else {
-            Button {
-                isShowingAuthSheet = true
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "person.crop.circle.badge.plus")
-                        .foregroundStyle(OctoTheme.accentBlue)
-                    Text("Sign in with GitHub…")
-                        .font(.system(size: 11, weight: .semibold))
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(OctoTheme.surfaceHigh, in: .capsule)
-            }
-            .buttonStyle(.plain)
-        }
     }
 
     private func accountPopoverContent(_ account: GitHubAccountEntity) -> some View {
@@ -391,6 +419,15 @@ public struct MainShellView: View {
                 .foregroundStyle(.secondary)
 
             Divider()
+
+            Button {
+                isShowingAccountPopover = false
+                Task { await syncLocalAndRemoteRunners(manual: true) }
+            } label: {
+                Label("Sync Local & GitHub Runners", systemImage: "arrow.triangle.2.circlepath.circle")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
 
             Button {
                 isShowingAccountPopover = false
@@ -432,7 +469,83 @@ public struct MainShellView: View {
             .buttonStyle(.plain)
         }
         .padding(14)
-        .frame(width: 260)
+        .frame(width: 265)
+    }
+
+    // MARK: - SyncKit Integration
+
+    @MainActor
+    @discardableResult
+    public static func upsertDiscoveredRunners(
+        _ discoveredList: [DiscoveredLocalRunner],
+        into modelContext: ModelContext
+    ) -> Int {
+        let existingRunners = (try? modelContext.fetch(FetchDescriptor<RunnerEntity>())) ?? []
+        var importedOrUpdated = 0
+
+        for item in discoveredList {
+            if let existing = existingRunners.first(where: {
+                $0.githubRunnerId == item.config.agentId || $0.name == item.config.agentName
+            }) {
+                existing.githubRunnerId = item.config.agentId
+                existing.name = item.config.agentName
+                existing.scopeType = item.config.inferredScopeType
+                existing.scopeUrlString = item.config.gitHubUrl.absoluteString
+                existing.workDirectoryPath = item.workDirectory.path()
+                existing.labels = item.labels
+                existing.pid = item.listenerPID
+                existing.status = item.localStatus
+                existing.lastHeartbeat = .now
+            } else {
+                let entity = RunnerEntity(
+                    name: item.config.agentName,
+                    scopeType: item.config.inferredScopeType,
+                    scopeUrl: item.config.gitHubUrl,
+                    status: item.localStatus,
+                    labels: item.labels,
+                    workDirectory: item.workDirectory,
+                    pid: item.listenerPID
+                )
+                entity.githubRunnerId = item.config.agentId
+                modelContext.insert(entity)
+            }
+            importedOrUpdated += 1
+        }
+
+        try? modelContext.save()
+        return importedOrUpdated
+    }
+
+    private func syncLocalAndRemoteRunners(manual: Bool, extraDirs: [URL] = []) async {
+        isSyncingRunners = true
+        defer { isSyncingRunners = false }
+
+        let discovered = await syncActor.discoverAndReconcileRunners(
+            accountLogin: accounts.first?.login,
+            additionalDirectories: extraDirs
+        )
+        let count = Self.upsertDiscoveredRunners(discovered, into: modelContext)
+        if manual {
+            updateStatusMessage = count > 0
+                ? "Synced \(count) local runner(s) with GitHub."
+                : "No local .runner instances found in standard paths."
+        }
+    }
+
+    private func importRunnerFolderViaOpenPanel() {
+        let panel = NSOpenPanel()
+        panel.title = "Select Existing GitHub Actions Runner Folder"
+        panel.message = "Choose a folder containing a configured GitHub Actions runner (.runner)."
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.showsHiddenFiles = true
+
+        if panel.runModal() == .OK, let url = panel.url {
+            Task {
+                await syncLocalAndRemoteRunners(manual: true, extraDirs: [url])
+            }
+        }
     }
 
     private var activeRunnerCount: Int {
