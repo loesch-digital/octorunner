@@ -198,4 +198,33 @@ struct OctoRunnerKitTests {
         #expect(viewModel.state == .initial)
         #expect(viewModel.errorMessage == nil)
     }
+
+    @Test("AppUpdaterActor semantic version comparison and GitHubReleaseDTO decoding")
+    func appUpdaterVersionComparisonAndDecoding() throws {
+        #expect(AppUpdaterActor.isVersion("v0.2.2", newerThan: "0.2.1") == true)
+        #expect(AppUpdaterActor.isVersion("0.3.0", newerThan: "0.2.9") == true)
+        #expect(AppUpdaterActor.isVersion("0.2.1", newerThan: "0.2.1") == false)
+        #expect(AppUpdaterActor.isVersion("0.1.9", newerThan: "0.2.0") == false)
+
+        let releaseJSON = """
+        {
+          "tag_name": "v0.2.2",
+          "name": "OctoRunner v0.2.2",
+          "body": "Auto-updater and account profile menu.",
+          "html_url": "https://github.com/loesch-digital/octorunner/releases/tag/v0.2.2",
+          "published_at": "2026-11-07T16:00:00Z",
+          "assets": [
+            {
+              "name": "OctoRunner-0.2.2-arm64.zip",
+              "browser_download_url": "https://github.com/loesch-digital/octorunner/releases/download/v0.2.2/OctoRunner-0.2.2-arm64.zip",
+              "size": 1245184
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(GitHubReleaseDTO.self, from: releaseJSON)
+        #expect(decoded.tagName == "v0.2.2")
+        #expect(decoded.assets.first?.name == "OctoRunner-0.2.2-arm64.zip")
+    }
 }
