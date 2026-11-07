@@ -1,4 +1,0 @@
-module CoreModels {
-header "CoreModels-Swift.h"
-export *
-}

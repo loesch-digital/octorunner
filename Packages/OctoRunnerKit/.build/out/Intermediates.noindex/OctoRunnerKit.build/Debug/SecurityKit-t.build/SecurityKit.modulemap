@@ -1,4 +1,0 @@
-module SecurityKit {
-header "SecurityKit-Swift.h"
-export *
-}
