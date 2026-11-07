@@ -107,4 +107,40 @@ struct GitHubAPITests {
         #expect(decoded.tagName == "v0.2.3")
         #expect(decoded.assets.first?.name == "OctoRunner-0.2.3-arm64.zip")
     }
+
+    @Test("GitHubRepositorySummaryDTO, GitHubOrganizationSummaryDTO, and GitHubRegistrationTokenDTO decoding")
+    func repositoryOrgAndRegistrationTokenDecoding() throws {
+        let repoJSON = """
+        {
+          "id": 9001,
+          "name": "itemflux-ios-app",
+          "full_name": "loesch-digital/itemflux-ios-app",
+          "html_url": "https://github.com/loesch-digital/itemflux-ios-app",
+          "private": true
+        }
+        """.data(using: .utf8)!
+        let repo = try JSONDecoder().decode(GitHubRepositorySummaryDTO.self, from: repoJSON)
+        #expect(repo.fullName == "loesch-digital/itemflux-ios-app")
+        #expect(repo.isPrivate == true)
+        #expect(repo.ownerLogin == "loesch-digital")
+
+        let orgJSON = """
+        {
+          "id": 5001,
+          "login": "loesch-digital",
+          "description": "Digital Products"
+        }
+        """.data(using: .utf8)!
+        let org = try JSONDecoder().decode(GitHubOrganizationSummaryDTO.self, from: orgJSON)
+        #expect(org.login == "loesch-digital")
+
+        let regTokenJSON = """
+        {
+          "token": "AANB2C3D4E5F6G7H8I9J0",
+          "expires_at": "2026-11-07T19:30:00Z"
+        }
+        """.data(using: .utf8)!
+        let regToken = try JSONDecoder().decode(GitHubRegistrationTokenDTO.self, from: regTokenJSON)
+        #expect(regToken.token == "AANB2C3D4E5F6G7H8I9J0")
+    }
 }

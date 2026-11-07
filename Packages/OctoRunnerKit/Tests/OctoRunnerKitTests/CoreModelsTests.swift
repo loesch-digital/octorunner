@@ -18,7 +18,10 @@ struct CoreModelsTests {
             scopeUrl: URL(string: "https://github.com/loesch-digital/octorunner")!,
             status: .idle,
             labels: ["self-hosted", "macos", "arm64"],
-            workDirectory: URL(fileURLWithPath: "/tmp/octorunner-test")
+            workDirectory: URL(fileURLWithPath: "/tmp/octorunner-test"),
+            rootDirectoryPath: "/tmp/octorunner-root",
+            runnerVersion: "2.338.2",
+            isImportedLocal: true
         )
         let job = JobRunEntity(
             githubRunId: 10842,
@@ -41,6 +44,9 @@ struct CoreModelsTests {
         #expect(fetchedRunners.first?.scopeType == .repository)
         #expect(fetchedRunners.first?.jobRuns.count == 1)
         #expect(fetchedRunners.first?.serviceLabel == "io.octorunner.agent.mac-runner-test")
+        #expect(fetchedRunners.first?.rootDirectoryPath == "/tmp/octorunner-root")
+        #expect(fetchedRunners.first?.runnerVersion == "2.338.2")
+        #expect(fetchedRunners.first?.isImportedLocal == true)
 
         // Verify status setter and scopeType setter
         runner.status = .busy

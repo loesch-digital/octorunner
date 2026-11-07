@@ -44,7 +44,8 @@ octorunner/
         │   ├── DesignSystem/        # macOS HIG Farben, Typografie, Badges, Terminal-Views
         │   ├── SecurityKit/         # KeychainActor, TokenVault, Touch ID / LAContext
         │   ├── GitHubAPI/           # OAuthDeviceFlowActor, GitHubRESTClient, RunnerDownloadService
-        │   ├── RunnerEngine/        # RunnerBinaryManager, LaunchAgentSupervisor, LogStreamActor
+        │   ├── RunnerEngine/        # RunnerBinaryCacheActor, LaunchAgentPlistGenerator, RunnerProvisionerActor
+        │   ├── SyncKit/             # LocalRunnerDiscoveryActor, GitHubRunnerSyncActor, SyncModels
         │   ├── TelemetryKit/        # HostTelemetryActor (CPU E/P-Cores, RAM, APFS Disk, Thermal)
         │   └── Features/
         │       ├── AuthFeature/     # Screen 1: OAuth Device Flow & PAT Modal

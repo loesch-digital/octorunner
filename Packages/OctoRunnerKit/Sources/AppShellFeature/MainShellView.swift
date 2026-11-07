@@ -16,6 +16,7 @@ public struct MainShellView: View {
     @State private var searchText: String = ""
     @State private var hostSnapshot: HostTelemetrySnapshot?
     @State private var isShowingAuthSheet: Bool = false
+    @State private var isShowingAddRunnerSheet: Bool = false
     @State private var isShowingAccountPopover: Bool = false
     @State private var isSyncingRunners: Bool = false
     @State private var updateInfo: AppUpdateInfo?
@@ -48,13 +49,18 @@ public struct MainShellView: View {
 
                 Button("Import Folder…", systemImage: "folder.badge.plus", action: importRunnerFolderViaOpenPanel)
 
-                Button("New Runner", systemImage: "plus", action: seedDemoRunnerIfEmpty)
-                    .buttonStyle(.borderedProminent)
-                    .tint(OctoTheme.accentBlue)
+                Button("New Runner", systemImage: "plus") {
+                    isShowingAddRunnerSheet = true
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(OctoTheme.accentBlue)
             }
         }
         .sheet(isPresented: $isShowingAuthSheet) {
             OAuthDeviceFlowSheet()
+        }
+        .sheet(isPresented: $isShowingAddRunnerSheet) {
+            AddRunnerWizardSheet()
         }
         .task {
             hostSnapshot = await telemetryActor.currentSnapshot()
@@ -340,6 +346,19 @@ public struct MainShellView: View {
                     Text(runner.name)
                         .font(.system(size: 13, weight: .semibold))
                     RunnerStatusBadge(status: runner.status)
+                    if runner.isImportedLocal {
+                        Text("IMPORTED")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundStyle(OctoTheme.accentBlue)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1.5)
+                            .background(OctoTheme.surfaceHighest, in: .rect(cornerRadius: 4))
+                    }
+                    if let version = runner.runnerVersion {
+                        Text("v\(version)")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
                     if let pid = runner.pid {
                         Text("PID \(pid)")
                             .font(.system(size: 10, design: .monospaced))
@@ -492,6 +511,9 @@ public struct MainShellView: View {
                 existing.scopeType = item.config.inferredScopeType
                 existing.scopeUrlString = item.config.gitHubUrl.absoluteString
                 existing.workDirectoryPath = item.workDirectory.path()
+                existing.rootDirectoryPath = item.rootDirectory.path()
+                existing.runnerVersion = item.runnerVersion
+                existing.isImportedLocal = true
                 existing.labels = item.labels
                 existing.pid = item.listenerPID
                 existing.status = item.localStatus
@@ -504,6 +526,9 @@ public struct MainShellView: View {
                     status: item.localStatus,
                     labels: item.labels,
                     workDirectory: item.workDirectory,
+                    rootDirectoryPath: item.rootDirectory.path(),
+                    runnerVersion: item.runnerVersion,
+                    isImportedLocal: true,
                     pid: item.listenerPID
                 )
                 entity.githubRunnerId = item.config.agentId
