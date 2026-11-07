@@ -17,13 +17,13 @@ public struct AddRunnerWizardSheet: View {
     public var body: some View {
         @Bindable var bindableVM = viewModel
 
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 14) {
             headerSection
 
             Divider()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 14) {
                     scopePickerSection(bindableVM: bindableVM)
                     targetSelectionSection(bindableVM: bindableVM)
                     instanceCountAndNamingSection(bindableVM: bindableVM)
@@ -60,8 +60,8 @@ public struct AddRunnerWizardSheet: View {
 
             footerActions
         }
-        .padding(24)
-        .frame(width: 640, height: 620)
+        .padding(22)
+        .frame(width: 640, height: 640)
         .background(OctoTheme.surfaceLowest)
         .task {
             await viewModel.loadGitHubTargets(forAccountLogin: accounts.first?.login)
@@ -71,20 +71,36 @@ public struct AddRunnerWizardSheet: View {
     private var headerSection: some View {
         HStack(spacing: 12) {
             Image(systemName: "plus.rectangle.on.folder.fill")
-                .font(.system(size: 24))
+                .font(.system(size: 22))
                 .foregroundStyle(OctoTheme.accentBlue)
-                .frame(width: 42, height: 42)
+                .frame(width: 40, height: 40)
                 .background(OctoTheme.surfaceHigh, in: .rect(cornerRadius: 10))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Add Self-Hosted Runner Setup Wizard")
                     .font(.system(size: 17, weight: .bold))
-                Text("Configure scope, parallel runner instances, labels & macOS LaunchAgent supervision.")
+                Text("Configure target scope, parallel runner instances, labels & automatic background start.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
             Spacer()
         }
+    }
+
+    private func infoCallout(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "info.circle.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(OctoTheme.accentBlue)
+                .padding(.top, 1)
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(OctoTheme.surfaceLow, in: .rect(cornerRadius: 6))
     }
 
     private func scopePickerSection(bindableVM: AddRunnerWizardViewModel) -> some View {
@@ -95,29 +111,98 @@ public struct AddRunnerWizardSheet: View {
                 .foregroundStyle(.secondary)
 
             Picker("Scope", selection: $vm.selectedScope) {
-                Text("Repository").tag(RunnerScopeType.repository)
-                Text("Organization").tag(RunnerScopeType.organization)
-                Text("Personal Account Repos").tag(RunnerScopeType.personalMultiRepo)
+                Text("Single Repository").tag(RunnerScopeType.repository)
+                Text("Personal Account (Multi-Repo)").tag(RunnerScopeType.personalMultiRepo)
+                Text("Organization Pool").tag(RunnerScopeType.organization)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
+
+            infoCallout(vm.scopeExplanationText)
         }
+        .padding(12)
+        .background(OctoTheme.surface, in: .rect(cornerRadius: 8))
     }
 
     private func targetSelectionSection(bindableVM: AddRunnerWizardViewModel) -> some View {
         @Bindable var vm = bindableVM
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(vm.selectedScope == .organization ? "2. Target GitHub Organization" : "2. Target GitHub Repository")
+                Text(targetSectionTitle(for: vm.selectedScope))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
                 if vm.isLoadingTargets {
                     ProgressView().controlSize(.small)
+                } else if vm.selectedScope == .personalMultiRepo && !vm.repositories.isEmpty {
+                    HStack(spacing: 8) {
+                        Button("Select All", action: vm.selectAllRepositories)
+                            .buttonStyle(.borderless)
+                            .font(.system(size: 11))
+                        Button("Clear", action: vm.deselectAllRepositories)
+                            .buttonStyle(.borderless)
+                            .font(.system(size: 11))
+                    }
                 }
             }
 
-            if vm.selectedScope == .organization {
+            switch vm.selectedScope {
+            case .repository:
+                if !vm.repositories.isEmpty {
+                    Picker("Repository", selection: $vm.selectedRepositoryFullName) {
+                        ForEach(vm.repositories) { repo in
+                            Text("\(repo.fullName)\(repo.isPrivate ? " (Private)" : "")")
+                                .tag(repo.fullName)
+                        }
+                    }
+                    .labelsHidden()
+                }
+                TextField("Or enter owner/repo manually (e.g. loesch-digital/itemflux-ios-app)", text: $vm.manualTargetInput)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12, design: .monospaced))
+
+            case .personalMultiRepo:
+                if !vm.repositories.isEmpty {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(vm.repositories) { repo in
+                                let isChecked = vm.selectedRepositoryFullNames.contains(repo.fullName)
+                                Button {
+                                    vm.toggleRepositorySelection(repo.fullName)
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: isChecked ? "checkmark.square.fill" : "square")
+                                            .foregroundStyle(isChecked ? OctoTheme.accentBlue : .secondary)
+                                        Text(repo.fullName)
+                                            .font(.system(size: 12, design: .monospaced))
+                                            .foregroundStyle(.primary)
+                                        if repo.isPrivate {
+                                            Text("PRIVATE")
+                                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                                                .foregroundStyle(.secondary)
+                                                .padding(.horizontal, 4)
+                                                .padding(.vertical, 1)
+                                                .background(OctoTheme.surfaceHigh, in: .rect(cornerRadius: 3))
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .contentShape(.rect)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 115)
+                    .background(OctoTheme.surfaceLowest, in: .rect(cornerRadius: 6))
+                } else {
+                    TextField("Enter owner/repo (e.g. loesch-digital/itemflux-ios-app)", text: $vm.manualTargetInput)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(size: 12, design: .monospaced))
+                }
+
+            case .organization:
                 if !vm.organizations.isEmpty {
                     Picker("Organization", selection: $vm.selectedOrganizationLogin) {
                         ForEach(vm.organizations) { org in
@@ -129,31 +214,33 @@ public struct AddRunnerWizardSheet: View {
                 TextField("Or enter organization slug (e.g. loesch-digital)", text: $vm.manualTargetInput)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 12, design: .monospaced))
-            } else {
-                if !vm.repositories.isEmpty {
-                    Picker("Repository", selection: $vm.selectedRepositoryFullName) {
-                        ForEach(vm.repositories) { repo in
-                            Text("\(repo.fullName)\(repo.isPrivate ? " (Private)" : "")")
-                                .tag(repo.fullName)
-                        }
-                    }
-                    .labelsHidden()
-                }
-                TextField("Or enter owner/repo (e.g. loesch-digital/itemflux-ios-app)", text: $vm.manualTargetInput)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 12, design: .monospaced))
             }
         }
         .padding(12)
         .background(OctoTheme.surface, in: .rect(cornerRadius: 8))
     }
 
+    private func targetSectionTitle(for scope: RunnerScopeType) -> String {
+        switch scope {
+        case .repository:
+            return "2. Target GitHub Repository (Single Selection)"
+        case .personalMultiRepo:
+            return "2. Select Repositories (\(viewModel.selectedRepositoryFullNames.count) selected)"
+        case .organization:
+            return "2. Target GitHub Organization"
+        }
+    }
+
     private func instanceCountAndNamingSection(bindableVM: AddRunnerWizardViewModel) -> some View {
         @Bindable var vm = bindableVM
-        return VStack(alignment: .leading, spacing: 10) {
-            Text("3. Instance Count & Base Name")
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("3. Base Runner Prefix & Parallel Instance Count")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
+
+            infoCallout(
+                "GitHub requires a unique name for each runner. The Base Prefix (e.g. 'mac-runner') is combined with the instance number ('mac-runner-1', 'mac-runner-2'). Each instance gets its own isolated '_work' folder so multiple CI jobs can run in parallel."
+            )
 
             HStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -172,7 +259,7 @@ public struct AddRunnerWizardSheet: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(vm.instanceCount) Instance\(vm.instanceCount > 1 ? "s" : "")")
                             .font(.system(size: 13, weight: .bold, design: .monospaced))
-                        Text("Parallel _work directories")
+                        Text("Parallel _work folders")
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                     }
@@ -199,10 +286,14 @@ public struct AddRunnerWizardSheet: View {
 
     private func labelsSection(bindableVM: AddRunnerWizardViewModel) -> some View {
         @Bindable var vm = bindableVM
-        return VStack(alignment: .leading, spacing: 10) {
-            Text("4. Runner Labels (runs-on)")
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("4. Runner Labels (Workflow 'runs-on' Matching)")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
+
+            infoCallout(
+                "GitHub Actions workflows use 'runs-on: [self-hosted, macos, arm64]' to route jobs to matching runners. Click any label below to toggle it or add custom capability tags (like 'fastlane')."
+            )
 
             ScrollView(.horizontal) {
                 HStack(spacing: 6) {
@@ -251,9 +342,9 @@ public struct AddRunnerWizardSheet: View {
         @Bindable var vm = bindableVM
         return Toggle(isOn: $vm.registerLaunchAgent) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Register macOS User LaunchAgent (~/Library/LaunchAgents)")
+                Text("Automatic Background Start (Run on macOS Login)")
                     .font(.system(size: 12, weight: .semibold))
-                Text("Automatically restarts runner instances on login and crash with /opt/homebrew/bin in PATH.")
+                Text("Starts the runner automatically in the background when you log in and restarts it if it ever crashes (includes /opt/homebrew/bin in PATH).")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }

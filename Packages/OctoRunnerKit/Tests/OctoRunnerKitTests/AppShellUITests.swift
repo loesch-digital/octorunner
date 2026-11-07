@@ -9,7 +9,7 @@ import SwiftUI
 import SyncKit
 import Testing
 
-@Suite("AppShell UI, Layout & Preview Rendering Tests")
+@Suite("AppShell UI, Layout & Preview Rendering Tests", .serialized)
 struct AppShellUITests {
     @Test("OAuthDeviceFlowViewModel copies userCode to NSPasteboard and resets cleanly on cancel")
     @MainActor
@@ -187,13 +187,20 @@ struct AppShellUITests {
         #expect(allRunners.first?.status == .busy)
     }
 
-    @Test("AddRunnerWizardViewModel generates instance names, manages labels, and renders Wizard Sheet in NSHostingView")
+    @Test("AddRunnerWizardViewModel generates instance names, manages labels, multi-repo selection, and renders Step 3 & Step 4 Sheets")
     @MainActor
     func addRunnerWizardViewModelAndSheetRendering() throws {
         let vm = AddRunnerWizardViewModel()
+        #expect(!vm.baseNamePrefix.contains("."))
         vm.baseNamePrefix = "mac-runner"
         vm.instanceCount = 3
         #expect(vm.previewInstanceNames == ["mac-runner-1", "mac-runner-2", "mac-runner-3"])
+
+        vm.selectedScope = .personalMultiRepo
+        vm.toggleRepositorySelection("loesch-digital/octorunner")
+        vm.toggleRepositorySelection("loesch-digital/itemflux-ios-app")
+        #expect(vm.selectedRepositoryFullNames.count == 2)
+        #expect(vm.resolvedTargetSummaries.count == 2)
 
         vm.customLabelInput = "fastlane"
         vm.addCustomLabel()
@@ -205,13 +212,53 @@ struct AppShellUITests {
             for: RunnerEntity.self,
             JobRunEntity.self,
             GitHubAccountEntity.self,
+            AuditLogEntity.self,
             configurations: config
         )
+        let sampleRunner = RunnerEntity(
+            name: "macbook-pro-frank",
+            scopeType: .repository,
+            scopeUrl: URL(string: "https://github.com/loesch-digital/itemflux-ios-app")!,
+            status: .idle,
+            labels: ["self-hosted", "macOS", "ARM64"],
+            workDirectory: URL(fileURLWithPath: "/Users/frank/Documents/apps/actions-runner/_work"),
+            rootDirectoryPath: "/Users/frank/Documents/apps/actions-runner",
+            runnerVersion: "2.338.2",
+            isImportedLocal: true,
+            pid: 87558
+        )
+        container.mainContext.insert(sampleRunner)
+        try container.mainContext.save()
+
         let host = NSHostingView(
             rootView: AddRunnerWizardSheet(viewModel: vm).modelContainer(container)
         )
         host.frame = NSRect(x: 0, y: 0, width: 640, height: 620)
         host.layoutSubtreeIfNeeded()
         #expect(host.bounds.size == CGSize(width: 640, height: 620))
+
+        // Step 4 Dialog 4: RunnerConfigDetailSheet
+        let configSheetHost = NSHostingView(
+            rootView: RunnerConfigDetailSheet(runner: sampleRunner).modelContainer(container)
+        )
+        configSheetHost.frame = NSRect(x: 0, y: 0, width: 660, height: 580)
+        configSheetHost.layoutSubtreeIfNeeded()
+        #expect(configSheetHost.bounds.size == CGSize(width: 660, height: 580))
+
+        // Step 4 Dialog 5: RunnerConsoleLogSheet
+        let consoleSheetHost = NSHostingView(
+            rootView: RunnerConsoleLogSheet(runner: sampleRunner).modelContainer(container)
+        )
+        consoleSheetHost.frame = NSRect(x: 0, y: 0, width: 820, height: 600)
+        consoleSheetHost.layoutSubtreeIfNeeded()
+        #expect(consoleSheetHost.bounds.size == CGSize(width: 820, height: 600))
+
+        // Step 4 Dialog 6: MenuBarStatusView
+        let menuBarHost = NSHostingView(
+            rootView: MenuBarStatusView().modelContainer(container)
+        )
+        menuBarHost.frame = NSRect(x: 0, y: 0, width: 350, height: 460)
+        menuBarHost.layoutSubtreeIfNeeded()
+        #expect(menuBarHost.bounds.size == CGSize(width: 350, height: 460))
     }
 }

@@ -2,6 +2,7 @@ import AppKit
 import CoreModels
 import DesignSystem
 import GitHubAPI
+import RunnerEngine
 import SwiftData
 import SwiftUI
 import SyncKit
@@ -24,17 +25,25 @@ public struct MainShellView: View {
     @State private var isInstallingUpdate: Bool = false
     @State private var updateStatusMessage: String?
 
+    @State private var activeConfigRunner: RunnerEntity?
+    @State private var activeConsoleRunner: RunnerEntity?
+    @State private var embeddedLogRunnerId: UUID?
+    @State private var embeddedLogLines: [RunnerLogLine] = []
+    @State private var embeddedAutoScroll: Bool = true
+
     private let telemetryActor = HostTelemetryActor()
     private let oauthActor = GitHubOAuthActor()
     private let updaterActor = AppUpdaterActor()
     private let syncActor = GitHubRunnerSyncActor()
+    private let logStreamer = RunnerLogStreamerActor()
+    private let provisioner = RunnerProvisionerActor()
 
     public init() {}
 
     public var body: some View {
         NavigationSplitView {
             sidebarContent
-                .navigationSplitViewColumnWidth(min: 215, ideal: 240, max: 280)
+                .navigationSplitViewColumnWidth(min: 220, ideal: 245, max: 285)
         } detail: {
             detailContent
         }
@@ -62,17 +71,24 @@ public struct MainShellView: View {
         .sheet(isPresented: $isShowingAddRunnerSheet) {
             AddRunnerWizardSheet()
         }
+        .sheet(item: $activeConfigRunner) { runner in
+            RunnerConfigDetailSheet(runner: runner)
+        }
+        .sheet(item: $activeConsoleRunner) { runner in
+            RunnerConsoleLogSheet(runner: runner)
+        }
         .task {
             hostSnapshot = await telemetryActor.currentSnapshot()
             if accounts.isEmpty {
                 isShowingAuthSheet = true
             }
             await syncLocalAndRemoteRunners(manual: false)
+            await refreshEmbeddedLogStream()
             await checkForAppUpdates(manual: false)
         }
     }
 
-    // MARK: - Left Sidebar + Bottom-Left Account & Settings Card (macOS App Store Style)
+    // MARK: - Left Sidebar + Bottom-Left Account Card & Version Footer
 
     private var sidebarContent: some View {
         VStack(spacing: 0) {
@@ -86,6 +102,7 @@ public struct MainShellView: View {
                                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
                                 .foregroundStyle(.secondary)
                         }
+                        .padding(.vertical, 5)
                         .tag(section)
                     }
                 }
@@ -95,6 +112,10 @@ public struct MainShellView: View {
             Divider()
 
             sidebarBottomAccountCard
+
+            Divider()
+
+            sidebarVersionFooter
         }
     }
 
@@ -121,14 +142,6 @@ public struct MainShellView: View {
                         }
 
                         Spacer()
-
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.secondary)
                     }
                     .padding(.horizontal, 12)
                     .frame(maxWidth: .infinity, minHeight: 50, maxHeight: 50)
@@ -166,7 +179,22 @@ public struct MainShellView: View {
         .background(OctoTheme.surfaceLow)
     }
 
-    // MARK: - Detail Content + Fixed Bottom Footer
+    private var sidebarVersionFooter: some View {
+        HStack {
+            Text("OctoRunner v\(AppUpdaterActor.currentBundleVersion)")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(.secondary)
+            Spacer()
+            Circle()
+                .fill(engineIndicatorColor)
+                .frame(width: 6, height: 6)
+        }
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, minHeight: 28, maxHeight: 28)
+        .background(OctoTheme.surfaceLow)
+    }
+
+    // MARK: - Detail Content + Embedded Live Log + Fixed Bottom Footer
 
     private var detailContent: some View {
         VStack(spacing: 0) {
@@ -193,6 +221,7 @@ public struct MainShellView: View {
 
                     kpiHeaderRow
                     runnerListCard
+                    embeddedLiveWorkerStreamCard
                 }
                 .padding(20)
             }
@@ -291,13 +320,15 @@ public struct MainShellView: View {
         }
     }
 
+    // MARK: - Registered Runner Pool Card
+
     private var runnerListCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Registered Runner Pool")
                     .font(.system(size: 15, weight: .semibold))
                 Spacer()
-                Text("v\(AppUpdaterActor.currentBundleVersion)")
+                Text("\(filteredRunners.count) instance(s)")
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.secondary)
             }
@@ -318,7 +349,7 @@ public struct MainShellView: View {
                             .buttonStyle(.bordered)
                     }
                 }
-                .frame(maxWidth: .infinity, minHeight: 220)
+                .frame(maxWidth: .infinity, minHeight: 200)
             } else {
                 ForEach(filteredRunners) { runner in
                     runnerRow(runner)
@@ -353,6 +384,13 @@ public struct MainShellView: View {
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1.5)
                             .background(OctoTheme.surfaceHighest, in: .rect(cornerRadius: 4))
+                    } else {
+                        Text("MANAGED")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundStyle(OctoTheme.onlineGreen)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1.5)
+                            .background(OctoTheme.surfaceHighest, in: .rect(cornerRadius: 4))
                     }
                     if let version = runner.runnerVersion {
                         Text("v\(version)")
@@ -360,7 +398,7 @@ public struct MainShellView: View {
                             .foregroundStyle(.secondary)
                     }
                     if let pid = runner.pid {
-                        Text("PID \(pid)")
+                        Text("PID \(String(pid))")
                             .font(.system(size: 10, design: .monospaced))
                             .foregroundStyle(.secondary)
                     }
@@ -382,14 +420,178 @@ public struct MainShellView: View {
                 }
             }
 
-            Button("Remove", systemImage: "trash", role: .destructive) {
-                deleteRunner(runner)
+            HStack(spacing: 6) {
+                if runner.isImportedLocal {
+                    Button("Migrate", systemImage: "arrow.right.doc.on.clipboard") {
+                        Task { await migrateImportedRunnerInline(runner) }
+                    }
+                    .controlSize(.small)
+                    .buttonStyle(.borderedProminent)
+                    .tint(OctoTheme.accentBlue)
+                    .help("Migrate this local runner into OctoRunner's managed folder and enable Autostart")
+                }
+
+                Button("Live Log", systemImage: "apple.terminal") {
+                    activeConsoleRunner = runner
+                }
+                .controlSize(.small)
+                .buttonStyle(.bordered)
+
+                Button("Settings", systemImage: "slider.horizontal.3") {
+                    activeConfigRunner = runner
+                }
+                .labelStyle(.iconOnly)
+                .controlSize(.small)
+                .buttonStyle(.bordered)
+                .help("Configure Runner Labels, Autostart & Workspace")
+
+                Button("Remove", systemImage: "trash", role: .destructive) {
+                    deleteRunner(runner)
+                }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.borderless)
             }
-            .labelStyle(.iconOnly)
-            .buttonStyle(.borderless)
         }
         .padding(10)
         .background(OctoTheme.surfaceLow, in: .rect(cornerRadius: 8))
+    }
+
+    // MARK: - Embedded Live Worker Execution Stream (Dialog 2 Bottom Panel)
+
+    private var embeddedLiveWorkerStreamCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: "waveform.path.ecg.rectangle.fill")
+                    .foregroundStyle(OctoTheme.accentBlue)
+                Text("Live Worker Execution Stream")
+                    .font(.system(size: 14, weight: .semibold))
+                if let selected = selectedEmbeddedRunner {
+                    Text("• \(selected.name)")
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(OctoTheme.accentBlue)
+                }
+
+                Spacer()
+
+                Toggle("Auto-scroll", isOn: $embeddedAutoScroll)
+                    .toggleStyle(.checkbox)
+                    .font(.system(size: 11))
+
+                Button("Refresh", systemImage: "arrow.clockwise") {
+                    Task { await refreshEmbeddedLogStream() }
+                }
+                .controlSize(.small)
+                .buttonStyle(.bordered)
+
+                if let selected = selectedEmbeddedRunner {
+                    Button("Full Console", systemImage: "arrow.up.left.and.arrow.down.right") {
+                        activeConsoleRunner = selected
+                    }
+                    .controlSize(.small)
+                    .buttonStyle(.bordered)
+                }
+            }
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 3) {
+                    if embeddedLogLines.isEmpty {
+                        Text("Waiting for runner diagnostic log output (_diag/Runner_*.log)…")
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .padding(8)
+                    } else {
+                        ForEach(embeddedLogLines.suffix(18)) { line in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text(line.timestampText)
+                                    .font(.system(size: 10, design: .monospaced))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 72, alignment: .leading)
+                                Text(line.level.rawValue)
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(color(for: line.level))
+                                    .frame(width: 34, alignment: .leading)
+                                Text(line.message)
+                                    .font(.system(size: 10, design: .monospaced))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                Spacer(minLength: 0)
+                            }
+                        }
+                    }
+                }
+                .padding(10)
+            }
+            .frame(minHeight: 130, maxHeight: 170)
+            .background(Color.black.opacity(0.42), in: .rect(cornerRadius: 8))
+        }
+        .padding(14)
+        .background(OctoTheme.surface, in: .rect(cornerRadius: 10))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(OctoTheme.outlineVariant.opacity(0.45), lineWidth: 1)
+        }
+    }
+
+    private var selectedEmbeddedRunner: RunnerEntity? {
+        if let id = embeddedLogRunnerId, let match = runners.first(where: { $0.id == id }) {
+            return match
+        }
+        return runners.first
+    }
+
+    private func color(for level: RunnerLogLevel) -> Color {
+        switch level {
+        case .info:
+            OctoTheme.accentBlue
+        case .warning:
+            OctoTheme.warningOrange
+        case .error:
+            OctoTheme.errorRed
+        case .success:
+            OctoTheme.onlineGreen
+        }
+    }
+
+    private func refreshEmbeddedLogStream() async {
+        guard let runner = selectedEmbeddedRunner else {
+            embeddedLogLines = []
+            return
+        }
+        let rootURL = URL(fileURLWithPath: runner.rootDirectoryPath ?? runner.workDirectoryPath)
+        embeddedLogLines = await logStreamer.readRecentLogLines(forRunnerRoot: rootURL, maxLines: 40)
+    }
+
+    private func migrateImportedRunnerInline(_ runner: RunnerEntity) async {
+        let sourceURL = URL(fileURLWithPath: runner.rootDirectoryPath ?? runner.workDirectoryPath)
+        do {
+            let previousPath = runner.rootDirectoryPath
+            let managedRoot = try await provisioner.migrateImportedRunnerDirectory(
+                runnerName: runner.name,
+                sourceRootDirectory: sourceURL,
+                registerLaunchAgent: true
+            )
+            runner.rootDirectoryPath = managedRoot.path()
+            runner.workDirectoryPath = managedRoot.appending(path: "_work").path()
+            runner.isImportedLocal = false
+            runner.lastHeartbeat = .now
+
+            AuditLogRecorder.record(
+                in: modelContext,
+                category: .configuration,
+                severity: .info,
+                title: "Runner Migrated into OctoRunner",
+                summary: "Migrated \(runner.name) into \(managedRoot.path()) and enabled Autostart",
+                actorAccountLogin: accounts.first?.login,
+                targetRunnerName: runner.name,
+                previousValue: previousPath,
+                newValue: managedRoot.path()
+            )
+            try? modelContext.save()
+            updateStatusMessage = "Migrated '\(runner.name)' into OctoRunner managed pool with Autostart enabled."
+            await refreshEmbeddedLogStream()
+        } catch {
+            updateStatusMessage = "Migration failed: \(error.localizedDescription)"
+        }
     }
 
     // MARK: - Bottom Status Bar
@@ -452,7 +654,7 @@ public struct MainShellView: View {
                 isShowingAccountPopover = false
                 selectedSection = .launchdSettings
             } label: {
-                Label("Settings & LaunchAgents", systemImage: "gearshape.fill")
+                Label("Autostart & Background Settings", systemImage: "gearshape.2.fill")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
@@ -513,7 +715,6 @@ public struct MainShellView: View {
                 existing.workDirectoryPath = item.workDirectory.path()
                 existing.rootDirectoryPath = item.rootDirectory.path()
                 existing.runnerVersion = item.runnerVersion
-                existing.isImportedLocal = true
                 existing.labels = item.labels
                 existing.pid = item.listenerPID
                 existing.status = item.localStatus
@@ -565,6 +766,7 @@ public struct MainShellView: View {
                 ? "Synced \(count) local runner(s) with GitHub."
                 : "No local .runner instances found in standard paths."
         }
+        await refreshEmbeddedLogStream()
     }
 
     private func importRunnerFolderViaOpenPanel() {
@@ -637,21 +839,6 @@ public struct MainShellView: View {
         case .failedFaulted:
             return runners.count(where: { $0.status == .faulted })
         }
-    }
-
-    private func seedDemoRunnerIfEmpty() {
-        let index = runners.count + 1
-        let runner = RunnerEntity(
-            name: "mac-runner-\(index)",
-            scopeType: .repository,
-            scopeUrl: URL(string: "https://github.com/loesch-digital/octorunner")!,
-            status: index.isMultiple(of: 2) ? .busy : .idle,
-            labels: ["self-hosted", "macos", "arm64", "xcode-27"],
-            workDirectory: URL(fileURLWithPath: NSHomeDirectory()).appending(path: "actions-runner/_work"),
-            pid: Int32(4800 + index)
-        )
-        modelContext.insert(runner)
-        try? modelContext.save()
     }
 
     private func deleteRunner(_ runner: RunnerEntity) {

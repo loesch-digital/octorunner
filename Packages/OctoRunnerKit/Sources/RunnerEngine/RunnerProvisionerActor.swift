@@ -151,6 +151,47 @@ public actor RunnerProvisionerActor {
         }
     }
 
+    /// Migrates an existing local runner directory (e.g. `~/Documents/apps/actions-runner`) into OctoRunner's managed directory
+    /// (`~/Library/Application Support/io.octorunner.macos/runners/<name>`) and optionally registers its LaunchAgent.
+    public func migrateImportedRunnerDirectory(
+        runnerName: String,
+        sourceRootDirectory: URL,
+        registerLaunchAgent: Bool
+    ) throws -> URL {
+        try FileManager.default.createDirectory(at: baseRunnersDirectory, withIntermediateDirectories: true)
+        let destinationRoot = baseRunnersDirectory.appending(path: runnerName, directoryHint: .isDirectory)
+
+        if sourceRootDirectory.standardizedFileURL != destinationRoot.standardizedFileURL {
+            if FileManager.default.fileExists(atPath: destinationRoot.path()) {
+                try FileManager.default.removeItem(at: destinationRoot)
+            }
+            try FileManager.default.copyItem(at: sourceRootDirectory, to: destinationRoot)
+        }
+
+        let workDir = destinationRoot.appending(path: "_work", directoryHint: .isDirectory)
+        let diagDir = destinationRoot.appending(path: "_diag", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: diagDir, withIntermediateDirectories: true)
+
+        if registerLaunchAgent {
+            let sanitized = runnerName.lowercased().replacingOccurrences(of: " ", with: "-")
+            let label = "io.octorunner.agent.\(sanitized)"
+            let plistData = try LaunchAgentPlistGenerator.generatePlistData(
+                serviceLabel: label,
+                runnerRootDirectory: destinationRoot
+            )
+            let plistURL = LaunchAgentPlistGenerator.launchAgentPlistURL(for: label)
+            try FileManager.default.createDirectory(
+                at: plistURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try plistData.write(to: plistURL, options: .atomic)
+            _ = Self.bootstrapLaunchAgent(plistURL: plistURL)
+        }
+
+        return destinationRoot
+    }
+
     public static func extractVersion(fromFilename filename: String) -> String? {
         let stripped = filename
             .replacingOccurrences(of: "actions-runner-osx-arm64-", with: "")

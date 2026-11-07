@@ -29,6 +29,10 @@ public enum OctoRunnerPersistence {
         ])
 
         let diskConfig = ModelConfiguration(schema: schema, url: targetURL)
+        if isCorruptedSQLiteFile(at: targetURL) {
+            removeStoreFiles(at: targetURL)
+        }
+
         if let container = try? ModelContainer(for: schema, configurations: [diskConfig]) {
             return container
         }
@@ -44,6 +48,17 @@ public enum OctoRunnerPersistence {
         let memoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         // swiftlint:disable:next force_try
         return try! ModelContainer(for: schema, configurations: [memoryConfig])
+    }
+
+    private static func isCorruptedSQLiteFile(at storeURL: URL) -> Bool {
+        guard FileManager.default.fileExists(atPath: storeURL.path()) else { return false }
+        guard let handle = try? FileHandle(forReadingFrom: storeURL) else { return false }
+        defer { try? handle.close() }
+        guard let headerData = try? handle.read(upToCount: 16), !headerData.isEmpty else {
+            return false
+        }
+        let sqliteMagic = Data("SQLite format 3\0".utf8)
+        return headerData != sqliteMagic
     }
 
     private static func removeStoreFiles(at storeURL: URL) {
