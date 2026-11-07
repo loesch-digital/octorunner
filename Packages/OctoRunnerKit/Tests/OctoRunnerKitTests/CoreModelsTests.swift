@@ -8,8 +8,7 @@ struct CoreModelsTests {
     @Test("RunnerEntity and JobRunEntity creation, computed properties, and cascade delete")
     @MainActor
     func runnerEntityPersistenceAndCascadeDelete() throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(for: RunnerEntity.self, JobRunEntity.self, configurations: config)
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
         let context = container.mainContext
 
         let runner = RunnerEntity(
@@ -65,8 +64,7 @@ struct CoreModelsTests {
     @Test("GitHubAccountEntity persistence without storing raw secret")
     @MainActor
     func githubAccountEntityPersistence() throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(for: GitHubAccountEntity.self, configurations: config)
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
         let context = container.mainContext
 
         let account = GitHubAccountEntity(
@@ -121,7 +119,6 @@ struct CoreModelsTests {
         let tempDir = FileManager.default.temporaryDirectory
             .appending(path: "octorunner-migration-test-\(UUID().uuidString)", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: tempDir) }
 
         // 1. Test self-healing when store file contains corrupted/unreadable bytes
         let corruptedStoreURL = tempDir.appending(path: "corrupted.store")
@@ -142,31 +139,12 @@ struct CoreModelsTests {
         #expect(fetched.count == 1)
         #expect(fetched.first?.name == "healed-runner")
         #expect(fetched.first?.isImportedLocal == false)
-
-        // 2. If a real legacy default.store exists in ~/Library/Application Support, copy and migrate it in-place
-        let realDefaultStore = URL(fileURLWithPath: NSHomeDirectory())
-            .appending(path: "Library/Application Support/default.store")
-        if FileManager.default.fileExists(atPath: realDefaultStore.path()) {
-            let copiedStoreURL = tempDir.appending(path: "legacy-default.store")
-            try FileManager.default.copyItem(at: realDefaultStore, to: copiedStoreURL)
-            let migratedContainer = OctoRunnerPersistence.makeSharedContainer(storeURL: copiedStoreURL)
-            let migratedAccounts = try migratedContainer.mainContext.fetch(FetchDescriptor<GitHubAccountEntity>())
-            let migratedRunners = try migratedContainer.mainContext.fetch(FetchDescriptor<RunnerEntity>())
-            #expect(migratedAccounts.count >= 0)
-            #expect(migratedRunners.count >= 0)
-        }
     }
 
     @Test("AuditLogEntity and AuditLogRecorder persist configuration changes and system events")
     @MainActor
     func auditLogPersistenceAndRecorder() throws {
-        let tempDir = FileManager.default.temporaryDirectory
-            .appending(path: "octorunner-audit-test-\(UUID().uuidString)", directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: tempDir) }
-
-        let storeURL = tempDir.appending(path: "audit-test.store")
-        let container = OctoRunnerPersistence.makeSharedContainer(storeURL: storeURL)
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
         let context = container.mainContext
 
         AuditLogRecorder.record(

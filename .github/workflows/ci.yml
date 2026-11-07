@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Run OctoRunnerKit Unit Tests (TDD Suite)
-        run: swift test --package-path Packages/OctoRunnerKit
+        run: swift test --package-path Packages/OctoRunnerKit --no-parallel
 
       - name: Generate App Icons & Xcode Project
         run: |

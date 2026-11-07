@@ -8,7 +8,7 @@
     "url": "https://github.com/loesch-digital/octorunner.git"
   },
   "scripts": {
-    "test": "swift test --package-path Packages/OctoRunnerKit",
+    "test": "swift test --package-path Packages/OctoRunnerKit --no-parallel",
     "build:mac": "fastlane mac build_release",
     "release": "release-it"
   },

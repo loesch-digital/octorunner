@@ -2,6 +2,15 @@ import Foundation
 import SwiftData
 
 public enum OctoRunnerPersistence {
+    public static var schema: Schema {
+        Schema([
+            RunnerEntity.self,
+            JobRunEntity.self,
+            GitHubAccountEntity.self,
+            AuditLogEntity.self
+        ])
+    }
+
     public static var defaultStoreURL: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Library/Application Support")
@@ -19,35 +28,39 @@ public enum OctoRunnerPersistence {
         return dedicatedStore
     }
 
+    public static func makeInMemoryContainer() throws -> ModelContainer {
+        let config = ModelConfiguration(
+            UUID().uuidString,
+            schema: schema,
+            isStoredInMemoryOnly: true
+        )
+        return try ModelContainer(for: schema, configurations: [config])
+    }
+
     public static func makeSharedContainer(storeURL: URL? = nil) -> ModelContainer {
         let targetURL = storeURL ?? defaultStoreURL
-        let schema = Schema([
-            RunnerEntity.self,
-            JobRunEntity.self,
-            GitHubAccountEntity.self,
-            AuditLogEntity.self
-        ])
+        let currentSchema = schema
 
-        let diskConfig = ModelConfiguration(schema: schema, url: targetURL)
+        let diskConfig = ModelConfiguration(schema: currentSchema, url: targetURL)
         if isCorruptedSQLiteFile(at: targetURL) {
             removeStoreFiles(at: targetURL)
         }
 
-        if let container = try? ModelContainer(for: schema, configurations: [diskConfig]) {
+        if let container = try? ModelContainer(for: currentSchema, configurations: [diskConfig]) {
             return container
         }
 
         // Self-heal: remove incompatible or corrupted SQLite store files (.store, .store-shm, .store-wal) and recreate cleanly
         removeStoreFiles(at: targetURL)
 
-        if let healedContainer = try? ModelContainer(for: schema, configurations: [diskConfig]) {
+        if let healedContainer = try? ModelContainer(for: currentSchema, configurations: [diskConfig]) {
             return healedContainer
         }
 
         // Last resort fallback: in-memory container (never fatalError)
-        let memoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let memoryConfig = ModelConfiguration(schema: currentSchema, isStoredInMemoryOnly: true)
         // swiftlint:disable:next force_try
-        return try! ModelContainer(for: schema, configurations: [memoryConfig])
+        return try! ModelContainer(for: currentSchema, configurations: [memoryConfig])
     }
 
     private static func isCorruptedSQLiteFile(at storeURL: URL) -> Bool {
