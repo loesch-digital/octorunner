@@ -158,3 +158,17 @@ In den Stitch-Entwürfen und dem ersten Spec-Draft standen einige Konzepte, die 
   - Das Swift-Skript [`scripts/generate-app-icons.swift`](../scripts/generate-app-icons.swift) generiert daraus vollautomatisch alle 10 für Xcode benötigten macOS-Auflösungen (`16x16@1x` bis `512x512@2x`) inkl. `Contents.json`.
   - Für das Menüleisten-Icon liegt unter [`docs/assets/menubar_icon.svg`](./assets/menubar_icon.svg) eine echte **Vektor-SVG** (Template-Image für automatisches Dark/Light-Tinting in der macOS-Menüleiste).
 
+### ADR-05: Warum "Personal Account Level Runners" auf GitHub eine Halluzination sind (und wie wir sie im Wizard abbilden)
+- **Was im Stitch-Mockup (Screen 3: Setup Wizard) stand:** Segment 1: `Personal Account` mit Ziel-URL `https://github.com/dein-benutzer`.
+- **Kritische Faktenprüfung (Live gegen die GitHub REST API & Docs):**
+  - GitHub unterstützt Self-Hosted Runner ausschließlich auf **3 Hierarchie-Ebenen**:
+    1. **Repository-Level** (`/repos/{owner}/{repo}/actions/runners`)
+    2. **Organization-Level** (`/orgs/{org}/actions/runners` — ein Runner für alle Repos einer Organisation)
+    3. **Enterprise-Level** (`/enterprises/{enterprise}/actions/runners`)
+  - Auf einem **persönlichen GitHub-Account (User Account)** gibt es unter `github.com/settings` im Menü *Code, planning, and automation* **keinen** Punkt *Actions -> Runners*, und der API-Endpunkt `GET /user/actions/runners` liefert `404 Not Found` (häufige KI-Halluzination, die Organization-Settings mit Personal-Settings verwechselt).
+- **Unsere Lösung für OctoRunner (Echter Mehrwert statt Fehler-Dialog):**
+  - Wenn der User im Setup-Wizard **`Personal Account`** auswählt, lädt `OctoRunner` über `GET /user/repos?affiliation=owner` alle seine persönlichen Repositories zur einfachen Ein- oder Mehrfachauswahl!
+  - Wählt der User dort z.B. 3 seiner privaten Repositories aus, legt `OctoRunner` per **APFS Copy-on-Write (`clonefile`)** ohne doppelten Speicherverbrauch im Hintergrund die benötigten Runner-Instanzen für diese Repos an. So bekommt man auch mit einem persönlichen GitHub-Account das Komfort-Erlebnis eines "Account-weiten Runners"!
+  - Alternativ kann man auf GitHub jederzeit eine **kostenlose GitHub Organization** anlegen — dort funktioniert ein einziger Runner nativ für alle Repositories der Organisation.
+
+

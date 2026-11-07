@@ -9,6 +9,7 @@ OctoRunner.xcodeproj
 
 # Build & Release Artifacts
 dist/
+.local-runner/
 fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots
