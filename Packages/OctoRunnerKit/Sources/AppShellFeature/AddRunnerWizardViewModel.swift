@@ -178,9 +178,7 @@ public final class AddRunnerWizardViewModel {
                 registerLaunchAgent: registerLaunchAgent,
                 accessToken: token
             ) { [weak self] message in
-                await MainActor.run {
-                    self?.provisioningProgressMessage = message
-                }
+                self?.provisioningProgressMessage = message
             }
 
             for summary in provisionedList {
@@ -200,6 +198,17 @@ public final class AddRunnerWizardViewModel {
                     entity.serviceLabel = label
                 }
                 modelContext.insert(entity)
+
+                AuditLogRecorder.record(
+                    in: modelContext,
+                    category: .runnerLifecycle,
+                    severity: .info,
+                    title: "Runner Provisioned",
+                    summary: "Provisioned \(summary.name) (\(summary.scopeURL.absoluteString), v\(summary.runnerVersion))",
+                    actorAccountLogin: login,
+                    targetRunnerName: summary.name,
+                    newValue: summary.labels.joined(separator: ",")
+                )
             }
             try? modelContext.save()
             return true

@@ -24,7 +24,8 @@ public enum OctoRunnerPersistence {
         let schema = Schema([
             RunnerEntity.self,
             JobRunEntity.self,
-            GitHubAccountEntity.self
+            GitHubAccountEntity.self,
+            AuditLogEntity.self
         ])
 
         let diskConfig = ModelConfiguration(schema: schema, url: targetURL)

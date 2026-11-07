@@ -43,10 +43,13 @@ struct SecurityKitTests {
         try await vault.deleteSecret(account: "user-beta")
     }
 
-    @Test("KeychainError equatable conformance")
+    @Test("KeychainError equatable conformance and OSStatus mapping")
     func keychainErrorEquatable() {
         let statusError = KeychainError.unexpectedStatus(-25300)
         #expect(statusError == KeychainError.unexpectedStatus(-25300))
         #expect(KeychainError.invalidDataEncoding != statusError)
+        #expect(KeychainError.interactionNotAllowed != statusError)
+        #expect(!statusError.localizedDescription.isEmpty)
+        #expect(!KeychainError.interactionNotAllowed.localizedDescription.isEmpty)
     }
 }

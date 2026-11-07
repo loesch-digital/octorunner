@@ -151,4 +151,57 @@ struct CoreModelsTests {
             #expect(migratedRunners.count >= 0)
         }
     }
+
+    @Test("AuditLogEntity and AuditLogRecorder persist configuration changes and system events")
+    @MainActor
+    func auditLogPersistenceAndRecorder() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appending(path: "octorunner-audit-test-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let storeURL = tempDir.appending(path: "audit-test.store")
+        let container = OctoRunnerPersistence.makeSharedContainer(storeURL: storeURL)
+        let context = container.mainContext
+
+        AuditLogRecorder.record(
+            in: context,
+            category: .configuration,
+            severity: .info,
+            title: "Runner Labels Updated",
+            summary: "Added 'fastlane' label to macbook-pro-frank",
+            actorAccountLogin: "loesch-digital",
+            targetRunnerName: "macbook-pro-frank",
+            previousValue: "self-hosted,macOS,ARM64",
+            newValue: "self-hosted,macOS,ARM64,fastlane"
+        )
+
+        AuditLogRecorder.record(
+            in: context,
+            category: .runnerLifecycle,
+            severity: .warning,
+            title: "Local Runner Imported",
+            summary: "Auto-imported macbook-pro-frank (agentId 21, v2.338.2)",
+            actorAccountLogin: "loesch-digital",
+            targetRunnerName: "macbook-pro-frank"
+        )
+
+        let descriptor = FetchDescriptor<AuditLogEntity>(
+            sortBy: [SortDescriptor(\AuditLogEntity.timestamp, order: .reverse)]
+        )
+        let logs = try context.fetch(descriptor)
+        #expect(logs.count == 2)
+
+        let configEntry = logs.first { $0.category == .configuration }
+        #expect(configEntry != nil)
+        #expect(configEntry?.severity == .info)
+        #expect(configEntry?.title == "Runner Labels Updated")
+        #expect(configEntry?.previousValue == "self-hosted,macOS,ARM64")
+        #expect(configEntry?.newValue == "self-hosted,macOS,ARM64,fastlane")
+
+        let lifecycleEntry = logs.first { $0.category == .runnerLifecycle }
+        #expect(lifecycleEntry != nil)
+        #expect(lifecycleEntry?.severity == .warning)
+        #expect(lifecycleEntry?.targetRunnerName == "macbook-pro-frank")
+    }
 }

@@ -89,3 +89,28 @@ In `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/SyncKitTests.swift`:
    - Creates a temporary runner folder with a BOM-prefixed `.runner` file and `bin -> bin.2.338.2` symlink, runs `LocalRunnerDiscoveryActor`, and verifies `agentId`, `runnerVersion == "2.338.2"`, and `workDirectory`.
 4. **`githubRemoteRunnerDTODecoding`:**
    - Decodes GitHub REST API JSON for `/repos/{owner}/{repo}/actions/runners/{id}` and extracts label names.
+
+---
+
+## 4. Audit-Log Datenmodell (`AuditLogEntity` & `AuditLogRecorder`)
+
+Für Konfigurationsänderungen, Runner-Lifecycle-Events (Auto-Import, Provisioning, Löschung) und System-/Auth-Ereignisse enthält `CoreModels` die dedizierte SwiftData-Tabelle **`AuditLogEntity`**:
+
+| Feld | Typ | Beschreibung |
+| :--- | :--- | :--- |
+| `id` | `UUID` | Eindeutige Event-ID (`= UUID()`) |
+| `timestamp` | `Date` | Zeitstempel des Ereignisses (`= Date.now`) |
+| `categoryRaw` / `category` | `AuditEventCategory` | `.authentication`, `.runnerLifecycle`, `.configuration`, `.appUpdate`, `.system` |
+| `severityRaw` / `severity` | `AuditEventSeverity` | `.info`, `.warning`, `.critical` |
+| `title` | `String` | Kurzer Event-Titel (z. B. `"Local Runner Auto-Imported"`, `"Runner Labels Updated"`) |
+| `summary` | `String` | Detailbeschreibung (**Bewusst `summary` statt `description` genannt**, da `description` in `@Model`-Klassen laut `swiftdata-pro` verboten ist) |
+| `actorAccountLogin` | `String?` | Ausführender GitHub-Account (z. B. `"loesch-digital"`) |
+| `targetRunnerName` | `String?` | Betroffene Runner-Instanz (z. B. `"macbook-pro-frank"`) |
+| `previousValue` | `String?` | Alter Konfigurationswert vor der Änderung (für Diff-Ansicht im späteren Audit-Dialog) |
+| `newValue` | `String?` | Neuer Konfigurationswert nach der Änderung |
+
+> [!NOTE]
+> **Einhaltung von `swiftdata-pro` (`references/indexing.md` & `references/core-rules.md`):**
+> - Auf `AuditLogEntity` wird bewusst **kein `#Index`** gesetzt, da `swiftdata-pro` für schreibintensive Logging-Tabellen explizit vom Indexing abrät (*"if data is read rarely and updated frequently (such as logging), indexes may be a bad choice"*).
+> - Alle Properties besitzen Property-Level-Defaultwerte, damit Lightweight-Migrationen (`OctoRunnerPersistence.makeSharedContainer()`) niemals fehlschlagen.
+
