@@ -9,7 +9,7 @@ struct OctoRunnerApp: App {
 
     private let modelContainer: ModelContainer = {
         do {
-            return try ModelContainer(for: RunnerEntity.self, JobRunEntity.self)
+            return try ModelContainer(for: RunnerEntity.self, JobRunEntity.self, GitHubAccountEntity.self)
         } catch {
             fatalError("Failed to initialize SwiftData ModelContainer: \(error)")
         }

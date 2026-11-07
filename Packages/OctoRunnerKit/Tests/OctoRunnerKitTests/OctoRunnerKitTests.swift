@@ -112,4 +112,75 @@ struct OctoRunnerKitTests {
         #expect(snapshot.physicalMemoryGB > 0)
         #expect(!snapshot.cpuSummary.isEmpty)
     }
+
+    @Test("GitHubDeviceCodeResponse and GitHubOAuthTokenResponse RFC 8628 JSON decoding")
+    func oauthDeviceCodeAndTokenDecoding() throws {
+        let deviceCodeJSON = """
+        {
+          "device_code": "3584d83530557fdd1f46af8289938c8ef79f9dc5",
+          "user_code": "WDX8-8222",
+          "verification_uri": "https://github.com/login/device",
+          "expires_in": 900,
+          "interval": 5
+        }
+        """.data(using: .utf8)!
+
+        let decodedCode = try JSONDecoder().decode(GitHubDeviceCodeResponse.self, from: deviceCodeJSON)
+        #expect(decodedCode.userCode == "WDX8-8222")
+        #expect(decodedCode.expiresIn == 900)
+        #expect(decodedCode.interval == 5)
+
+        let pendingJSON = """
+        {
+          "error": "authorization_pending",
+          "error_description": "The authorization request is still pending."
+        }
+        """.data(using: .utf8)!
+        let decodedPending = try JSONDecoder().decode(GitHubOAuthTokenResponse.self, from: pendingJSON)
+        #expect(decodedPending.error == "authorization_pending")
+        #expect(decodedPending.accessToken == nil)
+
+        let tokenJSON = """
+        {
+          "access_token": "gho_16C7e42F292c6912E7710c838347Ae178B4a",
+          "token_type": "bearer",
+          "scope": "admin:org,repo,workflow"
+        }
+        """.data(using: .utf8)!
+        let decodedToken = try JSONDecoder().decode(GitHubOAuthTokenResponse.self, from: tokenJSON)
+        #expect(decodedToken.accessToken == "gho_16C7e42F292c6912E7710c838347Ae178B4a")
+        #expect(decodedToken.error == nil)
+    }
+
+    @Test("GitHubOAuthActor X-OAuth-Scopes header parsing and default Client ID")
+    func oauthScopesParsingAndConfig() {
+        #expect(GitHubOAuthConfig.defaultClientID == "Ov23liD1qcIUTp8adWQd")
+        let scopes = GitHubOAuthActor.parseScopes(from: "repo, workflow, admin:org")
+        #expect(scopes == ["repo", "workflow", "admin:org"])
+        #expect(GitHubOAuthActor.parseScopes(from: "").isEmpty)
+    }
+
+    @Test("In-memory SwiftData GitHubAccountEntity persistence without storing raw secret")
+    @MainActor
+    func githubAccountEntityPersistence() throws {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: GitHubAccountEntity.self, configurations: config)
+        let context = container.mainContext
+
+        let account = GitHubAccountEntity(
+            githubUserId: 123456,
+            login: "loesch-digital",
+            displayName: "Frank",
+            scopes: ["repo", "workflow", "admin:org"],
+            authMethodRaw: "oauth_device",
+            keychainAccountKey: "loesch-digital"
+        )
+        context.insert(account)
+        try context.save()
+
+        let fetched = try context.fetch(FetchDescriptor<GitHubAccountEntity>())
+        #expect(fetched.count == 1)
+        #expect(fetched.first?.login == "loesch-digital")
+        #expect(fetched.first?.scopes.contains("workflow") == true)
+    }
 }

@@ -1,5 +1,6 @@
 import CoreModels
 import DesignSystem
+import GitHubAPI
 import SwiftData
 import SwiftUI
 import TelemetryKit
@@ -7,11 +8,14 @@ import TelemetryKit
 public struct MainShellView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \RunnerEntity.name) private var runners: [RunnerEntity]
+    @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
 
     @State private var selectedSection: SidebarSection? = .allRunners
     @State private var searchText: String = ""
     @State private var hostSnapshot: HostTelemetrySnapshot?
+    @State private var isShowingAuthSheet: Bool = false
     private let telemetryActor = HostTelemetryActor()
+    private let oauthActor = GitHubOAuthActor()
 
     public init() {}
 
@@ -26,17 +30,42 @@ public struct MainShellView: View {
         .searchable(text: $searchText, prompt: "Search runners, labels...")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
+                if let activeAccount = accounts.first {
+                    Menu {
+                        Text("Signed in as @\(activeAccount.login)")
+                        Text("Scopes: \(activeAccount.scopes.joined(separator: ", "))")
+                        Divider()
+                        Button("Switch / Re-authenticate Account...", systemImage: "person.badge.key.fill") {
+                            isShowingAuthSheet = true
+                        }
+                        Button("Sign Out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
+                            signOut(activeAccount)
+                        }
+                    } label: {
+                        Label("@\(activeAccount.login)", systemImage: "checkmark.seal.fill")
+                    }
+                } else {
+                    Button("Sign in with GitHub", systemImage: "person.crop.circle.badge.plus") {
+                        isShowingAuthSheet = true
+                    }
+                }
                 Button("Seed Demo Runner", systemImage: "sparkles", action: seedDemoRunnerIfEmpty)
                 Button("New Runner", systemImage: "plus", action: seedDemoRunnerIfEmpty)
                     .buttonStyle(.borderedProminent)
                     .tint(OctoTheme.accentBlue)
             }
         }
+        .sheet(isPresented: $isShowingAuthSheet) {
+            OAuthDeviceFlowSheet()
+        }
         .safeAreaInset(edge: .bottom) {
             statusFooterBar
         }
         .task {
             hostSnapshot = await telemetryActor.currentSnapshot()
+            if accounts.isEmpty {
+                isShowingAuthSheet = true
+            }
         }
     }
 
@@ -254,5 +283,15 @@ public struct MainShellView: View {
     private func deleteRunner(_ runner: RunnerEntity) {
         modelContext.delete(runner)
         try? modelContext.save()
+    }
+
+    private func signOut(_ account: GitHubAccountEntity) {
+        let login = account.login
+        modelContext.delete(account)
+        try? modelContext.save()
+        Task {
+            try? await oauthActor.signOut(login: login)
+        }
+        isShowingAuthSheet = true
     }
 }
