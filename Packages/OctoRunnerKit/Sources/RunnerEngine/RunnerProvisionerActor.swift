@@ -65,7 +65,7 @@ public actor RunnerProvisionerActor {
         labels: [String],
         registerLaunchAgent: Bool,
         accessToken: String,
-        onStatusUpdate: @Sendable (String) async -> Void
+        onStatusUpdate: @MainActor @Sendable (String) -> Void
     ) async throws -> [ProvisionedRunnerSummary] {
         await onStatusUpdate("Fetching macOS ARM64 runner binary metadata from GitHub…")
         let candidate = try await provisioningClient.fetchArm64RunnerDownload(

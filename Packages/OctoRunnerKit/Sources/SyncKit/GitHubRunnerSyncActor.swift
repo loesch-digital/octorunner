@@ -35,21 +35,31 @@ public actor GitHubRunnerSyncActor {
             return localRunners
         }
 
-        var enriched: [DiscoveredLocalRunner] = []
-        for var runner in localRunners {
-            if let remote = try? await fetchRemoteRunner(for: runner.config, token: token) {
-                if !remote.labelNames.isEmpty {
-                    runner.labels = remote.labelNames
-                }
-                if remote.busy {
-                    runner.localStatus = .busy
-                } else if remote.status == "online" {
-                    runner.localStatus = .idle
+        // Structured concurrency (withTaskGroup) per swift-concurrency-pro
+        return await withTaskGroup(of: DiscoveredLocalRunner.self) { group in
+            for runner in localRunners {
+                group.addTask {
+                    var updated = runner
+                    if let remote = try? await self.fetchRemoteRunner(for: runner.config, token: token) {
+                        if !remote.labelNames.isEmpty {
+                            updated.labels = remote.labelNames
+                        }
+                        if remote.busy {
+                            updated.localStatus = .busy
+                        } else if remote.status == "online" {
+                            updated.localStatus = .idle
+                        }
+                    }
+                    return updated
                 }
             }
-            enriched.append(runner)
+
+            var enriched: [DiscoveredLocalRunner] = []
+            for await item in group {
+                enriched.append(item)
+            }
+            return enriched.sorted { $0.config.agentName < $1.config.agentName }
         }
-        return enriched
     }
 
     public func fetchRemoteRunner(

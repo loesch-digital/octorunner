@@ -137,6 +137,15 @@ public final class OAuthDeviceFlowViewModel {
             )
             modelContext.insert(entity)
         }
+        AuditLogRecorder.record(
+            in: modelContext,
+            category: .authentication,
+            severity: .info,
+            title: "GitHub Account Connected",
+            summary: "Authenticated @\(session.user.login) via \(session.authMethod)",
+            actorAccountLogin: session.user.login,
+            newValue: session.scopes.joined(separator: ",")
+        )
         try? modelContext.save()
     }
 }

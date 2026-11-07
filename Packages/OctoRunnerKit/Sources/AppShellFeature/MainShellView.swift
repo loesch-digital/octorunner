@@ -533,6 +533,16 @@ public struct MainShellView: View {
                 )
                 entity.githubRunnerId = item.config.agentId
                 modelContext.insert(entity)
+
+                AuditLogRecorder.record(
+                    in: modelContext,
+                    category: .runnerLifecycle,
+                    severity: .info,
+                    title: "Local Runner Auto-Imported",
+                    summary: "Imported \(item.config.agentName) (agentId \(item.config.agentId), \(item.config.gitHubUrl.absoluteString))",
+                    targetRunnerName: item.config.agentName,
+                    newValue: item.labels.joined(separator: ",")
+                )
             }
             importedOrUpdated += 1
         }
@@ -645,13 +655,33 @@ public struct MainShellView: View {
     }
 
     private func deleteRunner(_ runner: RunnerEntity) {
+        let name = runner.name
+        let oldLabels = runner.labels.joined(separator: ",")
         modelContext.delete(runner)
+        AuditLogRecorder.record(
+            in: modelContext,
+            category: .runnerLifecycle,
+            severity: .warning,
+            title: "Runner Removed from Pool",
+            summary: "Removed runner \(name) from local pool",
+            actorAccountLogin: accounts.first?.login,
+            targetRunnerName: name,
+            previousValue: oldLabels
+        )
         try? modelContext.save()
     }
 
     private func signOut(_ account: GitHubAccountEntity) {
         let login = account.login
         modelContext.delete(account)
+        AuditLogRecorder.record(
+            in: modelContext,
+            category: .authentication,
+            severity: .warning,
+            title: "GitHub Account Signed Out",
+            summary: "Signed out @\(login) and removed token from Keychain",
+            actorAccountLogin: login
+        )
         try? modelContext.save()
         Task {
             try? await oauthActor.signOut(login: login)
