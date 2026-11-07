@@ -3,7 +3,7 @@ import Foundation
 import SwiftData
 import Testing
 
-@Suite("CoreModels & SwiftData Persistence Tests")
+@Suite("CoreModels & SwiftData Persistence Tests", .serialized)
 struct CoreModelsTests {
     @Test("RunnerEntity and JobRunEntity creation, computed properties, and cascade delete")
     @MainActor
@@ -104,10 +104,15 @@ struct CoreModelsTests {
         #expect(AppLanguage.german.displayTitle.contains("Deutsch"))
 
         #expect(SidebarSection.allCases.count == 5)
+        #expect(SidebarSection.launchdSettings.title == "Autostart & Background")
         for section in SidebarSection.allCases {
             #expect(!section.title.isEmpty)
             #expect(!section.systemImage.isEmpty)
         }
+
+        let parsedLog = RunnerLogLine.parse("[2026-11-07 18:10:00Z INFO Runner] Listening for Jobs", index: 1)
+        #expect(parsedLog.level == .info)
+        #expect(parsedLog.message.contains("Listening for Jobs"))
     }
 
     @Test("OctoRunnerPersistence migrates legacy v0.2.x SQLite store in-place and self-heals corrupted stores without fatalError")

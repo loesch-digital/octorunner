@@ -151,6 +151,37 @@ public actor GitHubRunnerProvisioningClient {
         return try JSONDecoder().decode(GitHubRegistrationTokenDTO.self, from: data)
     }
 
+    public func replaceRunnerLabels(
+        scopeURL: URL,
+        runnerId: Int64,
+        labels: [String],
+        token: String
+    ) async throws -> [String] {
+        let (owner, repo) = try Self.parseOwnerAndRepo(from: scopeURL)
+        let endpointURL: URL
+        if let repo {
+            endpointURL = URL(string: "https://api.github.com/repos/\(owner)/\(repo)/actions/runners/\(runnerId)/labels")!
+        } else {
+            endpointURL = URL(string: "https://api.github.com/orgs/\(owner)/actions/runners/\(runnerId)/labels")!
+        }
+
+        var request = URLRequest(url: endpointURL)
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["labels": labels])
+
+        let (data, response) = try await urlSession.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw GitHubProvisioningError.httpError(status, body)
+        }
+        return labels
+    }
+
     public static func parseOwnerAndRepo(from scopeURL: URL) throws -> (owner: String, repo: String?) {
         let parts = scopeURL.pathComponents.filter { $0 != "/" && !$0.isEmpty }
         guard let owner = parts.first else {

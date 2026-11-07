@@ -20,7 +20,7 @@ public enum SidebarSection: String, CaseIterable, Sendable, Identifiable {
         case .queueWorkpools:
             return "Queue & Workpools"
         case .launchdSettings:
-            return "launchd Settings"
+            return "Autostart & Background"
         }
     }
 
@@ -35,7 +35,7 @@ public enum SidebarSection: String, CaseIterable, Sendable, Identifiable {
         case .queueWorkpools:
             return "list.bullet.rectangle"
         case .launchdSettings:
-            return "terminal.fill"
+            return "bolt.badge.clock.fill"
         }
     }
 }
