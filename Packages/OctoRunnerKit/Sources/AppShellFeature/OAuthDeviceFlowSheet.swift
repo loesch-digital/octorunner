@@ -7,9 +7,11 @@ import SwiftUI
 public struct OAuthDeviceFlowSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @State private var viewModel = OAuthDeviceFlowViewModel()
+    @State private var viewModel: OAuthDeviceFlowViewModel
 
-    public init() {}
+    public init(viewModel: OAuthDeviceFlowViewModel = OAuthDeviceFlowViewModel()) {
+        _viewModel = State(initialValue: viewModel)
+    }
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -368,4 +370,47 @@ public struct OAuthDeviceFlowSheet: View {
         .padding(.vertical, 8)
         .background(OctoTheme.surfaceLowest)
     }
+}
+
+#Preview("OAuth Sheet — State A: Initial") {
+    OAuthDeviceFlowSheet()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("OAuth Sheet — State B/C: Device Code + Polling") {
+    OAuthDeviceFlowSheet(
+        viewModel: OAuthDeviceFlowViewModel(
+            initialState: .polling(
+                GitHubDeviceCodeResponse(
+                    deviceCode: "preview-device-code",
+                    userCode: "WDX8-8222",
+                    verificationUri: URL(string: "https://github.com/login/device")!,
+                    expiresIn: 900,
+                    interval: 5
+                )
+            ),
+            copiedToClipboard: true
+        )
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("OAuth Sheet — State D: Authenticated") {
+    OAuthDeviceFlowSheet(
+        viewModel: OAuthDeviceFlowViewModel(
+            initialState: .authenticated(
+                AuthenticatedGitHubSession(
+                    user: GitHubUserProfileDTO(
+                        id: 1001,
+                        login: "loesch-digital",
+                        name: "Frank",
+                        avatarUrl: nil
+                    ),
+                    scopes: ["repo", "workflow", "admin:org"],
+                    authMethod: "oauth_device"
+                )
+            )
+        )
+    )
+    .preferredColorScheme(.dark)
 }

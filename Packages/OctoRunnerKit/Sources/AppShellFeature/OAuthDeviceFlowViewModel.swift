@@ -26,8 +26,14 @@ public final class OAuthDeviceFlowViewModel {
     private let oauthActor: GitHubOAuthActor
     private var pollingTask: Task<Void, Never>?
 
-    public init(oauthActor: GitHubOAuthActor = GitHubOAuthActor()) {
+    public init(
+        oauthActor: GitHubOAuthActor = GitHubOAuthActor(),
+        initialState: AuthFlowState = .initial,
+        copiedToClipboard: Bool = false
+    ) {
         self.oauthActor = oauthActor
+        self.state = initialState
+        self.copiedToClipboard = copiedToClipboard
     }
 
     public func startDeviceFlow(modelContext: ModelContext, autoOpenBrowser: Bool = true) async {
