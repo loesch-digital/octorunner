@@ -31,15 +31,21 @@ sequenceDiagram
 
 ## 2. Was wo konfiguriert werden muss (Checkliste für dich & uns)
 
-### 2.1 Auf GitHub (Einmaliges Setup)
-1. **Haupt-Repository (`octorunner`):**
-   - Unser aktuelles Repository (`/Users/frank/Documents/apps/octorunner`), gepusht auf GitHub (z.B. `https://github.com/<dein-user>/octorunner`).
-2. **Homebrew Tap Repository (`homebrew-octorunner` oder `homebrew-tap`):**
-   - Ein zweites, öffentliches GitHub-Repository mit dem Namen **`homebrew-octorunner`** (oder falls du schon ein zentrales `homebrew-tap` hast, nutzen wir das!).
-   - *Hinweis:* Durch das Präfix `homebrew-` erlaubt Homebrew die Kurzform `brew tap <dein-user>/octorunner` und `brew install --cask <dein-user>/octorunner/octorunner`.
-   - Wir können dieses Repo in Step 1 direkt per `gh repo create homebrew-octorunner --public` für dich anlegen!
-3. **GitHub Token für `release-it`:**
-   - Lokal: `GITHUB_TOKEN` (oder automatisch über deine eingeloggte `gh auth token` Session) zum Anlegen des GitHub Releases und Pushen der Cask-Formula ins Tap-Repo.
+### 2.1 GitHub Repositories: Sichtbarkeit (`public` vs. `private`) & Self-Hosted Runner
+Bei der Analyse deines Accounts (`@loesch-digital`) und deines laufenden lokalen Runners (`/Users/frank/Documents/apps/actions-runner`) sind 3 wichtige Punkte aufgefallen:
+
+1. **Warum dein aktueller Runner (`macbook-pro-frank`) für `octorunner` noch nicht greift:**
+   - Dein aktuell laufender Runner unter `/Users/frank/Documents/apps/actions-runner/.runner` ist ein **Repository-Runner**, der exklusiv auf `https://github.com/loesch-digital/itemflux-ios-app` registriert ist.
+   - Da `@loesch-digital` ein **Personal GitHub Account** ist (keine GitHub Organization), erlaubt GitHub leider keine Account-weiten Runner über alle privaten Repos hinweg — jeder Runner wird pro Repository registriert.
+   - **Unsere Lösung für Step 1:** Wir legen für `loesch-digital/octorunner` direkt eine zweite, schlanke Runner-Instanz (z.B. `macbook-pro-octorunner`) an, die die bereits heruntergeladene Binary aus `/Users/frank/Documents/apps/actions-runner` per APFS Copy-on-Write (`cp -cR`) nutzt! *(Und genau dieses Problem — mehrere Repo-Runner auf einem Mac bequem parallel zu verwalten — löst `OctoRunner` ab `v0.3.0` ja dann per Klick in der GUI!)*
+2. **Muss das Repo `public` sein für Homebrew Cask & GitHub Actions?**
+   - **Option A (Empfohlen & am einfachsten für Homebrew): `loesch-digital/octorunner` + `loesch-digital/homebrew-octorunner` auf `PUBLIC` stellen:**
+     - **Vorteil 1 (Homebrew):** `brew install --cask loesch-digital/octorunner/octorunner` kann die Release-ZIP-Datei (`OctoRunner-0.1.0-arm64.zip`) direkt und **ohne Authentifizierung/Token** von GitHub Releases herunterladen.
+     - **Vorteil 2 (GitHub Actions):** In einem Public Repo sind sogar GitHub-gehostete macOS-Runner (`macos-15` M-Series) komplett kostenlos unbegrenzt nutzbar, falls dein MacBook mal zugeklappt ist.
+   - **Option B (`octorunner` bleibt `PRIVATE`, nur `homebrew-octorunner` ist `PUBLIC`):**
+     - Wenn der Quellcode von `octorunner` privat bleiben soll, können wir die kompilierten Release-ZIPs (`OctoRunner-0.1.0-arm64.zip`) bei `release-it` einfach als GitHub Release im öffentlichen **`loesch-digital/homebrew-octorunner`** Tap-Repo hochladen! Dann bleibt dein Code 100% privat, aber jeder (und Homebrew) kann das Cask ohne Token-Gefrickel installieren.
+3. **GitHub Actions Workflow (`.github/workflows/ci-release.yml`):**
+   - Wir richten in Step 1 direkt `.github/workflows/ci.yml` ein, der bei jedem Push/PR auf Feature-Branches (`feat/*`) auf deinem lokalen Runner (`runs-on: [self-hosted, macos, arm64]`) automatisch `swift test` und den Xcode-Build prüft.
 
 ### 2.2 Im Apple Developer Account / Fastlane `match`
 Da du **`fastlane match`** bereits in einer anderen App im Einsatz hast:
