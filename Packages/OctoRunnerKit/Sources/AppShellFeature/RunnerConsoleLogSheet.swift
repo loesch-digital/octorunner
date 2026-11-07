@@ -180,7 +180,7 @@ public struct RunnerConsoleLogSheet: View {
                 }
                 .padding(14)
             }
-            .background(Color.black.opacity(0.45))
+            .background(OctoTheme.surfaceLow)
 
         case .environmentVariables:
             ScrollView {
@@ -195,7 +195,7 @@ public struct RunnerConsoleLogSheet: View {
                 }
                 .padding(18)
             }
-            .background(Color.black.opacity(0.45))
+            .background(OctoTheme.surfaceLow)
 
         case .diagnostics:
             ScrollView {
@@ -210,7 +210,7 @@ public struct RunnerConsoleLogSheet: View {
                 }
                 .padding(18)
             }
-            .background(Color.black.opacity(0.45))
+            .background(OctoTheme.surfaceLow)
         }
     }
 

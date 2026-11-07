@@ -9,21 +9,24 @@ public struct RunnerStatusBadge: View {
     }
 
     public var body: some View {
-        let color = OctoTheme.statusColor(for: status)
         HStack(spacing: 5) {
             Circle()
-                .fill(color)
+                .fill(OctoTheme.statusColor(for: status))
                 .frame(width: 7, height: 7)
+                .accessibilityHidden(true)
+
             Text(status.badgeTitle)
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundStyle(color)
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(OctoTheme.statusColor(for: status))
         }
-        .padding(.horizontal, 7)
+        .padding(.horizontal, 8)
         .padding(.vertical, 3)
-        .background(color.opacity(0.14), in: .rect(cornerRadius: 5))
-        .overlay {
-            RoundedRectangle(cornerRadius: 5)
-                .strokeBorder(color.opacity(0.35), lineWidth: 1)
-        }
+        .background(
+            OctoTheme.statusColor(for: status).opacity(0.14),
+            in: .capsule
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Runner Status")
+        .accessibilityValue(status.badgeTitle)
     }
 }

@@ -454,6 +454,9 @@ public struct MainShellView: View {
         }
         .padding(10)
         .background(OctoTheme.surfaceLow, in: .rect(cornerRadius: 8))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Runner \(runner.name)")
+        .accessibilityValue("\(runner.status.badgeTitle), \(runner.scopeUrlString)")
     }
 
     // MARK: - Embedded Live Worker Execution Stream (Dialog 2 Bottom Panel)
@@ -522,7 +525,7 @@ public struct MainShellView: View {
                 .padding(10)
             }
             .frame(minHeight: 130, maxHeight: 170)
-            .background(Color.black.opacity(0.42), in: .rect(cornerRadius: 8))
+            .background(OctoTheme.surfaceLow, in: .rect(cornerRadius: 8))
         }
         .padding(14)
         .background(OctoTheme.surface, in: .rect(cornerRadius: 10))
@@ -530,6 +533,8 @@ public struct MainShellView: View {
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(OctoTheme.outlineVariant.opacity(0.45), lineWidth: 1)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Live Worker Execution Stream")
     }
 
     private var selectedEmbeddedRunner: RunnerEntity? {

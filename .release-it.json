@@ -12,7 +12,7 @@
   },
   "hooks": {
     "before:init": [
-      "swift test --package-path Packages/OctoRunnerKit"
+      "swift test --package-path Packages/OctoRunnerKit --no-parallel"
     ]
   }
 }

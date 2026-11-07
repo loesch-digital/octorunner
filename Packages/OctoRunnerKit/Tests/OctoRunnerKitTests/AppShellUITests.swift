@@ -27,13 +27,7 @@ struct AppShellUITests {
     @Test("MainShellView Preview renders populated Dashboard & Account pill cleanly in NSHostingView")
     @MainActor
     func mainShellViewPreviewRendersInHostingView() throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: RunnerEntity.self,
-            JobRunEntity.self,
-            GitHubAccountEntity.self,
-            configurations: config
-        )
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
         let account = GitHubAccountEntity(
             githubUserId: 1001,
             login: "loesch-digital",
@@ -74,13 +68,7 @@ struct AppShellUITests {
     @Test("OAuthDeviceFlowSheet Previews render all 3 states (Initial, Polling, Authenticated) cleanly")
     @MainActor
     func oauthSheetStatesRenderInHostingView() throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: RunnerEntity.self,
-            JobRunEntity.self,
-            GitHubAccountEntity.self,
-            configurations: config
-        )
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
 
         // State 1: Initial
         let vmInitial = OAuthDeviceFlowViewModel()
@@ -141,13 +129,7 @@ struct AppShellUITests {
     @Test("MainShellView.upsertDiscoveredRunners imports local runner and updates existing entry idempotently")
     @MainActor
     func upsertDiscoveredRunnersIdempotency() throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: RunnerEntity.self,
-            JobRunEntity.self,
-            GitHubAccountEntity.self,
-            configurations: config
-        )
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
         let context = container.mainContext
 
         let discovered = DiscoveredLocalRunner(
@@ -207,14 +189,7 @@ struct AppShellUITests {
         #expect(vm.selectedLabels.contains("fastlane"))
         #expect(vm.customLabelInput.isEmpty)
 
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: RunnerEntity.self,
-            JobRunEntity.self,
-            GitHubAccountEntity.self,
-            AuditLogEntity.self,
-            configurations: config
-        )
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
         let sampleRunner = RunnerEntity(
             name: "macbook-pro-frank",
             scopeType: .repository,
@@ -260,5 +235,37 @@ struct AppShellUITests {
         menuBarHost.frame = NSRect(x: 0, y: 0, width: 350, height: 460)
         menuBarHost.layoutSubtreeIfNeeded()
         #expect(menuBarHost.bounds.size == CGSize(width: 350, height: 460))
+    }
+
+    @Test("WCAG 2.2 AA/AAA contrast ratios pass in both Dark Mode and Light Mode, and DashboardWindowCoordinator prevents duplicate windows")
+    @MainActor
+    func wcag22ContrastAndSingleWindowCoordinator() {
+        // Dark Mode contrast checks (WCAG 2.2 AA requires >= 4.5:1 for normal text, >= 7.0:1 AAA for primary text)
+        let darkPrimaryRatio = OctoTheme.wcagContrastRatio(
+            foregroundRGB: (0.95, 0.95, 0.97),
+            backgroundRGB: OctoTheme.darkSurfaceRGB
+        )
+        let darkSecondaryRatio = OctoTheme.wcagContrastRatio(
+            foregroundRGB: (0.72, 0.74, 0.78),
+            backgroundRGB: OctoTheme.darkSurfaceRGB
+        )
+        #expect(darkPrimaryRatio >= 7.0)
+        #expect(darkSecondaryRatio >= 4.5)
+
+        // Light Mode contrast checks (WCAG 2.2 AA requires >= 4.5:1 for normal text, >= 7.0:1 AAA for primary text)
+        let lightPrimaryRatio = OctoTheme.wcagContrastRatio(
+            foregroundRGB: (0.08, 0.08, 0.10),
+            backgroundRGB: OctoTheme.lightSurfaceRGB
+        )
+        let lightSecondaryRatio = OctoTheme.wcagContrastRatio(
+            foregroundRGB: (0.28, 0.30, 0.35),
+            backgroundRGB: OctoTheme.lightSurfaceRGB
+        )
+        #expect(lightPrimaryRatio >= 7.0)
+        #expect(lightSecondaryRatio >= 4.5)
+
+        // Single-window coordinator prevents duplicate Dashboard windows
+        #expect(DashboardWindowCoordinator.shouldOpenNewWindow(visibleWindowTitles: ["OctoRunner"]) == false)
+        #expect(DashboardWindowCoordinator.shouldOpenNewWindow(visibleWindowTitles: []) == true)
     }
 }

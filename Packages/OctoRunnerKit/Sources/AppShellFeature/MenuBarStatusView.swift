@@ -46,21 +46,24 @@ public struct MenuBarStatusView: View {
                 Image(systemName: "infinity.circle.fill")
                     .font(.system(size: 16))
                     .foregroundStyle(OctoTheme.accentBlue)
+                    .accessibilityHidden(true)
                 Text("OctoRunner Engine")
                     .font(.system(size: 13, weight: .bold))
                 Spacer()
                 Button("Dashboard", systemImage: "macwindow") {
-                    openWindow(id: "main-dashboard")
-                    NSApplication.shared.activate(ignoringOtherApps: true)
+                    DashboardWindowCoordinator.activateOrOpenDashboard(openWindow: openWindow)
                 }
                 .controlSize(.small)
                 .buttonStyle(.bordered)
+                .accessibilityLabel("Open Dashboard Window")
+                .accessibilityHint("Brings the existing OctoRunner dashboard window to the front")
             }
 
             HStack(spacing: 6) {
                 Circle()
                     .fill(activeOnlineCount > 0 ? OctoTheme.onlineGreen : .secondary)
                     .frame(width: 7, height: 7)
+                    .accessibilityHidden(true)
                 Text("Background Engine active (\(activeOnlineCount)/\(runners.count) online)")
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(.secondary)
@@ -69,6 +72,9 @@ public struct MenuBarStatusView: View {
             .padding(.vertical, 5)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(OctoTheme.surface, in: .rect(cornerRadius: 6))
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Background Engine Status")
+            .accessibilityValue("\(activeOnlineCount) of \(runners.count) runners online")
         }
     }
 
@@ -114,6 +120,9 @@ public struct MenuBarStatusView: View {
                             }
                             .padding(8)
                             .background(OctoTheme.surface, in: .rect(cornerRadius: 7))
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("Runner \(runner.name)")
+                            .accessibilityValue("\(runner.status.badgeTitle), \(runner.scopeUrlString)")
                         }
                     }
                 }
@@ -132,8 +141,11 @@ public struct MenuBarStatusView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Toggle("Autostart at macOS Login", isOn: $autostartAtLogin)
+                    .accessibilityHint("Automatically starts OctoRunner and LaunchAgent runners on login")
                 Toggle("Auto-restart Runner on Crash", isOn: $autoRestartOnCrash)
+                    .accessibilityHint("Automatically restarts Runner.Listener if it exits unexpectedly")
                 Toggle("Pause Queue during Battery Saver", isOn: $pauseOnBatterySaver)
+                    .accessibilityHint("Pauses new job pickup when macOS Low Power Mode is active")
             }
             .toggleStyle(.checkbox)
             .font(.system(size: 11))
@@ -153,11 +165,21 @@ public struct MenuBarStatusView: View {
 
             Spacer()
 
-            Button("Quit OctoRunner", systemImage: "power", role: .destructive) {
+            Button("Hide Window", systemImage: "eye.slash") {
+                DashboardWindowCoordinator.hideDashboardWindowToMenuBar()
+            }
+            .buttonStyle(.borderless)
+            .font(.system(size: 11, weight: .medium))
+            .help("Closes the Dashboard window while keeping OctoRunner active in the Menu Bar")
+            .accessibilityLabel("Hide Dashboard Window to Menu Bar")
+
+            Button("Quit GUI", systemImage: "power", role: .destructive) {
                 NSApplication.shared.terminate(nil)
             }
             .buttonStyle(.borderless)
             .font(.system(size: 11, weight: .medium))
+            .help("Quits the OctoRunner GUI. Background runners managed via launchd continue running.")
+            .accessibilityLabel("Quit OctoRunner GUI")
         }
     }
 
