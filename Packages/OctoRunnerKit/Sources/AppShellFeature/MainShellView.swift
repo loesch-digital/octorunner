@@ -553,3 +553,9 @@ public struct MainShellView: View {
         }
     }
 }
+
+#Preview("MainShellView — Populated Dashboard") {
+    MainShellView()
+        .frame(width: 1120, height: 740)
+        .preferredColorScheme(.dark)
+}

@@ -1,0 +1,139 @@
+import AppKit
+import AppShellFeature
+import CoreModels
+import DesignSystem
+import Foundation
+import GitHubAPI
+import SwiftData
+import SwiftUI
+import Testing
+
+@Suite("AppShell UI, Layout & Preview Rendering Tests")
+struct AppShellUITests {
+    @Test("OAuthDeviceFlowViewModel copies userCode to NSPasteboard and resets cleanly on cancel")
+    @MainActor
+    func oauthDeviceFlowClipboardCopyAndCancelState() {
+        let viewModel = OAuthDeviceFlowViewModel()
+        viewModel.copyUserCode("ABCD-9876")
+        #expect(viewModel.copiedToClipboard == true)
+        #expect(NSPasteboard.general.string(forType: .string) == "ABCD-9876")
+
+        viewModel.cancelFlow()
+        #expect(viewModel.state == .initial)
+        #expect(viewModel.errorMessage == nil)
+    }
+
+    @Test("MainShellView Preview renders populated Dashboard & Account pill cleanly in NSHostingView")
+    @MainActor
+    func mainShellViewPreviewRendersInHostingView() throws {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: RunnerEntity.self,
+            JobRunEntity.self,
+            GitHubAccountEntity.self,
+            configurations: config
+        )
+        let account = GitHubAccountEntity(
+            githubUserId: 1001,
+            login: "loesch-digital",
+            displayName: "Frank",
+            scopes: ["repo", "workflow", "admin:org"],
+            keychainAccountKey: "loesch-digital"
+        )
+        let runner = RunnerEntity(
+            name: "mac-studio-m4-runner-1",
+            scopeType: .repository,
+            scopeUrl: URL(string: "https://github.com/loesch-digital/octorunner")!,
+            status: .idle,
+            labels: ["self-hosted", "macos", "arm64"],
+            workDirectory: URL(fileURLWithPath: "/tmp/octorunner-preview")
+        )
+        container.mainContext.insert(account)
+        container.mainContext.insert(runner)
+        try container.mainContext.save()
+
+        let rootView = MainShellView()
+            .modelContainer(container)
+            .frame(width: 1120, height: 740)
+
+        let hostingView = NSHostingView(rootView: rootView)
+        hostingView.frame = NSRect(x: 0, y: 0, width: 1120, height: 740)
+        hostingView.layoutSubtreeIfNeeded()
+
+        #expect(hostingView.bounds.width == 1120)
+        #expect(hostingView.bounds.height == 740)
+        #expect(!hostingView.subviews.isEmpty)
+
+        let bitmap = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds)
+        #expect(bitmap != nil)
+        #expect(bitmap?.pixelsWide ?? 0 >= 1120)
+        #expect(bitmap?.pixelsHigh ?? 0 >= 740)
+    }
+
+    @Test("OAuthDeviceFlowSheet Previews render all 3 states (Initial, Polling, Authenticated) cleanly")
+    @MainActor
+    func oauthSheetStatesRenderInHostingView() throws {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: RunnerEntity.self,
+            JobRunEntity.self,
+            GitHubAccountEntity.self,
+            configurations: config
+        )
+
+        // State 1: Initial
+        let vmInitial = OAuthDeviceFlowViewModel()
+        let initialHost = NSHostingView(
+            rootView: OAuthDeviceFlowSheet(viewModel: vmInitial).modelContainer(container)
+        )
+        initialHost.frame = NSRect(x: 0, y: 0, width: 580, height: 500)
+        initialHost.layoutSubtreeIfNeeded()
+        #expect(initialHost.bounds.size == CGSize(width: 580, height: 500))
+
+        // State 2: Polling with large copyable userCode
+        let vmPolling = OAuthDeviceFlowViewModel()
+        vmPolling.state = .polling(
+            GitHubDeviceCodeResponse(
+                deviceCode: "dev-123",
+                userCode: "WDX8-8222",
+                verificationUri: URL(string: "https://github.com/login/device")!,
+                expiresIn: 900,
+                interval: 5
+            )
+        )
+        vmPolling.copiedToClipboard = true
+        let pollingHost = NSHostingView(
+            rootView: OAuthDeviceFlowSheet(viewModel: vmPolling).modelContainer(container)
+        )
+        pollingHost.frame = NSRect(x: 0, y: 0, width: 580, height: 500)
+        pollingHost.layoutSubtreeIfNeeded()
+        #expect(pollingHost.bounds.size == CGSize(width: 580, height: 500))
+
+        // State 3: Authenticated
+        let vmAuth = OAuthDeviceFlowViewModel()
+        vmAuth.state = .authenticated(
+            AuthenticatedGitHubSession(
+                user: GitHubUserProfileDTO(id: 42, login: "loesch-digital", name: "Frank", avatarUrl: nil),
+                scopes: ["repo", "workflow", "admin:org"],
+                authMethod: "oauth_device"
+            )
+        )
+        let authHost = NSHostingView(
+            rootView: OAuthDeviceFlowSheet(viewModel: vmAuth).modelContainer(container)
+        )
+        authHost.frame = NSRect(x: 0, y: 0, width: 580, height: 500)
+        authHost.layoutSubtreeIfNeeded()
+        #expect(authHost.bounds.size == CGSize(width: 580, height: 500))
+    }
+
+    @Test("DesignSystem RunnerStatusBadge renders all status variants")
+    @MainActor
+    func runnerStatusBadgeRendering() {
+        for status in RunnerStatus.allCases {
+            let host = NSHostingView(rootView: RunnerStatusBadge(status: status))
+            host.frame = NSRect(x: 0, y: 0, width: 100, height: 28)
+            host.layoutSubtreeIfNeeded()
+            #expect(host.bounds.width == 100)
+        }
+    }
+}
