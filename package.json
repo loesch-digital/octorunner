@@ -1,0 +1,18 @@
+{
+  "name": "octorunner",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Native macOS desktop manager for self-hosted GitHub Actions runners",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loesch-digital/octorunner.git"
+  },
+  "scripts": {
+    "test": "swift test --package-path Packages/OctoRunnerKit",
+    "build:mac": "fastlane mac build_release",
+    "release": "release-it"
+  },
+  "devDependencies": {
+    "release-it": "^17.10.0"
+  }
+}

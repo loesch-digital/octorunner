@@ -1,0 +1,2 @@
+app_identifier("io.octorunner.macos")
+team_id(ENV["APPLE_TEAM_ID"] || "")

@@ -1,0 +1,27 @@
+{
+  "git": {
+    "commitMessage": "chore(release): v${version}",
+    "tagName": "v${version}",
+    "requireCleanWorkingDir": true
+  },
+  "github": {
+    "release": true,
+    "releaseName": "OctoRunner v${version}",
+    "tokenRef": "GITHUB_TOKEN",
+    "assets": [
+      "dist/OctoRunner-${version}-arm64.zip"
+    ]
+  },
+  "npm": {
+    "publish": false
+  },
+  "hooks": {
+    "before:git:release": [
+      "swift test --package-path Packages/OctoRunnerKit",
+      "fastlane mac build_release version:${version}"
+    ],
+    "after:release": [
+      "bash ./scripts/update-homebrew-cask.sh ${version}"
+    ]
+  }
+}
