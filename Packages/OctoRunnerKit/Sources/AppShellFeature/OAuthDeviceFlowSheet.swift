@@ -54,8 +54,6 @@ public struct OAuthDeviceFlowSheet: View {
         switch viewModel.state {
         case .initial, .requestingDeviceCode:
             initialStateView
-        case .codeGenerated(let response):
-            codeDisplayStateView(response)
         case .polling(let response):
             pollingStateView(response)
         case .authenticated(let session):
@@ -112,17 +110,17 @@ public struct OAuthDeviceFlowSheet: View {
             }
 
             Button {
-                Task { await viewModel.startDeviceFlow() }
+                Task { await viewModel.startDeviceFlow(modelContext: modelContext) }
             } label: {
                 HStack(spacing: 8) {
                     if viewModel.state == .requestingDeviceCode {
                         ProgressView()
                             .controlSize(.small)
-                        Text("Requesting Device Code...")
+                        Text("Requesting Device Code & Opening Browser...")
                     } else {
                         Image(systemName: "person.badge.key.fill")
                         Text("Sign in with GitHub (OAuth Device Flow)")
-                        Image(systemName: "arrow.right")
+                        Image(systemName: "arrow.up.right.square")
                     }
                 }
                 .font(.system(size: 13, weight: .semibold))
@@ -211,112 +209,88 @@ public struct OAuthDeviceFlowSheet: View {
         }
     }
 
-    // MARK: - State B: Device Code Display
+    // MARK: - State B/C: Unified Device Code Display + Live Polling
 
-    private func codeDisplayStateView(_ response: GitHubDeviceCodeResponse) -> some View {
-        VStack(spacing: 16) {
-            Text("GitHub Device Authorization Code")
+    private func pollingStateView(_ response: GitHubDeviceCodeResponse) -> some View {
+        VStack(spacing: 14) {
+            Text("GitHub Device Authorization")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(OctoTheme.accentBlue)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background(OctoTheme.accentBlue.opacity(0.15), in: .capsule)
 
-            Text("Authorize OctoRunner")
+            Text("Enter this code on GitHub")
                 .font(.system(size: 20, weight: .bold))
 
-            Text("Copy your one-time code below and enter it on GitHub's verification page.")
+            Text("We opened github.com/login/device in your default browser and copied the code to your clipboard.")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 440)
 
             VStack(spacing: 10) {
                 Text("YOUR ONE-TIME DEVICE CODE")
                     .font(.system(size: 10, weight: .semibold, design: .monospaced))
                     .foregroundStyle(.secondary)
 
-                HStack(spacing: 12) {
+                HStack(spacing: 14) {
                     Text(response.userCode)
-                        .font(.system(size: 32, weight: .bold, design: .monospaced))
+                        .font(.system(size: 34, weight: .bold, design: .monospaced))
                         .foregroundStyle(OctoTheme.accentBlue)
                         .textSelection(.enabled)
 
-                    Button("Copy Code", systemImage: viewModel.copiedToClipboard ? "checkmark" : "doc.on.doc") {
+                    Button {
                         viewModel.copyUserCode(response.userCode)
+                    } label: {
+                        Label(
+                            viewModel.copiedToClipboard ? "Copied" : "Copy Code",
+                            systemImage: viewModel.copiedToClipboard ? "checkmark" : "doc.on.doc"
+                        )
+                        .font(.system(size: 12, weight: .semibold))
                     }
                     .buttonStyle(.bordered)
                 }
 
                 if viewModel.copiedToClipboard {
-                    Text("✓ Copied to clipboard!")
+                    Text("✓ Code copied to clipboard — paste with ⌘V in your browser")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(OctoTheme.onlineGreen)
                 }
             }
-            .padding(18)
-            .frame(maxWidth: 430)
+            .padding(16)
+            .frame(maxWidth: 450)
             .background(OctoTheme.surfaceLowest, in: .rect(cornerRadius: 12))
             .overlay {
                 RoundedRectangle(cornerRadius: 12)
                     .strokeBorder(OctoTheme.outlineVariant.opacity(0.6), lineWidth: 1)
             }
 
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Waiting for browser confirmation • Checking every \(response.interval)s...")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+            .background(OctoTheme.surfaceLow, in: .capsule)
+
             HStack(spacing: 10) {
                 Button {
-                    viewModel.openVerificationPageAndStartPolling(response, modelContext: modelContext)
+                    viewModel.openVerificationPage(response)
                 } label: {
                     HStack(spacing: 6) {
-                        Text("Copy Code & Open GitHub Verification Page")
+                        Text("Open github.com/login/device in Browser")
                         Image(systemName: "arrow.up.right.square")
                     }
-                    .font(.system(size: 13, weight: .semibold))
-                    .frame(minHeight: 32)
+                    .font(.system(size: 12, weight: .semibold))
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(OctoTheme.accentBlue)
 
-                Button("Cancel", action: viewModel.cancelFlow)
-                    .buttonStyle(.bordered)
-            }
-        }
-        .padding(24)
-    }
-
-    // MARK: - State C: Polling
-
-    private func pollingStateView(_ response: GitHubDeviceCodeResponse) -> some View {
-        VStack(spacing: 16) {
-            ProgressView()
-                .controlSize(.large)
-                .padding(12)
-
-            Text("Waiting for browser authorization...")
-                .font(.system(size: 19, weight: .bold))
-
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(OctoTheme.accentBlue)
-                    .frame(width: 7, height: 7)
-                Text("Code: \(response.userCode) • Checking github.com/login/device every \(response.interval)s...")
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(OctoTheme.surfaceLow, in: .capsule)
-
-            Text("Please confirm the code in your browser window. Once authorized, this sheet will complete automatically.")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 420)
-
-            HStack(spacing: 10) {
-                Button("Re-open Browser") {
-                    NSWorkspace.shared.open(response.verificationUri)
-                }
-                .buttonStyle(.bordered)
-
-                Button("Cancel Authorization", role: .cancel, action: viewModel.cancelFlow)
+                Button("Cancel", role: .cancel, action: viewModel.cancelFlow)
                     .buttonStyle(.bordered)
             }
         }

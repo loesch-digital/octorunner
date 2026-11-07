@@ -9,7 +9,6 @@ import SwiftUI
 public enum AuthFlowState: Equatable, Sendable {
     case initial
     case requestingDeviceCode
-    case codeGenerated(GitHubDeviceCodeResponse)
     case polling(GitHubDeviceCodeResponse)
     case authenticated(AuthenticatedGitHubSession)
 }
@@ -31,12 +30,17 @@ public final class OAuthDeviceFlowViewModel {
         self.oauthActor = oauthActor
     }
 
-    public func startDeviceFlow() async {
+    public func startDeviceFlow(modelContext: ModelContext, autoOpenBrowser: Bool = true) async {
         errorMessage = nil
         state = .requestingDeviceCode
         do {
             let response = try await oauthActor.requestDeviceCode()
-            state = .codeGenerated(response)
+            copyUserCode(response.userCode)
+            if autoOpenBrowser {
+                NSWorkspace.shared.open(response.verificationUri)
+            }
+            state = .polling(response)
+            beginPolling(response, modelContext: modelContext)
         } catch is CancellationError {
             state = .initial
         } catch {
@@ -51,14 +55,15 @@ public final class OAuthDeviceFlowViewModel {
         copiedToClipboard = true
     }
 
-    public func openVerificationPageAndStartPolling(
+    public func openVerificationPage(_ response: GitHubDeviceCodeResponse) {
+        copyUserCode(response.userCode)
+        NSWorkspace.shared.open(response.verificationUri)
+    }
+
+    private func beginPolling(
         _ response: GitHubDeviceCodeResponse,
         modelContext: ModelContext
     ) {
-        copyUserCode(response.userCode)
-        NSWorkspace.shared.open(response.verificationUri)
-        state = .polling(response)
-
         pollingTask?.cancel()
         pollingTask = Task {
             do {

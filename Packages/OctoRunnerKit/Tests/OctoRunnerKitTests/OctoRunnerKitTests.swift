@@ -1,3 +1,5 @@
+import AppKit
+import AppShellFeature
 import CoreModels
 import Foundation
 import GitHubAPI
@@ -182,5 +184,18 @@ struct OctoRunnerKitTests {
         #expect(fetched.count == 1)
         #expect(fetched.first?.login == "loesch-digital")
         #expect(fetched.first?.scopes.contains("workflow") == true)
+    }
+
+    @Test("OAuthDeviceFlowViewModel copies userCode to NSPasteboard and resets cleanly on cancel")
+    @MainActor
+    func oauthDeviceFlowClipboardCopyAndCancelState() {
+        let viewModel = OAuthDeviceFlowViewModel()
+        viewModel.copyUserCode("ABCD-9876")
+        #expect(viewModel.copiedToClipboard == true)
+        #expect(NSPasteboard.general.string(forType: .string) == "ABCD-9876")
+
+        viewModel.cancelFlow()
+        #expect(viewModel.state == .initial)
+        #expect(viewModel.errorMessage == nil)
     }
 }
