@@ -5,12 +5,7 @@
     "requireCleanWorkingDir": true
   },
   "github": {
-    "release": true,
-    "releaseName": "OctoRunner v${version}",
-    "tokenRef": "GITHUB_TOKEN",
-    "assets": [
-      "dist/OctoRunner-${version}-arm64.zip"
-    ]
+    "release": false
   },
   "npm": {
     "publish": false
@@ -21,6 +16,7 @@
       "fastlane mac build_release version:${version}"
     ],
     "after:release": [
+      "gh release create v${version} dist/OctoRunner-${version}-arm64.zip --title 'OctoRunner v${version}' --generate-notes",
       "bash ./scripts/update-homebrew-cask.sh ${version}"
     ]
   }
