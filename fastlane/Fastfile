@@ -1,0 +1,49 @@
+default_platform(:mac)
+
+platform :mac do
+  desc "Synchronize Developer ID certificates via existing Match repository"
+  lane :sync_certificates do
+    match(
+      type: "developer_id",
+      platform: "macos",
+      readonly: is_ci
+    )
+  end
+
+  desc "Build, sign, optionally notarize, and package OctoRunner.app for release-it"
+  lane :build_release do |options|
+    version = options[:version] || "0.1.0"
+    skip_notarize = options[:skip_notarize].nil? ? (ENV["SKIP_NOTARIZE"] == "true" || ENV["MATCH_GIT_URL"].to_s.empty?) : options[:skip_notarize]
+
+    sh("cd .. && swift scripts/generate-app-icons.swift")
+    sh("cd .. && xcodegen generate")
+    sh("mkdir -p ../dist")
+
+    if ENV["MATCH_GIT_URL"] && !ENV["MATCH_GIT_URL"].empty?
+      sync_certificates
+      build_mac_app(
+        project: "OctoRunner.xcodeproj",
+        scheme: "OctoRunner",
+        configuration: "Release",
+        output_directory: "dist",
+        output_name: "OctoRunner.app",
+        export_method: "developer-id"
+      )
+    else
+      UI.important("Building with local/ad-hoc Hardened Runtime signature (set MATCH_GIT_URL in .env for Developer ID signing)")
+      sh("cd .. && xcodebuild -project OctoRunner.xcodeproj -scheme OctoRunner -configuration Release -derivedDataPath DerivedData MARKETING_VERSION=#{version} CODE_SIGN_IDENTITY='-' CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES clean build")
+      sh("rm -rf ../dist/OctoRunner.app && cp -R ../DerivedData/Build/Products/Release/OctoRunner.app ../dist/OctoRunner.app")
+    end
+
+    unless skip_notarize
+      notarize(
+        package: "dist/OctoRunner.app",
+        bundle_id: "io.octorunner.macos",
+        print_log: true
+      )
+    end
+
+    sh("cd ../dist && rm -f OctoRunner-#{version}-arm64.zip && ditto -c -k --sequesterRsrc --keepParent OctoRunner.app OctoRunner-#{version}-arm64.zip")
+    UI.success("Successfully packaged dist/OctoRunner-#{version}-arm64.zip")
+  end
+end
