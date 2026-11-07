@@ -5,25 +5,25 @@ import SwiftData
 public final class RunnerEntity {
     #Index<RunnerEntity>([\.statusRaw], [\.name])
 
-    public var id: UUID
-    public var name: String
+    public var id: UUID = UUID()
+    public var name: String = ""
     public var githubRunnerId: Int64?
-    public var scopeTypeRaw: String
-    public var scopeUrlString: String
-    public var statusRaw: String
-    public var labels: [String]
-    public var workDirectoryPath: String
+    public var scopeTypeRaw: String = RunnerScopeType.repository.rawValue
+    public var scopeUrlString: String = ""
+    public var statusRaw: String = RunnerStatus.offline.rawValue
+    public var labels: [String] = []
+    public var workDirectoryPath: String = ""
     public var rootDirectoryPath: String?
     public var runnerVersion: String?
-    public var isImportedLocal: Bool
-    public var serviceLabel: String
+    public var isImportedLocal: Bool = false
+    public var serviceLabel: String = ""
     public var currentJobName: String?
     public var currentRepo: String?
-    public var lastHeartbeat: Date
+    public var lastHeartbeat: Date = Date.now
     public var pid: Int32?
 
     @Relationship(deleteRule: .cascade, inverse: \JobRunEntity.runner)
-    public var jobRuns: [JobRunEntity]
+    public var jobRuns: [JobRunEntity] = []
 
     public var status: RunnerStatus {
         get { RunnerStatus(rawValue: statusRaw) ?? .offline }

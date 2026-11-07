@@ -5,16 +5,16 @@ import SwiftData
 public final class GitHubAccountEntity {
     #Index<GitHubAccountEntity>([\.login])
 
-    public var id: UUID
-    public var githubUserId: Int64
-    public var login: String
+    public var id: UUID = UUID()
+    public var githubUserId: Int64 = 0
+    public var login: String = ""
     public var displayName: String?
     public var avatarUrlString: String?
-    public var scopes: [String]
-    public var authMethodRaw: String
-    public var keychainAccountKey: String
-    public var connectedAt: Date
-    public var isActive: Bool
+    public var scopes: [String] = []
+    public var authMethodRaw: String = "oauth_device"
+    public var keychainAccountKey: String = ""
+    public var connectedAt: Date = Date.now
+    public var isActive: Bool = true
 
     public init(
         id: UUID = UUID(),

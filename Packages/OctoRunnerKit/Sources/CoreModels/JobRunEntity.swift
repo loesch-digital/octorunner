@@ -3,15 +3,15 @@ import SwiftData
 
 @Model
 public final class JobRunEntity {
-    public var id: UUID
-    public var githubRunId: Int64
-    public var workflowName: String
-    public var repositoryFullName: String
-    public var branchName: String
-    public var commitSha: String
-    public var statusRaw: String
-    public var startedAt: Date
-    public var durationSeconds: Double
+    public var id: UUID = UUID()
+    public var githubRunId: Int64 = 0
+    public var workflowName: String = ""
+    public var repositoryFullName: String = ""
+    public var branchName: String = ""
+    public var commitSha: String = ""
+    public var statusRaw: String = "completed"
+    public var startedAt: Date = Date.now
+    public var durationSeconds: Double = 0
     public var runner: RunnerEntity?
 
     public init(

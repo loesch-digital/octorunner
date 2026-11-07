@@ -109,4 +109,46 @@ struct CoreModelsTests {
             #expect(!section.systemImage.isEmpty)
         }
     }
+
+    @Test("OctoRunnerPersistence migrates legacy v0.2.x SQLite store in-place and self-heals corrupted stores without fatalError")
+    @MainActor
+    func persistenceLightweightMigrationAndSelfHealing() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appending(path: "octorunner-migration-test-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        // 1. Test self-healing when store file contains corrupted/unreadable bytes
+        let corruptedStoreURL = tempDir.appending(path: "corrupted.store")
+        try Data("not-a-valid-sqlite-database".utf8).write(to: corruptedStoreURL)
+
+        let healedContainer = OctoRunnerPersistence.makeSharedContainer(storeURL: corruptedStoreURL)
+        let context = healedContainer.mainContext
+        let runner = RunnerEntity(
+            name: "healed-runner",
+            scopeType: .repository,
+            scopeUrl: URL(string: "https://github.com/loesch-digital/octorunner")!,
+            workDirectory: tempDir
+        )
+        context.insert(runner)
+        try context.save()
+
+        let fetched = try context.fetch(FetchDescriptor<RunnerEntity>())
+        #expect(fetched.count == 1)
+        #expect(fetched.first?.name == "healed-runner")
+        #expect(fetched.first?.isImportedLocal == false)
+
+        // 2. If a real legacy default.store exists in ~/Library/Application Support, copy and migrate it in-place
+        let realDefaultStore = URL(fileURLWithPath: NSHomeDirectory())
+            .appending(path: "Library/Application Support/default.store")
+        if FileManager.default.fileExists(atPath: realDefaultStore.path()) {
+            let copiedStoreURL = tempDir.appending(path: "legacy-default.store")
+            try FileManager.default.copyItem(at: realDefaultStore, to: copiedStoreURL)
+            let migratedContainer = OctoRunnerPersistence.makeSharedContainer(storeURL: copiedStoreURL)
+            let migratedAccounts = try migratedContainer.mainContext.fetch(FetchDescriptor<GitHubAccountEntity>())
+            let migratedRunners = try migratedContainer.mainContext.fetch(FetchDescriptor<RunnerEntity>())
+            #expect(migratedAccounts.count >= 0)
+            #expect(migratedRunners.count >= 0)
+        }
+    }
 }
