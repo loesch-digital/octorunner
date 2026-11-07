@@ -13,6 +13,9 @@ public final class RunnerEntity {
     public var statusRaw: String
     public var labels: [String]
     public var workDirectoryPath: String
+    public var rootDirectoryPath: String?
+    public var runnerVersion: String?
+    public var isImportedLocal: Bool
     public var serviceLabel: String
     public var currentJobName: String?
     public var currentRepo: String?
@@ -40,16 +43,25 @@ public final class RunnerEntity {
         status: RunnerStatus = .idle,
         labels: [String] = ["self-hosted", "macos", "arm64", "apple-silicon"],
         workDirectory: URL,
+        rootDirectoryPath: String? = nil,
+        runnerVersion: String? = nil,
+        isImportedLocal: Bool = false,
         pid: Int32? = nil
     ) {
         self.id = id
         self.name = name
+        self.githubRunnerId = nil
         self.scopeTypeRaw = scopeType.rawValue
         self.scopeUrlString = scopeUrl.absoluteString
         self.statusRaw = status.rawValue
         self.labels = labels
-        self.workDirectoryPath = workDirectory.path(percentEncoded: false)
-        self.serviceLabel = "io.octorunner.agent.\(name.lowercased())"
+        self.workDirectoryPath = workDirectory.path()
+        self.rootDirectoryPath = rootDirectoryPath ?? workDirectory.deletingLastPathComponent().path()
+        self.runnerVersion = runnerVersion
+        self.isImportedLocal = isImportedLocal
+        self.serviceLabel = "io.octorunner.agent.\(name)"
+        self.currentJobName = nil
+        self.currentRepo = nil
         self.lastHeartbeat = .now
         self.pid = pid
         self.jobRuns = []

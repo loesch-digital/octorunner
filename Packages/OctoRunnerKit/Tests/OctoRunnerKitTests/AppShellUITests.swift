@@ -186,4 +186,32 @@ struct AppShellUITests {
         #expect(allRunners.count == 1)
         #expect(allRunners.first?.status == .busy)
     }
+
+    @Test("AddRunnerWizardViewModel generates instance names, manages labels, and renders Wizard Sheet in NSHostingView")
+    @MainActor
+    func addRunnerWizardViewModelAndSheetRendering() throws {
+        let vm = AddRunnerWizardViewModel()
+        vm.baseNamePrefix = "mac-runner"
+        vm.instanceCount = 3
+        #expect(vm.previewInstanceNames == ["mac-runner-1", "mac-runner-2", "mac-runner-3"])
+
+        vm.customLabelInput = "fastlane"
+        vm.addCustomLabel()
+        #expect(vm.selectedLabels.contains("fastlane"))
+        #expect(vm.customLabelInput.isEmpty)
+
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: RunnerEntity.self,
+            JobRunEntity.self,
+            GitHubAccountEntity.self,
+            configurations: config
+        )
+        let host = NSHostingView(
+            rootView: AddRunnerWizardSheet(viewModel: vm).modelContainer(container)
+        )
+        host.frame = NSRect(x: 0, y: 0, width: 640, height: 620)
+        host.layoutSubtreeIfNeeded()
+        #expect(host.bounds.size == CGSize(width: 640, height: 620))
+    }
 }
