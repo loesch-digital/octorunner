@@ -16,9 +16,9 @@ jobs:
     runs-on: macos-15
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Run OctoRunnerKit Unit Tests
+      - name: Run OctoRunnerKit Unit Tests (TDD Suite)
         run: swift test --package-path Packages/OctoRunnerKit
 
       - name: Generate App Icons & Xcode Project
