@@ -11,13 +11,8 @@
     "publish": false
   },
   "hooks": {
-    "before:git:release": [
-      "swift test --package-path Packages/OctoRunnerKit",
-      "fastlane mac build_release version:${version}"
-    ],
-    "after:release": [
-      "gh release create v${version} dist/OctoRunner-${version}-arm64.zip --title 'OctoRunner v${version}' --generate-notes",
-      "bash ./scripts/update-homebrew-cask.sh ${version}"
+    "before:init": [
+      "swift test --package-path Packages/OctoRunnerKit"
     ]
   }
 }

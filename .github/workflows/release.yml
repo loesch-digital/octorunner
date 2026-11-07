@@ -1,0 +1,125 @@
+name: Release — Build App, Publish GitHub Release & Update Homebrew Tap
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Publish OctoRunner Release
+    runs-on: macos-15
+    steps:
+      - name: Checkout Repository Tag
+        uses: actions/checkout@v7
+
+      - name: Extract Release Version from Git Tag
+        id: version
+        run: |
+          RAW_TAG="${GITHUB_REF_NAME}"
+          VERSION="${RAW_TAG#v}"
+          echo "tag=${RAW_TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building OctoRunner version ${VERSION} (tag ${RAW_TAG})"
+
+      - name: Run OctoRunnerKit Unit Tests (TDD Suite)
+        run: swift test --package-path Packages/OctoRunnerKit
+
+      - name: Generate App Icons & Xcode Project
+        run: |
+          brew list xcodegen || brew install xcodegen
+          swift scripts/generate-app-icons.swift
+          xcodegen generate
+
+      - name: Build & Package OctoRunner.app Archive
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          xcodebuild -project OctoRunner.xcodeproj \
+            -scheme OctoRunner \
+            -configuration Release \
+            -derivedDataPath DerivedData \
+            MARKETING_VERSION="${VERSION}" \
+            CURRENT_PROJECT_VERSION="${VERSION}" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=YES \
+            clean build
+
+          APP_PATH="DerivedData/Build/Products/Release/OctoRunner.app"
+          codesign --force --deep --sign - --entitlements App/OctoRunner.entitlements "${APP_PATH}"
+
+          mkdir -p dist
+          ZIP_PATH="dist/OctoRunner-${VERSION}-arm64.zip"
+          ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ZIP_PATH}"
+
+          SHA256=$(shasum -a 256 "${ZIP_PATH}" | awk '{print $1}')
+          echo "zip_path=${ZIP_PATH}" >> "$GITHUB_OUTPUT"
+          echo "sha256=${SHA256}" >> "$GITHUB_OUTPUT"
+          echo "Built ${ZIP_PATH} with SHA256: ${SHA256}"
+        id: package
+
+      - name: Create or Update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+          ZIP_PATH: ${{ steps.package.outputs.zip_path }}
+        run: |
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${ZIP_PATH}" --clobber
+          else
+            gh release create "${TAG}" "${ZIP_PATH}" \
+              --title "OctoRunner ${TAG}" \
+              --generate-notes
+          fi
+
+      - name: Update Homebrew Tap (loesch-digital/homebrew-octorunner)
+        env:
+          HOMEBREW_TAP_DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA256: ${{ steps.package.outputs.sha256 }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${HOMEBREW_TAP_DEPLOY_KEY}" > ~/.ssh/homebrew_tap_key
+          chmod 600 ~/.ssh/homebrew_tap_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/homebrew_tap_key -o IdentitiesOnly=yes"
+          git clone git@github.com:loesch-digital/homebrew-octorunner.git /tmp/homebrew-octorunner
+
+          cat > /tmp/homebrew-octorunner/Casks/octorunner.rb <<EOF
+          cask "octorunner" do
+            version "${VERSION}"
+            sha256 "${SHA256}"
+
+            url "https://github.com/loesch-digital/octorunner/releases/download/v#{version}/OctoRunner-#{version}-arm64.zip"
+            name "OctoRunner"
+            desc "Native macOS manager for self-hosted GitHub Actions runners"
+            homepage "https://github.com/loesch-digital/octorunner"
+
+            depends_on macos: ">= :sequoia"
+            depends_on arch: :arm64
+
+            app "OctoRunner.app"
+
+            zap trash: [
+              "~/Library/Application Support/io.octorunner.macos",
+              "~/Library/Caches/io.octorunner.macos",
+              "~/Library/Preferences/io.octorunner.macos.plist",
+            ]
+          end
+          EOF
+
+          cd /tmp/homebrew-octorunner
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/octorunner.rb
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(cask): bump octorunner to v${VERSION}"
+            git push origin main
+          fi
+          rm -rf ~/.ssh/homebrew_tap_key /tmp/homebrew-octorunner
