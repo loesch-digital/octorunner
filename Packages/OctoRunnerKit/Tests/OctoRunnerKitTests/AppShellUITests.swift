@@ -26,43 +26,52 @@ struct AppShellUITests {
 
     @Test("MainShellView Preview renders populated Dashboard & Account pill cleanly in NSHostingView")
     @MainActor
-    func mainShellViewPreviewRendersInHostingView() throws {
-        let container = try OctoRunnerPersistence.makeInMemoryContainer()
-        let account = GitHubAccountEntity(
-            githubUserId: 1001,
-            login: "loesch-digital",
-            displayName: "Frank",
-            scopes: ["repo", "workflow", "admin:org"],
-            keychainAccountKey: "loesch-digital"
-        )
-        let runner = RunnerEntity(
-            name: "mac-studio-m4-runner-1",
-            scopeType: .repository,
-            scopeUrl: URL(string: "https://github.com/loesch-digital/octorunner")!,
-            status: .idle,
-            labels: ["self-hosted", "macos", "arm64"],
-            workDirectory: URL(fileURLWithPath: "/tmp/octorunner-preview")
-        )
-        container.mainContext.insert(account)
-        container.mainContext.insert(runner)
-        try container.mainContext.save()
+    func mainShellViewPreviewRendersInHostingView() async throws {
+        do {
+            let container = try OctoRunnerPersistence.makeInMemoryContainer()
+            let account = GitHubAccountEntity(
+                githubUserId: 1001,
+                login: "loesch-digital",
+                displayName: "Frank",
+                scopes: ["repo", "workflow", "admin:org"],
+                keychainAccountKey: "loesch-digital"
+            )
+            let runner = RunnerEntity(
+                name: "mac-studio-m4-runner-1",
+                scopeType: .repository,
+                scopeUrl: URL(string: "https://github.com/loesch-digital/octorunner")!,
+                status: .idle,
+                labels: ["self-hosted", "macos", "arm64"],
+                workDirectory: URL(fileURLWithPath: "/tmp/octorunner-preview")
+            )
+            container.mainContext.insert(account)
+            container.mainContext.insert(runner)
+            try container.mainContext.save()
 
-        let rootView = MainShellView()
-            .modelContainer(container)
-            .frame(width: 1120, height: 740)
+            let rootView = MainShellView()
+                .modelContainer(container)
+                .frame(width: 1120, height: 740)
 
-        let hostingView = NSHostingView(rootView: rootView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 1120, height: 740)
-        hostingView.layoutSubtreeIfNeeded()
+            let hostingView = NSHostingView(rootView: AnyView(rootView))
+            hostingView.frame = NSRect(x: 0, y: 0, width: 1120, height: 740)
+            hostingView.layoutSubtreeIfNeeded()
 
-        #expect(hostingView.bounds.width == 1120)
-        #expect(hostingView.bounds.height == 740)
-        #expect(!hostingView.subviews.isEmpty)
+            #expect(hostingView.bounds.width == 1120)
+            #expect(hostingView.bounds.height == 740)
+            #expect(!hostingView.subviews.isEmpty)
 
-        let bitmap = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds)
-        #expect(bitmap != nil)
-        #expect(bitmap?.pixelsWide ?? 0 >= 1120)
-        #expect(bitmap?.pixelsHigh ?? 0 >= 740)
+            let bitmap = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds)
+            #expect(bitmap != nil)
+            #expect(bitmap?.pixelsWide ?? 0 >= 1120)
+            #expect(bitmap?.pixelsHigh ?? 0 >= 740)
+
+            // Tear down the view and container before suspended startup work resumes.
+            hostingView.rootView = AnyView(EmptyView())
+            hostingView.layoutSubtreeIfNeeded()
+        }
+        for _ in 0..<10 {
+            await Task.yield()
+        }
     }
 
     @Test("OAuthDeviceFlowSheet Previews render all 3 states (Initial, Polling, Authenticated) cleanly")

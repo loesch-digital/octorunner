@@ -78,12 +78,17 @@ public struct MainShellView: View {
             RunnerConsoleLogSheet(runner: runner)
         }
         .task {
+            let initialLogin = accounts.first?.login
+            let hasConnectedAccount = !accounts.isEmpty
             hostSnapshot = await telemetryActor.currentSnapshot()
-            if accounts.isEmpty {
+            guard !Task.isCancelled else { return }
+            if !hasConnectedAccount {
                 isShowingAuthSheet = true
             }
-            await syncLocalAndRemoteRunners(manual: false)
+            await syncLocalAndRemoteRunners(manual: false, explicitLogin: initialLogin)
+            guard !Task.isCancelled else { return }
             await refreshEmbeddedLogStream()
+            guard !Task.isCancelled else { return }
             await checkForAppUpdates(manual: false)
         }
     }
@@ -757,14 +762,20 @@ public struct MainShellView: View {
         return importedOrUpdated
     }
 
-    private func syncLocalAndRemoteRunners(manual: Bool, extraDirs: [URL] = []) async {
+    private func syncLocalAndRemoteRunners(
+        manual: Bool,
+        extraDirs: [URL] = [],
+        explicitLogin: String? = nil
+    ) async {
+        let login = explicitLogin ?? accounts.first?.login
         isSyncingRunners = true
         defer { isSyncingRunners = false }
 
         let discovered = await syncActor.discoverAndReconcileRunners(
-            accountLogin: accounts.first?.login,
+            accountLogin: login,
             additionalDirectories: extraDirs
         )
+        guard !Task.isCancelled else { return }
         let count = Self.upsertDiscoveredRunners(discovered, into: modelContext)
         if manual {
             updateStatusMessage = count > 0
