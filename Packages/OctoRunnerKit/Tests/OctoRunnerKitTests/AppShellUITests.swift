@@ -11,6 +11,17 @@ import Testing
 
 @Suite("AppShell UI, Layout & Preview Rendering Tests", .serialized)
 struct AppShellUITests {
+    // AppKit may retain SwiftUI render work beyond an NSHostingView's lifetime.
+    // Keep its SwiftData stores alive until the test process exits (macOS 15).
+    @MainActor private static var previewContainers: [ModelContainer] = []
+
+    @MainActor
+    private static func makePreviewContainer() throws -> ModelContainer {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        previewContainers.append(container)
+        return container
+    }
+
     @Test("OAuthDeviceFlowViewModel copies userCode to NSPasteboard and resets cleanly on cancel")
     @MainActor
     func oauthDeviceFlowClipboardCopyAndCancelState() {
@@ -28,7 +39,7 @@ struct AppShellUITests {
     @MainActor
     func mainShellViewPreviewRendersInHostingView() async throws {
         do {
-            let container = try OctoRunnerPersistence.makeInMemoryContainer()
+            let container = try Self.makePreviewContainer()
             let account = GitHubAccountEntity(
                 githubUserId: 1001,
                 login: "loesch-digital",
@@ -77,7 +88,7 @@ struct AppShellUITests {
     @Test("OAuthDeviceFlowSheet Previews render all 3 states (Initial, Polling, Authenticated) cleanly")
     @MainActor
     func oauthSheetStatesRenderInHostingView() throws {
-        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let container = try Self.makePreviewContainer()
 
         // State 1: Initial
         let vmInitial = OAuthDeviceFlowViewModel()
@@ -138,7 +149,7 @@ struct AppShellUITests {
     @Test("MainShellView.upsertDiscoveredRunners imports local runner and updates existing entry idempotently")
     @MainActor
     func upsertDiscoveredRunnersIdempotency() throws {
-        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let container = try Self.makePreviewContainer()
         let context = container.mainContext
 
         let discovered = DiscoveredLocalRunner(
@@ -198,7 +209,7 @@ struct AppShellUITests {
         #expect(vm.selectedLabels.contains("fastlane"))
         #expect(vm.customLabelInput.isEmpty)
 
-        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let container = try Self.makePreviewContainer()
         let sampleRunner = RunnerEntity(
             name: "macbook-pro-frank",
             scopeType: .repository,
