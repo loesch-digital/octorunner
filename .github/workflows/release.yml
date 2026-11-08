@@ -34,16 +34,20 @@ jobs:
           swift scripts/generate-app-icons.swift
           xcodegen generate
 
+      - name: Install Fastlane for Match
+        run: brew list fastlane || brew install fastlane
+
       - name: Build & Package OctoRunner.app Archive
         env:
           VERSION: ${{ steps.version.outputs.version }}
-          SIGNING_CERTIFICATE_BASE64: ${{ secrets.SIGNING_CERTIFICATE_BASE64 }}
-          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL || vars.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
           NOTARY_KEY_BASE64: ${{ secrets.NOTARY_KEY_BASE64 }}
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
         run: |
-          for name in SIGNING_CERTIFICATE_BASE64 SIGNING_CERTIFICATE_PASSWORD NOTARY_KEY_BASE64 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
+          for name in MATCH_GIT_URL MATCH_PASSWORD NOTARY_KEY_BASE64 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
             if [[ -z "${!name:-}" ]]; then
               echo "::error::Missing required release secret: ${name}"
               exit 1

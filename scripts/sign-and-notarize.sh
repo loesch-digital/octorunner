@@ -5,7 +5,7 @@ set -euo pipefail
 APP_PATH="${1:?Usage: sign-and-notarize.sh <app-path> <output.zip>}"
 ZIP_PATH="${2:?Usage: sign-and-notarize.sh <app-path> <output.zip>}"
 
-for name in SIGNING_CERTIFICATE_BASE64 SIGNING_CERTIFICATE_PASSWORD NOTARY_KEY_BASE64 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
+for name in MATCH_GIT_URL MATCH_PASSWORD NOTARY_KEY_BASE64 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
   if [[ -z "${!name:-}" ]]; then
     echo "Missing required release secret: ${name}" >&2
     exit 1
@@ -24,15 +24,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
-printf '%s' "$SIGNING_CERTIFICATE_BASE64" | base64 --decode > "$SIGNING_DIR/certificate.p12"
 printf '%s' "$NOTARY_KEY_BASE64" | base64 --decode > "$SIGNING_DIR/AuthKey.p8"
 security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
 security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-security import "$SIGNING_DIR/certificate.p12" -P "$SIGNING_CERTIFICATE_PASSWORD" \
-  -k "$KEYCHAIN_PATH" -T /usr/bin/codesign
-security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
-  -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" >/dev/null
+# Match imports the existing certificate/private key and configures signing access.
+# CI forces the lane into readonly mode; releases must never create certificates.
+CI=true MATCH_KEYCHAIN_NAME="$KEYCHAIN_PATH" MATCH_KEYCHAIN_PASSWORD="$KEYCHAIN_PASSWORD" \
+  fastlane mac sync_certificates
 IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
   | sed -nE '/"Developer ID Application:/s/.*\) ([A-Fa-f0-9]{40}) .*/\1/p' | head -1)
 [[ -n "$IDENTITY" ]] || { echo "No valid Developer ID Application identity in certificate." >&2; exit 1; }

@@ -6,6 +6,9 @@ platform :mac do
     match(
       type: "developer_id",
       platform: "macos",
+      # Developer ID certificates belong to the team, not an App Store app.
+      app_identifier: [],
+      skip_provisioning_profiles: true,
       readonly: is_ci
     )
   end

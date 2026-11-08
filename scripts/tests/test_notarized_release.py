@@ -25,6 +25,12 @@ with open(os.environ["COMMAND_LOG"], "a") as log:
     log.write(json.dumps([command, *args]) + "\\n")
 if command == "security" and args[0] == "find-identity":
     print('1) ABCDEF0123456789ABCDEF0123456789ABCDEF01 "Developer ID Application: Test (TEAM123)"')
+if command == "fastlane":
+    assert os.environ["CI"] == "true"
+    assert os.environ["MATCH_GIT_URL"] == "https://github.com/example/certificates"
+    assert os.environ["MATCH_KEYCHAIN_NAME"].endswith("release.keychain-db")
+    assert os.environ["MATCH_KEYCHAIN_PASSWORD"]
+    assert os.environ["MATCH_PASSWORD"]
 if command == "xcrun" and args[:2] == ["notarytool", "submit"]:
     print(json.dumps({"status": os.environ["NOTARY_STATUS"]}))
 if command == "spctl" and os.environ["REJECT_GATEKEEPER"] == "1":
@@ -33,7 +39,7 @@ if command == "ditto":
     pathlib.Path(args[-1]).write_bytes(b"archive")
 ''')
             stub.chmod(0o755)
-            for command in ["security", "codesign", "xcrun", "ditto", "spctl"]:
+            for command in ["security", "codesign", "xcrun", "ditto", "spctl", "fastlane"]:
                 (root / command).symlink_to(stub)
             env = {
                 **os.environ,
@@ -41,8 +47,8 @@ if command == "ditto":
                 "COMMAND_LOG": str(log),
                 "NOTARY_STATUS": status,
                 "REJECT_GATEKEEPER": str(int(reject_gatekeeper)),
-                "SIGNING_CERTIFICATE_BASE64": "dGVzdA==",
-                "SIGNING_CERTIFICATE_PASSWORD": "test-password",
+                "MATCH_GIT_URL": "https://github.com/example/certificates",
+                "MATCH_PASSWORD": "test-password",
                 "NOTARY_KEY_BASE64": "dGVzdA==",
                 "NOTARY_KEY_ID": "TESTKEY",
                 "NOTARY_ISSUER_ID": "test-issuer",
@@ -80,10 +86,12 @@ if command == "ditto":
         result, commands, packaged = self.run_release()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(packaged)
+        sync = next(i for i, command in enumerate(commands) if command == ["fastlane", "mac", "sync_certificates"])
         staple = next(i for i, command in enumerate(commands) if command[:3] == ["xcrun", "stapler", "staple"])
         gatekeeper = next(i for i, command in enumerate(commands) if command[0] == "spctl")
         final_zip = max(i for i, command in enumerate(commands) if command[0] == "ditto")
         self.assertLess(staple, gatekeeper)
+        self.assertLess(sync, staple)
         self.assertLess(gatekeeper, final_zip)
         signature = next(command for command in commands if command[0] == "codesign" and "--sign" in command)
         self.assertIn("--timestamp", signature)

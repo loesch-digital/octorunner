@@ -7,39 +7,32 @@ publication. The Homebrew cask no longer removes quarantine attributes.
 
 ## One-time setup
 
-1. In the Apple Developer account, create a **Developer ID Application**
-   certificate for the intended team. Export the certificate **with its private
-   key** from Keychain Access as a password-protected `.p12` file. Apple Development
-   and Apple Distribution certificates are not substitutes.
-2. Create a **team App Store Connect API key** with permission to submit
-   notarizations. Keep its `.p8` private key, Key ID, and Issuer ID. Use the same
-   developer team as the certificate.
-3. Add these repository Actions secrets under Settings → Secrets and variables
-   → Actions:
+The existing Developer ID certificate and private key live encrypted in the
+Fastlane Match repository. The release runner imports them into a temporary
+keychain with `fastlane mac sync_certificates` in readonly mode.
+
+Add these repository Actions secrets under Settings → Secrets and variables
+→ Actions:
 
 | Secret | Value |
 | --- | --- |
-| `SIGNING_CERTIFICATE_BASE64` | Base64-encoded `.p12`, including the private key |
-| `SIGNING_CERTIFICATE_PASSWORD` | Export password for that `.p12` |
-| `NOTARY_KEY_BASE64` | Base64-encoded API private key (`.p8`) |
+| `MATCH_GIT_URL` | Existing Match repository URL; an Actions variable is also supported |
+| `MATCH_PASSWORD` | Existing Match repository encryption password |
+| `MATCH_GIT_BASIC_AUTHORIZATION` | Base64-encoded `username:token` for HTTPS read access to the private Match repository |
+| `NOTARY_KEY_BASE64` | Base64-encoded team App Store Connect API private key (`.p8`) |
 | `NOTARY_KEY_ID` | API Key ID |
 | `NOTARY_ISSUER_ID` | Team API Issuer ID |
 
-Upload file contents directly without printing private keys:
+The repository access token needs Contents read permission on the Match repository.
+The OctoRunner workflow's default `GITHUB_TOKEN` cannot read another private
+repository. Use a team API key authorized for notarization on the same Apple team
+as the Developer ID certificate.
 
-```bash
-base64 -i /path/to/DeveloperID.p12 | gh secret set SIGNING_CERTIFICATE_BASE64
-gh secret set SIGNING_CERTIFICATE_PASSWORD
-base64 -i /path/to/AuthKey.p8 | gh secret set NOTARY_KEY_BASE64
-gh secret set NOTARY_KEY_ID
-gh secret set NOTARY_ISSUER_ID
-```
-
-Never commit these files or paste private keys or passwords into chat. The signing
-script imports the certificate into a temporary keychain and deletes that
-keychain and the decoded credentials on exit. GitHub release signing uses
-`scripts/sign-and-notarize.sh`; the older local Fastlane lane can still produce
-development/ad-hoc builds and is not evidence of notarization.
+Never commit private keys or paste passwords or tokens into chat. The signing
+script deletes its temporary keychain and decoded notarization key on exit.
+GitHub release signing uses `scripts/sign-and-notarize.sh`; the older local
+Fastlane lane can still produce development/ad-hoc builds and is not evidence of
+notarization.
 
 After configuring secrets, publish a new patch version from verified `main`.
 Do not replace an already published archive: Homebrew caches archives and checks
