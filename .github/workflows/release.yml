@@ -42,12 +42,12 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL || vars.MATCH_GIT_URL }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
           NOTARY_KEY_BASE64: ${{ secrets.NOTARY_KEY_BASE64 }}
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
         run: |
-          for name in MATCH_GIT_URL MATCH_PASSWORD NOTARY_KEY_BASE64 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
+          for name in MATCH_GIT_URL MATCH_PASSWORD MATCH_GIT_TOKEN NOTARY_KEY_BASE64 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
             if [[ -z "${!name:-}" ]]; then
               echo "::error::Missing required release secret: ${name}"
               exit 1

@@ -18,11 +18,13 @@ Add these repository Actions secrets under Settings → Secrets and variables
 | --- | --- |
 | `MATCH_GIT_URL` | Existing Match repository URL; an Actions variable is also supported |
 | `MATCH_PASSWORD` | Existing Match repository encryption password |
-| `MATCH_GIT_BASIC_AUTHORIZATION` | Base64-encoded `username:token` for HTTPS read access to the private Match repository |
+| `MATCH_GIT_TOKEN` | Unmodified fine-grained GitHub token with Contents read access to the Match repository |
 | `NOTARY_KEY_BASE64` | Base64-encoded team App Store Connect API private key (`.p8`) |
 | `NOTARY_KEY_ID` | API Key ID |
 | `NOTARY_ISSUER_ID` | Team API Issuer ID |
 
+Paste the token directly into the secret; no local encoding is needed. The release
+script encodes it for Match and masks the derived value in GitHub Actions logs.
 The repository access token needs Contents read permission on the Match repository.
 The OctoRunner workflow's default `GITHUB_TOKEN` cannot read another private
 repository. Use a team API key authorized for notarization on the same Apple team

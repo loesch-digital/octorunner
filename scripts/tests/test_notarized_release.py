@@ -18,7 +18,7 @@ class NotarizedReleaseTests(unittest.TestCase):
             log = root / "commands.jsonl"
             stub = root / "stub"
             stub.write_text('''#!/usr/bin/env python3
-import json, os, pathlib, sys
+import base64, json, os, pathlib, sys
 command = pathlib.Path(sys.argv[0]).name
 args = sys.argv[1:]
 with open(os.environ["COMMAND_LOG"], "a") as log:
@@ -31,6 +31,7 @@ if command == "fastlane":
     assert os.environ["MATCH_KEYCHAIN_NAME"].endswith("release.keychain-db")
     assert os.environ["MATCH_KEYCHAIN_PASSWORD"]
     assert os.environ["MATCH_PASSWORD"]
+    assert base64.b64decode(os.environ.get("MATCH_GIT_BASIC_AUTHORIZATION", "")).decode() == "x-access-token:test-token"
 if command == "xcrun" and args[:2] == ["notarytool", "submit"]:
     print(json.dumps({"status": os.environ["NOTARY_STATUS"]}))
 if command == "spctl" and os.environ["REJECT_GATEKEEPER"] == "1":
@@ -49,6 +50,7 @@ if command == "ditto":
                 "REJECT_GATEKEEPER": str(int(reject_gatekeeper)),
                 "MATCH_GIT_URL": "https://github.com/example/certificates",
                 "MATCH_PASSWORD": "test-password",
+                "MATCH_GIT_TOKEN": "test-token",
                 "NOTARY_KEY_BASE64": "dGVzdA==",
                 "NOTARY_KEY_ID": "TESTKEY",
                 "NOTARY_ISSUER_ID": "test-issuer",

@@ -5,12 +5,18 @@ set -euo pipefail
 APP_PATH="${1:?Usage: sign-and-notarize.sh <app-path> <output.zip>}"
 ZIP_PATH="${2:?Usage: sign-and-notarize.sh <app-path> <output.zip>}"
 
-for name in MATCH_GIT_URL MATCH_PASSWORD NOTARY_KEY_BASE64 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
+for name in MATCH_GIT_URL MATCH_PASSWORD MATCH_GIT_TOKEN NOTARY_KEY_BASE64 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
   if [[ -z "${!name:-}" ]]; then
     echo "Missing required release secret: ${name}" >&2
     exit 1
   fi
 done
+MATCH_GIT_BASIC_AUTHORIZATION=$(printf 'x-access-token:%s' "$MATCH_GIT_TOKEN" | base64 | tr -d '\n')
+export MATCH_GIT_BASIC_AUTHORIZATION
+if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  printf '::add-mask::%s\n' "$MATCH_GIT_BASIC_AUTHORIZATION"
+fi
+unset MATCH_GIT_TOKEN
 [[ -d "$APP_PATH" ]] || { echo "App not found: $APP_PATH" >&2; exit 1; }
 # Prevent a stale archive from being mistaken for a successfully notarized release.
 rm -f "$ZIP_PATH"
