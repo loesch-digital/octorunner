@@ -37,7 +37,18 @@ jobs:
       - name: Build & Package OctoRunner.app Archive
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          SIGNING_CERTIFICATE_BASE64: ${{ secrets.SIGNING_CERTIFICATE_BASE64 }}
+          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+          NOTARY_KEY_BASE64: ${{ secrets.NOTARY_KEY_BASE64 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
         run: |
+          for name in SIGNING_CERTIFICATE_BASE64 SIGNING_CERTIFICATE_PASSWORD NOTARY_KEY_BASE64 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Missing required release secret: ${name}"
+              exit 1
+            fi
+          done
           xcodebuild -project OctoRunner.xcodeproj \
             -scheme OctoRunner \
             -configuration Release \
@@ -50,11 +61,8 @@ jobs:
             clean build
 
           APP_PATH="DerivedData/Build/Products/Release/OctoRunner.app"
-          codesign --force --deep --sign - --entitlements App/OctoRunner.entitlements "${APP_PATH}"
-
-          mkdir -p dist
           ZIP_PATH="dist/OctoRunner-${VERSION}-arm64.zip"
-          ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ZIP_PATH}"
+          bash scripts/sign-and-notarize.sh "${APP_PATH}" "${ZIP_PATH}"
 
           SHA256=$(shasum -a 256 "${ZIP_PATH}" | awk '{print $1}')
           echo "zip_path=${ZIP_PATH}" >> "$GITHUB_OUTPUT"
@@ -105,12 +113,6 @@ jobs:
             depends_on arch: :arm64
 
             app "OctoRunner.app"
-
-            postflight do
-              system_command "/usr/bin/xattr",
-                             args: ["-cr", "#{appdir}/OctoRunner.app"],
-                             sudo: false
-            end
 
             uninstall quit: "io.octorunner.macos"
 

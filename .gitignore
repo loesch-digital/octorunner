@@ -22,3 +22,4 @@ node_modules/
 vendor/bundle/
 .env
 .env.local
+__pycache__/

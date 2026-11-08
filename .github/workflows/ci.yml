@@ -21,6 +21,9 @@ jobs:
       - name: Run OctoRunnerKit Unit Tests (TDD Suite)
         run: swift test --package-path Packages/OctoRunnerKit --no-parallel
 
+      - name: Test Release Signing Pipeline
+        run: python3 -m unittest discover -s scripts/tests -v
+
       - name: Generate App Icons & Xcode Project
         run: |
           brew list xcodegen || brew install xcodegen
