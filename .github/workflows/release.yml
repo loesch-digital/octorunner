@@ -34,10 +34,25 @@ jobs:
           swift scripts/generate-app-icons.swift
           xcodegen generate
 
+      - name: Install Fastlane for Match
+        run: brew list fastlane || brew install fastlane
+
       - name: Build & Package OctoRunner.app Archive
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL || vars.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
         run: |
+          for name in MATCH_GIT_URL MATCH_PASSWORD MATCH_GIT_TOKEN APP_STORE_CONNECT_API_KEY_CONTENT APP_STORE_CONNECT_API_KEY_ID APP_STORE_CONNECT_API_KEY_ISSUER_ID; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Missing required release secret: ${name}"
+              exit 1
+            fi
+          done
           xcodebuild -project OctoRunner.xcodeproj \
             -scheme OctoRunner \
             -configuration Release \
@@ -50,11 +65,8 @@ jobs:
             clean build
 
           APP_PATH="DerivedData/Build/Products/Release/OctoRunner.app"
-          codesign --force --deep --sign - --entitlements App/OctoRunner.entitlements "${APP_PATH}"
-
-          mkdir -p dist
           ZIP_PATH="dist/OctoRunner-${VERSION}-arm64.zip"
-          ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ZIP_PATH}"
+          bash scripts/sign-and-notarize.sh "${APP_PATH}" "${ZIP_PATH}"
 
           SHA256=$(shasum -a 256 "${ZIP_PATH}" | awk '{print $1}')
           echo "zip_path=${ZIP_PATH}" >> "$GITHUB_OUTPUT"
@@ -105,12 +117,6 @@ jobs:
             depends_on arch: :arm64
 
             app "OctoRunner.app"
-
-            postflight do
-              system_command "/usr/bin/xattr",
-                             args: ["-cr", "#{appdir}/OctoRunner.app"],
-                             sudo: false
-            end
 
             uninstall quit: "io.octorunner.macos"
 

@@ -4,11 +4,13 @@ on:
   push:
     branches:
       - main
-      - "feat/**"
-      - "fix/**"
   pull_request:
     branches:
       - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
@@ -20,6 +22,9 @@ jobs:
 
       - name: Run OctoRunnerKit Unit Tests (TDD Suite)
         run: swift test --package-path Packages/OctoRunnerKit --no-parallel
+
+      - name: Test Release Signing Pipeline
+        run: python3 -m unittest discover -s scripts/tests -v
 
       - name: Generate App Icons & Xcode Project
         run: |

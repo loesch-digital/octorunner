@@ -33,12 +33,6 @@ cask "octorunner" do
 
   app "OctoRunner.app"
 
-  postflight do
-    system_command "/usr/bin/xattr",
-                   args: ["-cr", "#{appdir}/OctoRunner.app"],
-                   sudo: false
-  end
-
   uninstall quit: "io.octorunner.macos"
 
   zap trash: [
