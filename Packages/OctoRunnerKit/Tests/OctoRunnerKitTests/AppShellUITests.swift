@@ -237,7 +237,9 @@ struct AppShellUITests {
         try container.mainContext.save()
 
         let host = NSHostingView(
-            rootView: AddRunnerWizardSheet(viewModel: vm).modelContainer(container)
+            rootView: AddRunnerWizardSheet(viewModel: vm)
+                .environment(AppPreferencesStore())
+                .modelContainer(container)
         )
         host.frame = NSRect(x: 0, y: 0, width: 640, height: 620)
         host.layoutSubtreeIfNeeded()

@@ -544,6 +544,346 @@
           }
         }
       }
+    },
+    "Autostart & Background": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autostart & Hintergrund"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autostart & Background"
+          }
+        }
+      }
+    },
+    "Failover": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausfallsicherung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failover"
+          }
+        }
+      }
+    },
+    "OctoRunner app": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner-App"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner app"
+          }
+        }
+      }
+    },
+    "The app login item is independent of installed runner LaunchAgents.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Anmeldeobjekt der App ist unabhängig von installierten Runner-LaunchAgents."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app login item is independent of installed runner LaunchAgents."
+          }
+        }
+      }
+    },
+    "Runner SHELL environment": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SHELL-Umgebung der Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner SHELL environment"
+          }
+        }
+      }
+    },
+    "Sets the shell environment for newly created runners.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legt die Shell-Umgebung für neu erstellte Runner fest."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets the shell environment for newly created runners."
+          }
+        }
+      }
+    },
+    "Inherit OctoRunner's PATH": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PATH von OctoRunner übernehmen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inherit OctoRunner's PATH"
+          }
+        }
+      }
+    },
+    "Uses absolute PATH entries and adds Homebrew tools. When disabled, only system directories are used.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übernimmt absolute PATH-Einträge und ergänzt Homebrew-Werkzeuge. Wenn deaktiviert, werden nur Systemverzeichnisse verwendet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses absolute PATH entries and adds Homebrew tools. When disabled, only system directories are used."
+          }
+        }
+      }
+    },
+    "New runner environment": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umgebung neuer Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New runner environment"
+          }
+        }
+      }
+    },
+    "Applies when creating runners. GitHub's startup scripts still use Bash; each workflow defines the shell for its own steps.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gilt beim Erstellen von Runnern. GitHubs Startskripte verwenden weiterhin Bash; jeder Workflow legt die Shell für seine Schritte selbst fest."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applies when creating runners. GitHub's startup scripts still use Bash; each workflow defines the shell for its own steps."
+          }
+        }
+      }
+    },
+    "Always restart": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Immer neu starten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always restart"
+          }
+        }
+      }
+    },
+    "Restart after an error": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach einem Fehler neu starten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart after an error"
+          }
+        }
+      }
+    },
+    "No automatic restart": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein automatischer Neustart"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No automatic restart"
+          }
+        }
+      }
+    },
+    "Restart policy": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neustartregel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart policy"
+          }
+        }
+      }
+    },
+    "Controls how launchd restarts newly created runner services after they exit.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legt fest, wie launchd neu erstellte Runner-Dienste nach dem Beenden neu startet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controls how launchd restarts newly created runner services after they exit."
+          }
+        }
+      }
+    },
+    "Restart delay (seconds)": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neustartverzögerung (Sekunden)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart delay (seconds)"
+          }
+        }
+      }
+    },
+    "Limits how frequently launchd attempts to restart a runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begrenzt, wie häufig launchd den Neustart eines Runners versucht."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limits how frequently launchd attempts to restart a runner."
+          }
+        }
+      }
+    },
+    "New runner LaunchAgents": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LaunchAgents neuer Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New runner LaunchAgents"
+          }
+        }
+      }
+    },
+    "Applies to newly created LaunchAgents. Existing runners keep their installed configuration. A service without automatic restart still starts once at login.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gilt für neu erstellte LaunchAgents. Bestehende Runner behalten ihre installierte Konfiguration. Auch ohne automatischen Neustart startet ein Dienst einmal bei der Anmeldung."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applies to newly created LaunchAgents. Existing runners keep their installed configuration. A service without automatic restart still starts once at login."
+          }
+        }
+      }
+    },
+    "Installs a runner LaunchAgent that starts at login. The restart policy and PATH come from Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installs a runner LaunchAgent that starts at login. The restart policy and PATH come from Settings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installiert einen Runner-LaunchAgent für den Start bei der Anmeldung. Neustartregel und PATH werden aus den Einstellungen übernommen."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

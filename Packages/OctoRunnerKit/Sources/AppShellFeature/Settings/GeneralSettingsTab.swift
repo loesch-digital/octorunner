@@ -11,7 +11,6 @@ public struct GeneralSettingsTab: View {
         @Bindable var preferences = preferences
         Form {
             Section {
-                LoginItemSettingsControl()
                 Toggle(isOn: $preferences.showInMenuBar) {
                     Text("Show icon in menu bar", bundle: .module)
                 }

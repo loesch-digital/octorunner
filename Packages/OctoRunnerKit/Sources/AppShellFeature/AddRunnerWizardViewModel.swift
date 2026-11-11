@@ -51,13 +51,13 @@ public final class AddRunnerWizardViewModel {
     public var provisioningProgressMessage: String?
     public var errorMessage: String?
 
-    private let provisioningClient: GitHubRunnerProvisioningClient
-    private let provisionerActor: RunnerProvisionerActor
+    private let provisioningClient: any RunnerTargetLoading
+    private let provisionerActor: any RunnerProvisioning
     private let vault: KeychainVaultActor
 
     public init(
-        provisioningClient: GitHubRunnerProvisioningClient = GitHubRunnerProvisioningClient(),
-        provisionerActor: RunnerProvisionerActor = RunnerProvisionerActor(),
+        provisioningClient: any RunnerTargetLoading = GitHubRunnerProvisioningClient(),
+        provisionerActor: any RunnerProvisioning = RunnerProvisionerActor(),
         vault: KeychainVaultActor = KeychainVaultActor()
     ) {
         self.provisioningClient = provisioningClient
@@ -208,8 +208,10 @@ public final class AddRunnerWizardViewModel {
 
     public func provisionAndPersistRunners(
         accountLogin: String?,
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration()
     ) async -> Bool {
+        guard !isProvisioning, !Task.isCancelled else { return false }
         errorMessage = nil
         guard let login = accountLogin else {
             errorMessage = "Please sign in with GitHub before provisioning a runner."
@@ -220,6 +222,11 @@ public final class AddRunnerWizardViewModel {
             errorMessage = "Please select at least one GitHub Repository or Organization."
             return false
         }
+        // Freeze form input before credential loading suspends this actor.
+        let names = previewInstanceNames
+        let scope = selectedScope
+        let labels = selectedLabels
+        let launchAgent = registerLaunchAgent
 
         isProvisioning = true
         defer {
@@ -229,22 +236,27 @@ public final class AddRunnerWizardViewModel {
 
         do {
             let token = try await provisioningClient.readToken(for: login)
+            try Task.checkCancellation()
 
             for target in targets {
+                try Task.checkCancellation()
                 let suffix = targets.count > 1 && target.repo != nil ? "-\(target.repo!)" : ""
-                let namesForTarget = previewInstanceNames.map { "\($0)\(suffix)" }
+                let namesForTarget = names.map { "\($0)\(suffix)" }
 
                 let provisionedList = try await provisionerActor.provisionRunners(
                     instanceNames: namesForTarget,
-                    scopeType: selectedScope,
+                    scopeType: scope,
                     scopeURL: target.scopeURL,
-                    labels: selectedLabels,
-                    registerLaunchAgent: registerLaunchAgent,
-                    accessToken: token
+                    labels: labels,
+                    registerLaunchAgent: launchAgent,
+                    accessToken: token,
+                    configuration: configuration
                 ) { [weak self] message in
+                    guard !Task.isCancelled else { return }
                     self?.provisioningProgressMessage = message
                 }
 
+                try Task.checkCancellation()
                 for summary in provisionedList {
                     let entity = RunnerEntity(
                         name: summary.name,
@@ -253,7 +265,7 @@ public final class AddRunnerWizardViewModel {
                         status: .idle,
                         labels: summary.labels,
                         workDirectory: summary.workDirectory,
-                        rootDirectoryPath: summary.rootDirectory.path(),
+                        rootDirectoryPath: summary.rootDirectory.path(percentEncoded: false),
                         runnerVersion: summary.runnerVersion,
                         isImportedLocal: false,
                         pid: summary.pid
@@ -275,9 +287,12 @@ public final class AddRunnerWizardViewModel {
                     )
                 }
             }
-            try? modelContext.save()
+            try modelContext.save()
             return true
+        } catch is CancellationError {
+            return false
         } catch {
+            guard !Task.isCancelled else { return false }
             errorMessage = error.localizedDescription
             return false
         }

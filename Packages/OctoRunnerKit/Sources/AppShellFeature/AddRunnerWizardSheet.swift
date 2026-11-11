@@ -1,14 +1,17 @@
 import CoreModels
 import DesignSystem
+import RunnerEngine
 import SwiftData
 import SwiftUI
 
 public struct AddRunnerWizardSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppPreferencesStore.self) private var preferences
     @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
 
     @State private var viewModel: AddRunnerWizardViewModel
+    @State private var provisioningTask: Task<Void, Never>?
 
     public init(viewModel: AddRunnerWizardViewModel = AddRunnerWizardViewModel()) {
         _viewModel = State(initialValue: viewModel)
@@ -66,6 +69,7 @@ public struct AddRunnerWizardSheet: View {
         .task {
             await viewModel.loadGitHubTargets(forAccountLogin: accounts.first?.login)
         }
+        .onDisappear { provisioningTask?.cancel() }
     }
 
     private var headerSection: some View {
@@ -344,7 +348,7 @@ public struct AddRunnerWizardSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Automatic Background Start (Run on macOS Login)")
                     .font(.system(size: 12, weight: .semibold))
-                Text("Starts the runner automatically in the background when you log in and restarts it if it ever crashes (includes /opt/homebrew/bin in PATH).")
+                Text("Installs a runner LaunchAgent that starts at login. The restart policy and PATH come from Settings.", bundle: .module)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -364,12 +368,15 @@ public struct AddRunnerWizardSheet: View {
             Spacer()
 
             Button {
-                Task {
+                let configuration = RunnerLaunchConfiguration(runtimePolicy: preferences.runtimePolicy, inheritHostPath: preferences.inheritHostPath)
+                let login = accounts.first?.login
+                provisioningTask = Task {
                     let ok = await viewModel.provisionAndPersistRunners(
-                        accountLogin: accounts.first?.login,
-                        modelContext: modelContext
+                        accountLogin: login,
+                        modelContext: modelContext,
+                        configuration: configuration
                     )
-                    if ok {
+                    if ok && !Task.isCancelled {
                         dismiss()
                     }
                 }
@@ -393,5 +400,6 @@ public struct AddRunnerWizardSheet: View {
 
 #Preview("AddRunnerWizardSheet — Step 3 Setup Wizard") {
     AddRunnerWizardSheet()
+        .environment(AppPreferencesStore())
         .preferredColorScheme(.dark)
 }

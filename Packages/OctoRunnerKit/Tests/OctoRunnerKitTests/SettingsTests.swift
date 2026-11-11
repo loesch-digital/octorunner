@@ -103,6 +103,36 @@ struct SettingsTests {
             }
         }
     }
+
+    @Test("Runner defaults settings render without registering login items or changing policies")
+    func runnerDefaultsRendering() async throws {
+        let name = "octorunner-settings-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let preferences = AppPreferencesStore(defaults: defaults)
+        let login = SettingsLoginService()
+        let integration = AppIntegrationController(preferences: preferences, loginService: login)
+        let original = preferences.runtimePolicy
+        for language in [AppLanguage.english, .german] {
+            for scheme in [ColorScheme.light, .dark] {
+                let background = NSHostingView(rootView: BackgroundSettingsTab()
+                    .environment(preferences).environment(integration)
+                    .environment(\.locale, language.locale).environment(\.colorScheme, scheme))
+                let failover = NSHostingView(rootView: FailoverSettingsTab()
+                    .environment(preferences)
+                    .environment(\.locale, language.locale).environment(\.colorScheme, scheme))
+                for host in [background as NSView, failover as NSView] {
+                    host.frame = NSRect(x: 0, y: 0, width: 680, height: 520)
+                    host.layoutSubtreeIfNeeded()
+                    let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                    host.cacheDisplay(in: host.bounds, to: bitmap)
+                    #expect(try #require(bitmap.representation(using: .png, properties: [:])).count > 0)
+                }
+            }
+        }
+        #expect(preferences.runtimePolicy == original)
+        #expect(await login.registrations == 0)
+    }
 }
 
 private actor SettingsLoginService: LoginItemServicing {

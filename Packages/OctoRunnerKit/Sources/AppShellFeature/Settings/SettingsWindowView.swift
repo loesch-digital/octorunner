@@ -17,6 +17,16 @@ public struct SettingsWindowView: View {
             } label: {
                 Label { Text("Notifications", bundle: .module) } icon: { Image(systemName: "bell") }
             }
+            Tab(value: SettingsTab.background) {
+                BackgroundSettingsTab()
+            } label: {
+                Label { Text("Autostart & Background", bundle: .module) } icon: { Image(systemName: "power") }
+            }
+            Tab(value: SettingsTab.failover) {
+                FailoverSettingsTab()
+            } label: {
+                Label { Text("Failover", bundle: .module) } icon: { Image(systemName: "arrow.clockwise") }
+            }
         }
         .frame(minWidth: 620, idealWidth: 680, minHeight: 480, idealHeight: 520)
     }
