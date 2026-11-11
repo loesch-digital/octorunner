@@ -1,10 +1,24 @@
-import AppShellFeature
+@testable import AppShellFeature
 import CoreModels
 import Foundation
 import Testing
+import UserNotifications
 
 @MainActor
 struct AppNotificationTests {
+    @Test("System authorization maps every known status without transferring notification settings", arguments: [
+        UNAuthorizationStatus.notDetermined, .denied, .authorized, .provisional
+    ])
+    func systemAuthorizationMapping(_ status: UNAuthorizationStatus) {
+        let expected: NotificationAuthorizationState
+        switch status {
+        case .notDetermined: expected = .notDetermined
+        case .denied: expected = .denied
+        default: expected = .allowed
+        }
+        #expect(SystemNotificationClient.authorizationState(for: status) == expected)
+    }
+
     @Test("Background events never prompt for permission and respect the opt-in setting")
     func noAutomaticPrompt() async throws {
         let name = "octorunner-notifications-test-\(UUID().uuidString)"

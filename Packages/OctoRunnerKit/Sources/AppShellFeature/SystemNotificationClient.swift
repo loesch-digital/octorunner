@@ -4,9 +4,15 @@ import UserNotifications
 public actor SystemNotificationClient: AppNotificationClient {
     public init() {}
 
-    public func authorizationStatus() async -> NotificationAuthorizationState {
+    // The macOS 15 SDK does not declare UNNotificationSettings Sendable.
+    // Read and reduce it on the nonisolated executor; only our value enum crosses back.
+    public nonisolated func authorizationStatus() async -> NotificationAuthorizationState {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
-        switch settings.authorizationStatus {
+        return Self.authorizationState(for: settings.authorizationStatus)
+    }
+
+    nonisolated static func authorizationState(for status: UNAuthorizationStatus) -> NotificationAuthorizationState {
+        switch status {
         case .authorized, .provisional, .ephemeral: return .allowed
         case .denied: return .denied
         case .notDetermined: return .notDetermined
