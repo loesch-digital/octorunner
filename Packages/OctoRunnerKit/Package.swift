@@ -63,6 +63,7 @@ let package = Package(
                 "SyncKit",
                 "TelemetryKit"
             ],
+            resources: [.process("Resources")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(

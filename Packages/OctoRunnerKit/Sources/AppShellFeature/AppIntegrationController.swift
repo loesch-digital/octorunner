@@ -61,6 +61,9 @@ public final class AppIntegrationController {
             showInMenuBar: preferences.showInMenuBar,
             hideDockWhenClosed: preferences.hideDockIconWhenClosed
         )
-        NSApplication.shared.setActivationPolicy(show ? .regular : .accessory)
+        let policy: NSApplication.ActivationPolicy = show ? .regular : .accessory
+        if NSApplication.shared.activationPolicy() != policy {
+            NSApplication.shared.setActivationPolicy(policy)
+        }
     }
 }

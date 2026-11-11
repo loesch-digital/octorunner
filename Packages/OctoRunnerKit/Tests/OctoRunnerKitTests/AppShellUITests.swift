@@ -260,8 +260,11 @@ struct AppShellUITests {
         #expect(consoleSheetHost.bounds.size == CGSize(width: 820, height: 600))
 
         // Step 4 Dialog 6: MenuBarStatusView
+        let menuServices = AppServices()
         let menuBarHost = NSHostingView(
             rootView: MenuBarStatusView().modelContainer(container)
+                .environment(menuServices.preferences)
+                .environment(menuServices.integration)
         )
         menuBarHost.frame = NSRect(x: 0, y: 0, width: 350, height: 460)
         menuBarHost.layoutSubtreeIfNeeded()

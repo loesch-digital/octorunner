@@ -39,7 +39,7 @@ public enum OctoTheme {
         dark: (0.204, 0.780, 0.349)   // #34C759
     )
     public static let warningOrange = adaptiveColor(
-        light: (0.706, 0.365, 0.0),   // #B45D00
+        light: (0.660, 0.330, 0.0),   // #A85400; text contrast >= 4.5:1 on light surface
         dark: (1.0, 0.624, 0.039)     // #FF9F0A
     )
     public static let errorRed = adaptiveColor(

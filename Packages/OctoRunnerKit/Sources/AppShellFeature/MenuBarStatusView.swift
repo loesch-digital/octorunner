@@ -135,11 +135,18 @@ public struct MenuBarStatusView: View {
                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                 .foregroundStyle(.secondary)
 
+            LoginItemSettingsControl()
+                .toggleStyle(.checkbox)
+                .font(.callout)
+            SettingsLink {
+                Text("Settings…", bundle: .module)
+            }
+            .accessibilityLabel(Text("Open OctoRunner settings", bundle: .module))
+            .accessibilityHint(Text("Opens app preferences in a separate settings window.", bundle: .module))
+
             VStack(alignment: .leading, spacing: 6) {
                 Text("Coming in v0.5.0 — not active yet")
                     .font(.caption)
-                Toggle("Autostart at macOS Login", isOn: .constant(false))
-                    .accessibilityHint("Coming in v0.5.0; currently unavailable")
                 Toggle("Auto-restart Runner on Crash", isOn: .constant(false))
                     .accessibilityHint("Coming in v0.5.0; currently unavailable")
                 Toggle("Pause Queue during Battery Saver", isOn: .constant(false))
