@@ -9,6 +9,8 @@ public enum RunnerEngineError: LocalizedError, Sendable {
     case extractionFailed(Int32)
     case configurationFailed(Int32, String)
     case launchAgentRegistrationFailed(Int32, String)
+    case invalidRunnerName
+    case runnerDirectoryAlreadyExists
 
     public var errorDescription: String? {
         switch self {
@@ -22,6 +24,10 @@ public enum RunnerEngineError: LocalizedError, Sendable {
             return "config.sh exited with code \(code): \(log)"
         case .launchAgentRegistrationFailed(let code, let log):
             return "launchctl exited with code \(code): \(log)"
+        case .invalidRunnerName:
+            return "Runner names must be a single non-empty directory name without path separators or control characters."
+        case .runnerDirectoryAlreadyExists:
+            return "A managed runner directory already exists. Choose another name to preserve the existing runner."
         }
     }
 }

@@ -68,6 +68,9 @@ public actor RunnerProvisionerActor {
         configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration(),
         onStatusUpdate: @MainActor @Sendable (String) -> Void
     ) async throws -> [ProvisionedRunnerSummary] {
+        for name in instanceNames {
+            try Self.validateRunnerName(name)
+        }
         await onStatusUpdate("Fetching macOS ARM64 runner binary metadata from GitHub…")
         let candidate = try await provisioningClient.fetchArm64RunnerDownload(
             scopeURL: scopeURL,
@@ -162,12 +165,13 @@ public actor RunnerProvisionerActor {
         registerLaunchAgent: Bool,
         configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration()
     ) throws -> URL {
+        try Self.validateRunnerName(runnerName)
         try FileManager.default.createDirectory(at: baseRunnersDirectory, withIntermediateDirectories: true)
         let destinationRoot = baseRunnersDirectory.appending(path: runnerName, directoryHint: .isDirectory)
 
         if sourceRootDirectory.standardizedFileURL != destinationRoot.standardizedFileURL {
             if FileManager.default.fileExists(atPath: destinationRoot.path(percentEncoded: false)) {
-                try FileManager.default.removeItem(at: destinationRoot)
+                throw RunnerEngineError.runnerDirectoryAlreadyExists
             }
             try FileManager.default.copyItem(at: sourceRootDirectory, to: destinationRoot)
         }
@@ -195,6 +199,15 @@ public actor RunnerProvisionerActor {
         }
 
         return destinationRoot
+    }
+
+    private static func validateRunnerName(_ name: String) throws {
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              name != ".", name != "..", name.utf8.count <= 200,
+              !name.contains("/"), !name.contains("\\"),
+              name.unicodeScalars.allSatisfy({ !CharacterSet.controlCharacters.contains($0) }) else {
+            throw RunnerEngineError.invalidRunnerName
+        }
     }
 
     public static func extractVersion(fromFilename filename: String) -> String? {
