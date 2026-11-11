@@ -4,6 +4,8 @@
 > **Test Suite:** `SyncKitTests.swift` (`Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/SyncKitTests.swift`)
 > **Goal:** Automatically discover existing self-hosted GitHub Actions runners on the local Mac (such as `~/Documents/apps/actions-runner` or `~/actions-runner`), reconcile them with the GitHub Actions REST API, and import/synchronize them into SwiftData (`RunnerEntity`).
 
+> **Privacy correction (v0.4.4):** External paths such as Documents are inspected only after explicit selection using **Import Folder…**. Automatic discovery is limited to `~/actions-runner`, `~/.octorunner/runners/*`, and `~/Library/Application Support/io.octorunner.macos/runners/*`. Process-table paths alone do not authorize filesystem reads. External embedded logs require a user action. The automatic Documents scanning described below is historical and superseded by [the privacy audit](./09-pipeline-privacy-and-test-audit.md).
+
 ---
 
 ## 1. Problem Statement & Real-World Analysis

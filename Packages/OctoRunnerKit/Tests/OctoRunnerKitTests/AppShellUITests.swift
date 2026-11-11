@@ -11,6 +11,17 @@ import Testing
 
 @Suite("AppShell UI, Layout & Preview Rendering Tests", .serialized)
 struct AppShellUITests {
+    @Test("Quit confirmation cancels safely and only explicit confirmation terminates the app")
+    @MainActor
+    func quitConfirmationRequiresExplicitChoice() {
+        let alert = AppQuitConfirmation.makeAlert()
+        #expect(alert.buttons.count == 2)
+        #expect(alert.buttons[1].keyEquivalent == "\u{1b}")
+        #expect(AppQuitConfirmation.shouldTerminate(after: .alertFirstButtonReturn))
+        #expect(!AppQuitConfirmation.shouldTerminate(after: .alertSecondButtonReturn))
+        #expect(!AppQuitConfirmation.shouldTerminate(after: .abort))
+    }
+
     // AppKit may retain SwiftUI render work beyond an NSHostingView's lifetime.
     // Keep its SwiftData stores alive until the test process exits (macOS 15).
     @MainActor private static var previewContainers: [ModelContainer] = []

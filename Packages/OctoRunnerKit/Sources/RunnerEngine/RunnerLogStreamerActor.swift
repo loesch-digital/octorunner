@@ -10,16 +10,21 @@ public actor RunnerLogStreamerActor {
         maxLines: Int = 80
     ) -> [RunnerLogLine] {
         let diagDir = runnerRoot.appending(path: "_diag", directoryHint: .isDirectory)
+        // Do not enumerate or prefetch metadata through links to unrelated folders.
+        guard (try? FileManager.default.destinationOfSymbolicLink(atPath: diagDir.path())) == nil else { return [] }
         guard let files = try? FileManager.default.contentsOfDirectory(
             at: diagDir,
-            includingPropertiesForKeys: [.contentModificationDateKey],
+            includingPropertiesForKeys: nil,
             options: [.skipsHiddenFiles]
         ) else {
             return []
         }
 
         let logFiles = files
-            .filter { $0.pathExtension == "log" }
+            .filter {
+                $0.pathExtension == "log"
+                    && (try? FileManager.default.destinationOfSymbolicLink(atPath: $0.path())) == nil
+            }
             .sorted { lhs, rhs in
                 let lhsDate = (try? lhs.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
                 let rhsDate = (try? rhs.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast

@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -15,20 +18,44 @@ concurrency:
 jobs:
   build-and-test:
     name: Swift 6 Strict Concurrency & macOS App Build
-    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: xcode-27
+            developer-dir: /Applications/Xcode_27.2.app/Contents/Developer
+          - os: macos-15
+            developer-dir: /Applications/Xcode.app/Contents/Developer
+    runs-on: ${{ matrix.os }}
+    env:
+      DEVELOPER_DIR: ${{ matrix.developer-dir }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
+      - name: Report Selected Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
       - name: Run OctoRunnerKit Unit Tests (TDD Suite)
-        run: swift test --package-path Packages/OctoRunnerKit --no-parallel
+        run: swift test --package-path Packages/OctoRunnerKit --no-parallel --enable-code-coverage
+
+      - name: Preserve Swift Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: swift-coverage-${{ matrix.os }}
+          path: Packages/OctoRunnerKit/.build/**/codecov/*.json
+          include-hidden-files: true
+          retention-days: 14
 
       - name: Test Release Signing Pipeline
         run: python3 -m unittest discover -s scripts/tests -v
 
       - name: Generate App Icons & Xcode Project
         run: |
-          brew list xcodegen || brew install xcodegen
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
           swift scripts/generate-app-icons.swift
           xcodegen generate
 

@@ -30,6 +30,7 @@ public struct MainShellView: View {
     @State private var embeddedLogRunnerId: UUID?
     @State private var embeddedLogLines: [RunnerLogLine] = []
     @State private var embeddedAutoScroll: Bool = true
+    @State private var explicitlyRequestedLogRoots: Set<URL> = []
 
     private let telemetryActor = HostTelemetryActor()
     private let oauthActor = GitHubOAuthActor()
@@ -486,7 +487,7 @@ public struct MainShellView: View {
                     .font(.system(size: 11))
 
                 Button("Refresh", systemImage: "arrow.clockwise") {
-                    Task { await refreshEmbeddedLogStream() }
+                    Task { await refreshEmbeddedLogStream(userInitiated: true) }
                 }
                 .controlSize(.small)
                 .buttonStyle(.bordered)
@@ -562,13 +563,22 @@ public struct MainShellView: View {
         }
     }
 
-    private func refreshEmbeddedLogStream() async {
+    private func refreshEmbeddedLogStream(userInitiated: Bool = false) async {
+        guard !Task.isCancelled else { return }
         guard let runner = selectedEmbeddedRunner else {
             embeddedLogLines = []
             return
         }
-        let rootURL = URL(fileURLWithPath: runner.rootDirectoryPath ?? runner.workDirectoryPath)
-        embeddedLogLines = await logStreamer.readRecentLogLines(forRunnerRoot: rootURL, maxLines: 40)
+        let rootURL = URL(fileURLWithPath: runner.rootDirectoryPath ?? runner.workDirectoryPath).standardizedFileURL
+        if userInitiated { explicitlyRequestedLogRoots.insert(rootURL) }
+        guard explicitlyRequestedLogRoots.contains(rootURL)
+            || RunnerDirectoryAccessPolicy.allowsAutomaticRead(at: rootURL.appending(path: "_diag")) else {
+            embeddedLogLines = []
+            return
+        }
+        let lines = await logStreamer.readRecentLogLines(forRunnerRoot: rootURL, maxLines: 40)
+        guard !Task.isCancelled else { return }
+        embeddedLogLines = lines
     }
 
     private func migrateImportedRunnerInline(_ runner: RunnerEntity) async {
@@ -645,7 +655,7 @@ public struct MainShellView: View {
                 Spacer()
             }
 
-            Text("Scopes: \(account.scopes.isEmpty ? "repo, workflow, admin:org" : account.scopes.joined(separator: ", "))")
+            Text("Scopes: \(account.scopes.isEmpty ? "Not reported by token; permissions checked when used" : account.scopes.joined(separator: ", "))")
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundStyle(.secondary)
 

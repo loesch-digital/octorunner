@@ -148,7 +148,7 @@ public struct OAuthDeviceFlowSheet: View {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 10))
                     .foregroundStyle(OctoTheme.onlineGreen)
-                Text("Requires repo, workflow, and admin:org scopes. Stored securely in macOS Keychain.")
+                Text("OAuth: repo and admin:org for runner management. Fine-grained PATs can limit access to selected repositories. Stored in macOS Keychain.")
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
