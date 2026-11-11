@@ -1,53 +1,34 @@
-import CoreModels
 import Foundation
 
-public struct HostTelemetrySnapshot: Sendable, Equatable {
-    public let cpuSummary: String
-    public let totalCoreCount: Int
-    public let physicalMemoryGB: Double
-    public let usedMemoryGB: Double
-    public let osVersionString: String
-
-    public init(
-        cpuSummary: String,
-        totalCoreCount: Int,
-        physicalMemoryGB: Double,
-        usedMemoryGB: Double,
-        osVersionString: String
-    ) {
-        self.cpuSummary = cpuSummary
-        self.totalCoreCount = totalCoreCount
-        self.physicalMemoryGB = physicalMemoryGB
-        self.usedMemoryGB = usedMemoryGB
-        self.osVersionString = osVersionString
-    }
-}
-
 public actor HostTelemetryActor {
-    public init() {}
+    private let sampler: any HostTelemetrySampling
+    private var previousTicks: HostCPUTicks?
+
+    public init(sampler: any HostTelemetrySampling = SystemHostTelemetrySampler()) {
+        self.sampler = sampler
+    }
 
     public func currentSnapshot() -> HostTelemetrySnapshot {
-        let info = ProcessInfo.processInfo
-        let cores = info.activeProcessorCount
-        let totalRAMBytes = info.physicalMemory
-        let totalGB = Double(totalRAMBytes) / 1_073_741_824.0
-        let brand = Self.readBrandString() ?? "Apple Silicon"
-        return HostTelemetrySnapshot(
-            cpuSummary: brand,
-            totalCoreCount: cores,
-            physicalMemoryGB: (totalGB * 10).rounded() / 10,
-            usedMemoryGB: (totalGB * 0.35 * 10).rounded() / 10,
-            osVersionString: info.operatingSystemVersionString
-        )
+        let sample = sampler.sample()
+        let usage = Self.cpuUsage(previous: previousTicks, current: sample.cpuTicks)
+        previousTicks = sample.cpuTicks
+        let memory = sample.vmStatistics.flatMap { HostMemorySnapshot(statistics: $0, physicalMemoryBytes: sample.physicalMemoryBytes) }
+        return HostTelemetrySnapshot(cpuSummary: sample.cpuSummary, totalCoreCount: sample.totalCoreCount,
+            physicalMemoryGB: Double(sample.physicalMemoryBytes) / 1_073_741_824,
+            usedMemoryGB: memory.map { Double($0.usedBytes) / 1_073_741_824 }, osVersionString: sample.osVersionString,
+            cpuUsagePercent: usage, memory: memory,
+            performanceCoreCount: sample.performanceCoreCount, efficiencyCoreCount: sample.efficiencyCoreCount,
+            coreClusters: sample.coreClusters)
     }
 
-    private static func readBrandString() -> String? {
-        var size: Int = 0
-        sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0)
-        guard size > 0 else { return nil }
-        var buffer = [CChar](repeating: 0, count: size)
-        sysctlbyname("machdep.cpu.brand_string", &buffer, &size, nil, 0)
-        let bytes = buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }
-        return String(decoding: bytes, as: UTF8.self)
+    private static func cpuUsage(previous: HostCPUTicks?, current: HostCPUTicks?) -> Double? {
+        guard let previous, let current else { return nil }
+        let before = [previous.user, previous.system, previous.idle, previous.nice]
+        let after = [current.user, current.system, current.idle, current.nice]
+        guard zip(before, after).allSatisfy({ $0 <= $1 }) else { return nil }
+        let deltas = zip(before, after).map { Double($1 - $0) }
+        let total = deltas.reduce(0, +)
+        guard total > 0 else { return nil }
+        return (deltas[0] + deltas[1] + deltas[3]) / total * 100
     }
 }

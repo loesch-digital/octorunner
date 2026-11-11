@@ -10,6 +10,7 @@ import TelemetryKit
 
 public struct MainShellView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.locale) private var locale
     @Query(sort: \RunnerEntity.name) private var runners: [RunnerEntity]
     @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
 
@@ -81,7 +82,6 @@ public struct MainShellView: View {
         .task {
             let initialLogin = accounts.first?.login
             let hasConnectedAccount = !accounts.isEmpty
-            hostSnapshot = await telemetryActor.currentSnapshot()
             guard !Task.isCancelled else { return }
             if !hasConnectedAccount {
                 isShowingAuthSheet = true
@@ -91,6 +91,15 @@ public struct MainShellView: View {
             await refreshEmbeddedLogStream()
             guard !Task.isCancelled else { return }
             await checkForAppUpdates(manual: false)
+        }
+        .task {
+            while !Task.isCancelled {
+                let snapshot = await telemetryActor.currentSnapshot()
+                guard !Task.isCancelled else { return }
+                hostSnapshot = snapshot
+                do { try await Task.sleep(for: .seconds(2)) }
+                catch { return }
+            }
         }
     }
 
@@ -282,6 +291,10 @@ public struct MainShellView: View {
         }
     }
 
+    private var hostDisplay: HostTelemetryDisplay {
+        HostTelemetryDisplay(snapshot: hostSnapshot, locale: locale)
+    }
+
     private var kpiHeaderRow: some View {
         HStack(spacing: 12) {
             kpiCard(
@@ -292,15 +305,15 @@ public struct MainShellView: View {
             )
             kpiCard(
                 title: "Host CPU Architecture",
-                value: hostSnapshot?.cpuSummary ?? "Apple Silicon",
-                subtitle: "\(hostSnapshot?.totalCoreCount ?? 12) Cores active",
+                value: hostDisplay.cpuBrand,
+                subtitle: "\(hostDisplay.coreCount) logical cores",
                 accent: OctoTheme.accentBlue
             )
             kpiCard(
                 title: "Unified Memory",
-                value: "\(String(format: "%.0f", hostSnapshot?.physicalMemoryGB ?? 32)) GB RAM",
-                subtitle: "Pressure: Nominal",
-                accent: OctoTheme.onlineGreen
+                value: "\(hostDisplay.memoryCapacity) GiB RAM",
+                subtitle: "\(hostDisplay.memoryUsed) GiB used",
+                accent: OctoTheme.accentBlue
             )
         }
     }
@@ -629,7 +642,7 @@ public struct MainShellView: View {
 
             Spacer()
 
-            Text("\(hostSnapshot?.cpuSummary ?? "Apple Silicon") • \(String(format: "%.0f", hostSnapshot?.physicalMemoryGB ?? 32)) GB Unified RAM")
+            Text("\(hostDisplay.cpuBrand) • \(hostDisplay.memoryCapacity) GiB Unified RAM")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.secondary)
         }
