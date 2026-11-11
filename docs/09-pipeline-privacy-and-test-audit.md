@@ -7,13 +7,13 @@
 
 ## Patch v0.4.4
 
-Die CI lief bislang mit dem Standard-Xcode des `macos-15`-Images. Die zusätzliche Prüfung auf dem offiziellen `xcode-27`-Image wählt Xcode 27.2 explizit; macOS 15 bleibt ein eigener Kompatibilitätslauf. Der Release verwendet Xcode 27.2. Das Deployment Target bleibt macOS 15. Swift-Sprachmodus 6 und `complete` Strict Concurrency sind weiterhin verbindlich; eine minimale SPM-Tools-Version 6.0 bezeichnet keinen veralteten Compiler.
+v0.4.4 ergänzte einen Xcode-27.2-Build neben dem bisherigen `macos-15`-Image. Auf ausdrücklichen Nutzerwunsch verwenden ab dem Step-5-Branch CI und Release ausschließlich das aktuelle offizielle `xcode-27`-Image mit explizit ausgewähltem Xcode 27.2; der zusätzliche Build mit altem Xcode entfällt. Ein aktuelles Build-SDK und die macOS-Untergrenze der App sind unabhängig. Ein erfolgreicher Build auf diesem Image ersetzt keinen Laufzeittest auf macOS 15. Das Deployment Target bleibt macOS 15. Swift-Sprachmodus 6 und `complete` Strict Concurrency sind weiterhin verbindlich; eine minimale SPM-Tools-Version 6.0 bezeichnet keinen veralteten Compiler.
 
 Verifiziert am 2026-11-11: lokal Xcode 27.2 (27B52), Swift 6.4.2; aktuelle stabile Xcode-Version 27.2, checkout v7.0.1, release-it 21.1.2. Referenzen: [Apple](https://developer.apple.com/xcode/system-requirements/), [Runner-Images](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md), [checkout](https://github.com/actions/checkout/releases).
 
 Homebrew-Verfügbarkeitsprüfungen sind stumm; Installationsfehler bleiben sichtbar. Python-Signingtests laufen auch vor Releases. CI erhält nur `contents: read`. Release-Publikationen werden serialisiert und `gh release create --verify-tag` verweigert vorhandene Releases, statt Archive mit `--clobber` auszutauschen. PR-CI läuft weiterhin ausschließlich auf `pull_request`; nur main hat zusätzlich Push-CI.
 
-Die CI erzeugt Coverage pro Betriebssystem und bewahrt die JSON-Berichte 14 Tage als Artefakte auf (`actions/upload-artifact@v7`, aktuelle Version v7.0.2 geprüft). Es gibt bewusst noch keine pauschale Prozent-Hürde: Aussagekräftige Fehlerpfadtests gehen vor einer durch UI-Rendering erhöhten Gesamtzahl.
+Die CI erzeugt Coverage für die ausgewählte Toolchain und bewahrt die JSON-Berichte 14 Tage als Artefakte auf (`actions/upload-artifact@v7`, aktuelle Version v7.0.2 geprüft). Es gibt bewusst noch keine pauschale Prozent-Hürde: Aussagekräftige Fehlerpfadtests gehen vor einer durch UI-Rendering erhöhten Gesamtzahl.
 
 ## Warum macOS nach Dokumente-Zugriff fragte
 

@@ -1,5 +1,6 @@
 """Execute workflow shell blocks with local boundary stubs; no GitHub writes."""
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -23,6 +24,14 @@ def workflow_run(workflow, step):
 
 
 class WorkflowCommandTests(unittest.TestCase):
+    def test_build_workflows_use_the_same_current_toolchain(self):
+        for workflow in ("ci.yml", "release.yml"):
+            with self.subTest(workflow=workflow):
+                source = (ROOT / ".github/workflows" / workflow).read_text()
+                self.assertEqual(re.findall(r"^    runs-on: (.+)$", source, re.MULTILINE), ["xcode-27"])
+                self.assertIn("DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer", source)
+                self.assertNotIn("matrix.", source)
+
     def run_step(self, workflow, step, command, stub, extra_env=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
