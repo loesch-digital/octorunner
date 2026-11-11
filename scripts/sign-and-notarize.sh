@@ -5,7 +5,7 @@ set -euo pipefail
 APP_PATH="${1:?Usage: sign-and-notarize.sh <app-path> <output.zip>}"
 ZIP_PATH="${2:?Usage: sign-and-notarize.sh <app-path> <output.zip>}"
 
-for name in MATCH_GIT_URL MATCH_PASSWORD MATCH_GIT_TOKEN NOTARY_KEY_CONTENT NOTARY_KEY_ID NOTARY_ISSUER_ID; do
+for name in MATCH_GIT_URL MATCH_PASSWORD MATCH_GIT_TOKEN APP_STORE_CONNECT_API_KEY_CONTENT APP_STORE_CONNECT_API_KEY_ID APP_STORE_CONNECT_API_KEY_ISSUER_ID; do
   if [[ -z "${!name:-}" ]]; then
     echo "Missing required release secret: ${name}" >&2
     exit 1
@@ -30,7 +30,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-printf '%s' "$NOTARY_KEY_CONTENT" > "$SIGNING_DIR/AuthKey.p8"
+printf '%s' "$APP_STORE_CONNECT_API_KEY_CONTENT" > "$SIGNING_DIR/AuthKey.p8"
 security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
 security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
@@ -47,7 +47,7 @@ codesign --force --sign "$IDENTITY" --keychain "$KEYCHAIN_PATH" \
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$SIGNING_DIR/submission.zip"
 xcrun notarytool submit "$SIGNING_DIR/submission.zip" \
-  --key "$SIGNING_DIR/AuthKey.p8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" \
+  --key "$SIGNING_DIR/AuthKey.p8" --key-id "$APP_STORE_CONNECT_API_KEY_ID" --issuer "$APP_STORE_CONNECT_API_KEY_ISSUER_ID" \
   --wait --timeout 30m --output-format json > "$SIGNING_DIR/notarization.json"
 python3 - "$SIGNING_DIR/notarization.json" <<'PY'
 import json, sys
