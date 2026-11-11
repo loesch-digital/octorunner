@@ -19,7 +19,7 @@ Add these repository Actions secrets under Settings → Secrets and variables
 | `MATCH_GIT_URL` | Existing Match repository URL; an Actions variable is also supported |
 | `MATCH_PASSWORD` | Existing Match repository encryption password |
 | `MATCH_GIT_TOKEN` | Unmodified fine-grained GitHub token with Contents read access to the Match repository |
-| `NOTARY_KEY_BASE64` | Base64-encoded team App Store Connect API private key (`.p8`) |
+| `NOTARY_KEY_CONTENT` | Unmodified contents of the team App Store Connect API private key (`.p8`) |
 | `NOTARY_KEY_ID` | API Key ID |
 | `NOTARY_ISSUER_ID` | Team API Issuer ID |
 

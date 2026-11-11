@@ -5,7 +5,7 @@ set -euo pipefail
 APP_PATH="${1:?Usage: sign-and-notarize.sh <app-path> <output.zip>}"
 ZIP_PATH="${2:?Usage: sign-and-notarize.sh <app-path> <output.zip>}"
 
-for name in MATCH_GIT_URL MATCH_PASSWORD MATCH_GIT_TOKEN NOTARY_KEY_BASE64 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
+for name in MATCH_GIT_URL MATCH_PASSWORD MATCH_GIT_TOKEN NOTARY_KEY_CONTENT NOTARY_KEY_ID NOTARY_ISSUER_ID; do
   if [[ -z "${!name:-}" ]]; then
     echo "Missing required release secret: ${name}" >&2
     exit 1
@@ -30,7 +30,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-printf '%s' "$NOTARY_KEY_BASE64" | base64 --decode > "$SIGNING_DIR/AuthKey.p8"
+printf '%s' "$NOTARY_KEY_CONTENT" > "$SIGNING_DIR/AuthKey.p8"
 security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
 security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"

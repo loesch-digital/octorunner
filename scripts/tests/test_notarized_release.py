@@ -51,12 +51,12 @@ if command == "ditto":
                 "MATCH_GIT_URL": "https://github.com/example/certificates",
                 "MATCH_PASSWORD": "test-password",
                 "MATCH_GIT_TOKEN": "test-token",
-                "NOTARY_KEY_BASE64": "dGVzdA==",
+                "NOTARY_KEY_CONTENT": "test-private-key",
                 "NOTARY_KEY_ID": "TESTKEY",
                 "NOTARY_ISSUER_ID": "test-issuer",
             }
             if missing_secret:
-                env.pop("NOTARY_KEY_BASE64")
+                env.pop("NOTARY_KEY_CONTENT")
             output = root / "release.zip"
             result = subprocess.run(
                 ["bash", str(SCRIPT), str(app), str(output)],
@@ -68,7 +68,7 @@ if command == "ditto":
     def test_missing_credentials_prevent_signing_and_packaging(self):
         result, commands, packaged = self.run_release(missing_secret=True)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("NOTARY_KEY_BASE64", result.stderr)
+        self.assertIn("NOTARY_KEY_CONTENT", result.stderr)
         self.assertFalse(commands)
         self.assertFalse(packaged)
 
