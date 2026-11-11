@@ -24,7 +24,15 @@ umask 077
 SIGNING_DIR=$(mktemp -d)
 KEYCHAIN_PATH="$SIGNING_DIR/release.keychain-db"
 KEYCHAIN_PASSWORD=$(openssl rand -hex 32)
+ORIGINAL_KEYCHAINS=()
+while IFS= read -r keychain; do
+  keychain="${keychain#"${keychain%%[![:space:]]*}"}"
+  keychain="${keychain//\"/}"
+  [[ -n "$keychain" ]] && ORIGINAL_KEYCHAINS+=("$keychain")
+done < <(security list-keychains -d user)
 cleanup() {
+  # Restore the user's keychain search list before removing the temporary keychain.
+  security list-keychains -d user -s ${ORIGINAL_KEYCHAINS[@]+"${ORIGINAL_KEYCHAINS[@]}"} >/dev/null 2>&1 || true
   security delete-keychain "$KEYCHAIN_PATH" >/dev/null 2>&1 || true
   rm -rf "$SIGNING_DIR"
 }
@@ -38,9 +46,13 @@ security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 # CI forces the lane into readonly mode; releases must never create certificates.
 CI=true MATCH_KEYCHAIN_NAME="$KEYCHAIN_PATH" MATCH_KEYCHAIN_PASSWORD="$KEYCHAIN_PASSWORD" \
   fastlane mac sync_certificates
+# codesign resolves the certificate chain through the keychain search list.
+security list-keychains -d user -s "$KEYCHAIN_PATH" ${ORIGINAL_KEYCHAINS[@]+"${ORIGINAL_KEYCHAINS[@]}"}
 IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
   | sed -nE '/"Developer ID Application:/s/.*\) ([A-Fa-f0-9]{40}) .*/\1/p' | head -1)
 [[ -n "$IDENTITY" ]] || { echo "No valid Developer ID Application identity in certificate." >&2; exit 1; }
+echo "Signing with Developer ID identity ${IDENTITY:0:8}… from temporary keychain."
+security find-identity -v -p codesigning "$KEYCHAIN_PATH" | sed -E 's/[A-Fa-f0-9]{40}/<sha1>/'
 
 codesign --force --sign "$IDENTITY" --keychain "$KEYCHAIN_PATH" \
   --options runtime --timestamp --entitlements App/OctoRunner.entitlements "$APP_PATH"
