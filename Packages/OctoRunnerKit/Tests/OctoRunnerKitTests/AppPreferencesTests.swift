@@ -65,4 +65,56 @@ struct AppPreferencesTests {
         #expect(preferences.pruneWorkspacesOlderThanDays == 1)
         #expect(AppPreferencesStore(defaults: defaults).maxConcurrentRunners == 64)
     }
+
+    @Test("Runtime, retention and notification policies persist across launch")
+    func persistsPolicies() throws {
+        let name = "octorunner-preferences-test-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let preferences = AppPreferencesStore(defaults: defaults)
+        preferences.runtimePolicy.shell = .zsh
+        preferences.runtimePolicy.restartPolicy = .onNonZeroExit
+        preferences.runtimePolicy.restartDelaySeconds = 20
+        preferences.runtimePolicy.quarantineThreshold = 3
+        preferences.runtimePolicy.gracefulDrainEnabled = false
+        preferences.runtimePolicy.drainTimeoutSeconds = 120
+        preferences.runtimePolicy.batterySaverEnabled = true
+        preferences.storagePolicy.logRetentionDays = 30
+        preferences.storagePolicy.pruningMode = .lowDiskSpace
+        preferences.storagePolicy.minimumFreeSpaceGB = 25
+        preferences.notificationPolicy.enabled = true
+        preferences.notificationPolicy.runnerOffline = false
+        preferences.notificationPolicy.jobFailure = false
+        preferences.notificationPolicy.lowDiskSpace = false
+        preferences.notificationPolicy.soundEnabled = false
+        let restored = AppPreferencesStore(defaults: defaults)
+        #expect(restored.runtimePolicy == preferences.runtimePolicy)
+        #expect(restored.storagePolicy == preferences.storagePolicy)
+        #expect(restored.notificationPolicy == preferences.notificationPolicy)
+    }
+
+    @Test("Policy values are bounded and malformed persisted policies use safe defaults")
+    func validatesPolicies() throws {
+        let name = "octorunner-preferences-test-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        defaults.set(Data("invalid JSON".utf8), forKey: "preferences.runtimePolicy")
+        defaults.set(Data("{}".utf8), forKey: "preferences.storagePolicy")
+        defaults.set(Data("null".utf8), forKey: "preferences.notificationPolicy")
+        let preferences = AppPreferencesStore(defaults: defaults)
+        #expect(preferences.runtimePolicy == RunnerRuntimePolicy())
+        #expect(preferences.storagePolicy.pruningMode == .manual)
+        #expect(!preferences.notificationPolicy.enabled)
+        preferences.runtimePolicy.restartDelaySeconds = -1
+        preferences.runtimePolicy.quarantineThreshold = 0
+        preferences.runtimePolicy.drainTimeoutSeconds = Int.max
+        preferences.storagePolicy.logRetentionDays = -1
+        preferences.storagePolicy.minimumFreeSpaceGB = -1
+        #expect(preferences.runtimePolicy.restartDelaySeconds == 1)
+        #expect(preferences.runtimePolicy.quarantineThreshold == 1)
+        #expect(preferences.runtimePolicy.drainTimeoutSeconds == 3_600)
+        #expect(preferences.storagePolicy.logRetentionDays == 14)
+        #expect(preferences.storagePolicy.minimumFreeSpaceGB == 1)
+        #expect(AppPreferencesStore(defaults: defaults).runtimePolicy == preferences.runtimePolicy)
+    }
 }

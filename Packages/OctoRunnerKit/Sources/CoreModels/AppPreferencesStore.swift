@@ -31,7 +31,11 @@ public final class AppPreferencesStore {
         didSet { defaults.set(inheritHostPath, forKey: "preferences.inheritHostPath") }
     }
     public var diskAutoPruningEnabled: Bool {
-        didSet { defaults.set(diskAutoPruningEnabled, forKey: "preferences.diskAutoPruningEnabled") }
+        get { storagePolicy.pruningMode != .manual }
+        set {
+            if !newValue { storagePolicy.pruningMode = .manual }
+            else if storagePolicy.pruningMode == .manual { storagePolicy.pruningMode = .olderThanDays }
+        }
     }
     private var storedPruneWorkspacesOlderThanDays: Int
     public var pruneWorkspacesOlderThanDays: Int {
@@ -43,6 +47,26 @@ public final class AppPreferencesStore {
     }
     public var customRunnerDownloadURL: String = ""
 
+    private var storedRuntimePolicy = RunnerRuntimePolicy()
+    public var runtimePolicy: RunnerRuntimePolicy {
+        get { storedRuntimePolicy }
+        set {
+            storedRuntimePolicy = newValue.validated()
+            persist(storedRuntimePolicy, forKey: "preferences.runtimePolicy")
+        }
+    }
+    private var storedStoragePolicy = StoragePolicy()
+    public var storagePolicy: StoragePolicy {
+        get { storedStoragePolicy }
+        set {
+            storedStoragePolicy = newValue.validated()
+            persist(storedStoragePolicy, forKey: "preferences.storagePolicy")
+        }
+    }
+    public var notificationPolicy: NotificationPolicy {
+        didSet { persist(notificationPolicy, forKey: "preferences.notificationPolicy") }
+    }
+
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         language = AppLanguage(rawValue: defaults.string(forKey: "preferences.language") ?? "") ?? .system
@@ -51,11 +75,25 @@ public final class AppPreferencesStore {
         hideDockIconWhenClosed = defaults.object(forKey: "preferences.hideDockIconWhenClosed") as? Bool ?? true
         storedMaxConcurrentRunners = Self.clamp(defaults.object(forKey: "preferences.maxConcurrentRunners") as? Int ?? 4, to: 1...64)
         inheritHostPath = defaults.object(forKey: "preferences.inheritHostPath") as? Bool ?? true
-        diskAutoPruningEnabled = defaults.object(forKey: "preferences.diskAutoPruningEnabled") as? Bool ?? false
         storedPruneWorkspacesOlderThanDays = Self.clamp(defaults.object(forKey: "preferences.pruneWorkspacesOlderThanDays") as? Int ?? 7, to: 1...365)
+        storedRuntimePolicy = Self.load(RunnerRuntimePolicy.self, from: defaults, key: "preferences.runtimePolicy")?.validated() ?? RunnerRuntimePolicy()
+        storedStoragePolicy = Self.load(StoragePolicy.self, from: defaults, key: "preferences.storagePolicy")?.validated() ?? StoragePolicy()
+        notificationPolicy = Self.load(NotificationPolicy.self, from: defaults, key: "preferences.notificationPolicy") ?? NotificationPolicy()
     }
 
     private static func clamp(_ value: Int, to range: ClosedRange<Int>) -> Int {
         min(max(value, range.lowerBound), range.upperBound)
+    }
+
+    private static func load<Value: Decodable>(_ type: Value.Type, from defaults: UserDefaults, key: String) -> Value? {
+        guard let data = defaults.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(type, from: data)
+    }
+
+    private func persist<Value: Encodable>(_ value: Value, forKey key: String) {
+        // These policy values contain only enums, bounded integers and booleans.
+        // Keep the previous stored value if a future encoder ever rejects a value.
+        guard let data = try? JSONEncoder().encode(value) else { return }
+        defaults.set(data, forKey: key)
     }
 }
