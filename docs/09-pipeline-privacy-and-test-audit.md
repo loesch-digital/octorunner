@@ -61,7 +61,7 @@ Coverage-Messung mit `swift test --package-path Packages/OctoRunnerKit --no-para
 
 Diese Zahlen sind keine Freigabe als „vollständig abgedeckt“: SwiftUI-Generics erhöhen die Zahl der instrumentierten Zeilen. Besonders OAuth-Polling/Cancellation, Fehlerantworten/Paginierung, Provisioning-Rollback, Crash-Supervision und echter Update-Rollback brauchen weitere Verhaltenstests in v0.5–v0.7. Die bisherige Telemetrie-Testabdeckung belegt ebenfalls keine vollständige Hardware-Telemetrie; die Implementierung enthält noch einen geschätzten Speicherverbrauch.
 
-Noch live zu prüfen: mehrfach Dashboard öffnen einschließlich minimiertem/geschlossenem Fenster; Schließen versus Quit; Menüleisteneintrag verschwindet nach Quit; LaunchAgents laufen weiter; nicht migrierte Runner werden erklärt; frischer App-Start ohne Dokumente-Dialog und bewusster Ordnerimport. Die Computersteuerung meldete beim ersten Zugriff `cgWindowNotFound`, deshalb sind diese Punkte nicht als verifiziert markiert. Kein TCC-Reset und keine Änderung von Datenschutzfreigaben für Tests.
+Manuelle Nutzerabnahme abgeschlossen: fünfmal **Dashboard** im Menüleistenfenster öffnet weiterhin genau ein Fenster; Schließen und Wiederöffnen funktionieren; Quit-Dialog und Beenden funktionieren; erneuter normaler Start ohne Dokumente-Abfrage; die drei Vorschau-Schalter sind deaktiviert. Separat noch nicht live belegt sind das Weiterlaufen konkreter LaunchAgent-Runner und ein neuer externer Ordnerimport. Die Computersteuerung meldet `cgWindowNotFound`; die genannten UI-Ergebnisse stammen ausdrücklich vom Nutzer. Kein TCC-Reset und keine Änderung von Datenschutzfreigaben für Tests.
 
 ## Weitere Meilensteine
 
