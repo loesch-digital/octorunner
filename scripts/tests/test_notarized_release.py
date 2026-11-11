@@ -23,6 +23,8 @@ command = pathlib.Path(sys.argv[0]).name
 args = sys.argv[1:]
 with open(os.environ["COMMAND_LOG"], "a") as log:
     log.write(json.dumps([command, *args]) + "\\n")
+if command == "security" and args[:2] == ["list-keychains", "-d"] and "-s" not in args:
+    print('    "/Users/runner/Library/Keychains/login.keychain-db"')
 if command == "security" and args[0] == "find-identity":
     print('1) ABCDEF0123456789ABCDEF0123456789ABCDEF01 "Developer ID Application: Test (TEAM123)"')
 if command == "fastlane":
@@ -83,6 +85,18 @@ if command == "ditto":
         result, _, packaged = self.run_release(reject_gatekeeper=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(packaged)
+
+    def test_signing_keychain_is_in_search_list_before_codesign_and_restored_afterwards(self):
+        result, commands, _ = self.run_release()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        searches = [i for i, c in enumerate(commands) if c[:2] == ["security", "list-keychains"] and "-s" in c]
+        sign = next(i for i, c in enumerate(commands) if c[0] == "codesign" and "--sign" in c)
+        self.assertGreaterEqual(len(searches), 2, "search list must be set and restored")
+        self.assertLess(searches[0], sign)
+        self.assertTrue(any(a.endswith("release.keychain-db") for a in commands[searches[0]]))
+        self.assertGreater(searches[-1], sign)
+        self.assertFalse(any(a.endswith("release.keychain-db") for a in commands[searches[-1]]))
+        self.assertIn("login.keychain-db", " ".join(commands[searches[-1]]))
 
     def test_success_packages_only_after_stapling_and_gatekeeper_verification(self):
         result, commands, packaged = self.run_release()
