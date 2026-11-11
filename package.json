@@ -1,6 +1,6 @@
 {
   "name": "octorunner",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "private": true,
   "description": "Native macOS desktop manager for self-hosted GitHub Actions runners",
   "repository": {
