@@ -30,7 +30,9 @@ Das Gesamtkonzept ist nach Architektur, Infrastruktur und den einzelnen Release-
 | **[05-step-03-runner-wizard-and-engine.md](./05-step-03-runner-wizard-and-engine.md)** | **Step 3:** Add Runner Setup Wizard (Dialog 3), Auto-Download & Caching der GitHub Runner Binary (`osx-arm64`), `config.sh` & `launchd` Agent Registrierung | **`v0.3.0`** |
 | **[06-step-04-dashboard-detail-and-menubar.md](./06-step-04-dashboard-detail-and-menubar.md)** | **Step 4:** Main Dashboard (Dialog 2), Advanced Runner Config & Labels (Dialog 4), Live ANSI Log Stream (Dialog 5) & macOS MenuBar Popover (Dialog 6) | **`v0.4.0`** |
 | **[07-step-05-settings-telemetry-and-jobs.md](./07-step-05-settings-telemetry-and-jobs.md)** | **Step 5:** Settings Suite (Dialoge 7a–7e: General, launchd, Storage/Pruning, Auth, Notifications), Jobs Queue (Dialog 8) & Apple Silicon Telemetry (Dialog 9) | **`v0.5.0`** |
-| **[08-sync-kit-and-local-runner-import.md](./08-sync-kit-and-local-runner-import.md)** | **`SyncKit`:** Auto-Discovery lokaler `.runner`-Instanzen (z.B. `~/Documents/apps/actions-runner`), Live-PID-Erkennung (`Runner.Listener`) & GitHub REST API Reconciliation | **`v0.2.4` / `v0.3.0`** |
+| **[08-sync-kit-and-local-runner-import.md](./08-sync-kit-and-local-runner-import.md)** | **`SyncKit`:** Discovery verwalteter Runner, bewusster Import externer Ordner, Live-PID-Erkennung und GitHub-Abgleich | **`v0.2.4` / `v0.3.0`** |
+| **[09-pipeline-privacy-and-test-audit.md](./09-pipeline-privacy-and-test-audit.md)** | Pipeline-Prüfung, bedarfsgesteuerter Ordnerzugriff, minimale GitHub-Rechte und offene Testlücken | **`v0.4.4`** |
+| **[10-development-and-acceptance.md](./10-development-and-acceptance.md)** | Entwicklungsstand aus Xcode abnehmen; Release-ZIP ohne Homebrew installieren | Abnahme |
 
 ---
 
@@ -47,5 +49,6 @@ flowchart LR
 ### Wie wir vorgehen (Workflow pro Meilenstein):
 1. **Umsetzung nach Plan-Dokument** (z.B. Start mit Step 1: `03-step-01-infrastructure-homebrew-release.md`).
 2. **Code-Review gegen die 4 Agent Skills** (`swiftui-pro`, `swift-security-expert`, `swiftdata-pro`, `swift-concurrency-pro`).
-3. **Lokaler Build & Test** (`swift test` & `fastlane mac build_release`).
-4. **Release & Bereitstellung** via `npm run release` (`release-it` baut, signiert, erstellt das GitHub Release `v0.x.0` und aktualisiert automatisch das Homebrew Cask zum direkten Testen per `brew upgrade --cask octorunner`).
+3. **Lokaler Build, Tests und interaktive Abnahme** des Branches [direkt aus Xcode](./10-development-and-acceptance.md), ohne Homebrew-Installation der App.
+4. **PR-CI abwarten, PR mergen und main-CI abwarten.**
+5. **Release & Bereitstellung** via `npm run release`: `release-it` erstellt Versionscommit und Tag; der Tag startet den GitHub-Workflow für Build, Signierung, Notarisierung, GitHub Release und Homebrew-Tap. Den vollständigen Release-Lauf abwarten und anschließend Homebrew-Upgrade und Gatekeeper prüfen. Das signierte ZIP kann auch ohne Homebrew installiert werden.

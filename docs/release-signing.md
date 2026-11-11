@@ -1,5 +1,7 @@
 # Apple signing for GitHub releases
 
+For development acceptance before a release, use the [local Xcode / Debug workflow](10-development-and-acceptance.md). It does not require installing the app through Homebrew or using release signing secrets. The same guide covers installing the signed release ZIP directly.
+
 GitHub releases require a Developer ID Application signature, Apple's accepted
 notarization, a stapled ticket, and a successful Gatekeeper assessment. The final
 ZIP is created after these checks. Missing credentials or any failed check stops
