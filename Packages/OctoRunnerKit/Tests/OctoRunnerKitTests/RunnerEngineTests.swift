@@ -60,12 +60,12 @@ struct RunnerEngineTests {
         let dict = try #require(plistObject as? [String: Any])
 
         #expect(dict["Label"] as? String == "io.octorunner.agent.mac-runner-1")
-        #expect(dict["WorkingDirectory"] as? String == rootDir.path())
+        #expect(dict["WorkingDirectory"] as? String == rootDir.path(percentEncoded: false))
         #expect(dict["RunAtLoad"] as? Bool == true)
         #expect(dict["KeepAlive"] as? Bool == true)
 
         let programArgs = try #require(dict["ProgramArguments"] as? [String])
-        #expect(programArgs == ["/bin/bash", rootDir.appending(path: "run.sh").path()])
+        #expect(programArgs == ["/bin/bash", rootDir.appending(path: "run.sh").path(percentEncoded: false)])
 
         let env = try #require(dict["EnvironmentVariables"] as? [String: String])
         #expect(env["PATH"]?.contains("/opt/homebrew/bin") == true)
