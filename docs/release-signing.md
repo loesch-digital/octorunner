@@ -40,6 +40,10 @@ After configuring secrets, publish a new patch version from verified `main`.
 Do not replace an already published archive: Homebrew caches archives and checks
 their SHA-256 digests.
 
+The workflow uses Xcode 27.2 explicitly, runs the Python signing regressions,
+serializes publications, and refuses existing GitHub releases. Failed releases
+must use a new patch tag; the workflow never uploads assets with `--clobber`.
+
 ## Verification
 
 ```bash

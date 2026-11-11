@@ -5,6 +5,64 @@ import Testing
 
 @Suite("SyncKit — Local Runner Discovery & GitHub Reconciliation Tests")
 struct SyncKitTests {
+    @Test("Background log reads require a managed path; imported external paths wait for user action")
+    func backgroundLogAccessPolicy() {
+        let home = URL(fileURLWithPath: "/tmp/OctoRunnerPolicyHome", isDirectory: true).resolvingSymlinksInPath()
+        #expect(RunnerDirectoryAccessPolicy.allowsAutomaticRead(at: home.appending(path: "actions-runner/_diag/Runner.log"), homeDirectory: home))
+        #expect(RunnerDirectoryAccessPolicy.allowsAutomaticRead(at: home.appending(path: "Library/Application Support/io.octorunner.macos/runners/one/_diag"), homeDirectory: home))
+        #expect(!RunnerDirectoryAccessPolicy.allowsAutomaticRead(at: home.appending(path: "Documents/actions-runner/_diag"), homeDirectory: home))
+        #expect(!RunnerDirectoryAccessPolicy.allowsAutomaticRead(at: home.appending(path: "actions-runner-other/_diag"), homeDirectory: home))
+        #expect(!RunnerDirectoryAccessPolicy.allowsAutomaticRead(at: home.appending(path: "actions-runner/../Documents/_diag"), homeDirectory: home))
+    }
+
+    @Test("Automatic discovery never reads external runner folders, including roots from live processes")
+    func externalFoldersRequireExplicitSelection() async throws {
+        let home = FileManager.default.temporaryDirectory
+            .appending(path: "OctoRunnerDiscovery-\(UUID().uuidString)", directoryHint: .isDirectory)
+            .resolvingSymlinksInPath()
+        defer { try? FileManager.default.removeItem(at: home) }
+        let paths = ["actions-runner", ".octorunner/runners/managed", "Documents/apps/actions-runner",
+                     "Documents/actions-runner", "Desktop/external-runner",
+                     "Library/Application Support/io.octorunner.macos/runners/current-managed"]
+        for (index, path) in paths.enumerated() {
+            let directory = home.appending(path: path, directoryHint: .isDirectory)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try Data("""
+            {"agentId": \(index + 1), "agentName": "runner-\(index)",
+             "gitHubUrl": "https://github.com/example/repo", "workFolder": "_work"}
+            """.utf8).write(to: directory.appending(path: ".runner"))
+        }
+        let external = home.appending(path: "Desktop/external-runner", directoryHint: .isDirectory)
+        let discovery = LocalRunnerDiscoveryActor(homeDirectory: home, processTableProvider: {
+            [LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: external):
+                LocalRunnerProcessState(listenerPID: 123, isWorkerActive: false)]
+        })
+        let automatic = await discovery.discoverAllLocalRunners()
+        #expect(Set(automatic.map(\.config.agentName)) == ["runner-0", "runner-1", "runner-5"])
+
+        let selected = await discovery.discoverAllLocalRunners(additionalDirectories: [external, external])
+        #expect(Set(selected.map(\.config.agentName)) == ["runner-0", "runner-1", "runner-4", "runner-5"])
+        #expect(selected.count == 4)
+        #expect(selected.first(where: { $0.config.agentName == "runner-4" })?.listenerPID == 123)
+    }
+
+    @Test("Automatic discovery does not follow standard-folder symlinks into external folders")
+    func automaticDiscoveryRejectsExternalSymlinks() async throws {
+        let home = FileManager.default.temporaryDirectory
+            .appending(path: "OctoRunnerSymlink-\(UUID().uuidString)", directoryHint: .isDirectory)
+            .resolvingSymlinksInPath()
+        defer { try? FileManager.default.removeItem(at: home) }
+        let external = home.appending(path: "Documents/external", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: external, withIntermediateDirectories: true)
+        try Data("""
+        {"agentId": 1, "agentName": "external", "gitHubUrl": "https://github.com/example/repo", "workFolder": "_work"}
+        """.utf8).write(to: external.appending(path: ".runner"))
+        try FileManager.default.createSymbolicLink(at: home.appending(path: "actions-runner"), withDestinationURL: external)
+        let discovery = LocalRunnerDiscoveryActor(homeDirectory: home, processTableProvider: { [:] })
+        #expect(await discovery.discoverAllLocalRunners().isEmpty)
+        #expect(await discovery.discoverAllLocalRunners(additionalDirectories: [external]).count == 1)
+    }
+
     @Test("LocalDotRunnerConfig strips .NET UTF-8 BOM (0xEF 0xBB 0xBF) and infers repository vs org scope")
     func dotRunnerBOMDecodingAndScopeInference() throws {
         let jsonString = """

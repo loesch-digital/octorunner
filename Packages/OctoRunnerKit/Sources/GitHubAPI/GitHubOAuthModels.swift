@@ -3,7 +3,8 @@ import Foundation
 public enum GitHubOAuthConfig {
     /// Public OAuth Client ID for OctoRunner (RFC 8628 Device Flow — not a secret).
     public static let defaultClientID = "Ov23liD1qcIUTp8adWQd"
-    public static let defaultScopes = ["repo", "workflow", "admin:org"]
+    // Runner administration does not modify workflow files.
+    public static let defaultScopes = ["repo", "admin:org"]
     public static let deviceCodeEndpoint = URL(string: "https://github.com/login/device/code")!
     public static let accessTokenEndpoint = URL(string: "https://github.com/login/oauth/access_token")!
     public static let userProfileEndpoint = URL(string: "https://api.github.com/user")!

@@ -9,10 +9,6 @@ public struct MenuBarStatusView: View {
     @Query(sort: \RunnerEntity.name) private var runners: [RunnerEntity]
     @Environment(\.openWindow) private var openWindow
 
-    @AppStorage("io.octorunner.policy.autostartLogin") private var autostartAtLogin: Bool = true
-    @AppStorage("io.octorunner.policy.autoRestartCrash") private var autoRestartOnCrash: Bool = true
-    @AppStorage("io.octorunner.policy.pauseBatterySaver") private var pauseOnBatterySaver: Bool = false
-
     public init() {}
 
     public var body: some View {
@@ -140,13 +136,16 @@ public struct MenuBarStatusView: View {
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 6) {
-                Toggle("Autostart at macOS Login", isOn: $autostartAtLogin)
-                    .accessibilityHint("Automatically starts OctoRunner and LaunchAgent runners on login")
-                Toggle("Auto-restart Runner on Crash", isOn: $autoRestartOnCrash)
-                    .accessibilityHint("Automatically restarts Runner.Listener if it exits unexpectedly")
-                Toggle("Pause Queue during Battery Saver", isOn: $pauseOnBatterySaver)
-                    .accessibilityHint("Pauses new job pickup when macOS Low Power Mode is active")
+                Text("Coming in v0.5.0 — not active yet")
+                    .font(.caption)
+                Toggle("Autostart at macOS Login", isOn: .constant(false))
+                    .accessibilityHint("Coming in v0.5.0; currently unavailable")
+                Toggle("Auto-restart Runner on Crash", isOn: .constant(false))
+                    .accessibilityHint("Coming in v0.5.0; currently unavailable")
+                Toggle("Pause Queue during Battery Saver", isOn: .constant(false))
+                    .accessibilityHint("Coming in v0.5.0; currently unavailable")
             }
+            .disabled(true)
             .toggleStyle(.checkbox)
             .font(.system(size: 11))
             .padding(10)
@@ -173,12 +172,12 @@ public struct MenuBarStatusView: View {
             .help("Closes the Dashboard window while keeping OctoRunner active in the Menu Bar")
             .accessibilityLabel("Hide Dashboard Window to Menu Bar")
 
-            Button("Quit GUI", systemImage: "power", role: .destructive) {
+            Button("Quit", systemImage: "power", role: .destructive) {
                 NSApplication.shared.terminate(nil)
             }
             .buttonStyle(.borderless)
             .font(.system(size: 11, weight: .medium))
-            .help("Quits the OctoRunner GUI. Background runners managed via launchd continue running.")
+            .help("Quits OctoRunner and removes its menu bar item. Installed runner LaunchAgents continue running; imported runners may require migration.")
             .accessibilityLabel("Quit OctoRunner GUI")
         }
     }

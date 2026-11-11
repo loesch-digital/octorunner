@@ -5,6 +5,11 @@ import SwiftData
 import SwiftUI
 
 public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
+    public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        AppQuitConfirmation.shouldTerminate(after: AppQuitConfirmation.makeAlert().runModal())
+            ? .terminateNow : .terminateCancel
+    }
+
     public func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         // Keep OctoRunner MenuBar Extra and background supervision alive when the Dashboard window is closed
         false

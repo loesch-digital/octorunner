@@ -2,7 +2,16 @@ import CoreModels
 import Foundation
 
 public actor LocalRunnerDiscoveryActor {
-    public init() {}
+    private let homeDirectory: URL
+    private let processTableProvider: (@Sendable () -> [String: LocalRunnerProcessState])?
+
+    public init(
+        homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true),
+        processTableProvider: (@Sendable () -> [String: LocalRunnerProcessState])? = nil
+    ) {
+        self.homeDirectory = homeDirectory
+        self.processTableProvider = processTableProvider
+    }
 
     public static func normalizedDirectoryPath(for url: URL) -> String {
         let raw = url.standardizedFileURL.path(percentEncoded: false)
@@ -102,30 +111,30 @@ public actor LocalRunnerDiscoveryActor {
     }
 
     public func discoverAllLocalRunners(additionalDirectories: [URL] = []) -> [DiscoveredLocalRunner] {
-        let activeProcesses = queryLiveProcessTable()
-        let home = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+        let activeProcesses = processTableProvider?() ?? queryLiveProcessTable()
+        let home = homeDirectory
 
-        var candidateDirs: [URL] = [
-            home.appending(path: "actions-runner", directoryHint: .isDirectory),
-            home.appending(path: "Documents/apps/actions-runner", directoryHint: .isDirectory),
-            home.appending(path: "Documents/actions-runner", directoryHint: .isDirectory)
-        ]
-        candidateDirs.append(contentsOf: additionalDirectories)
-
-        // Include any runner root directory discovered directly from active Runner.Listener processes
-        for activeRootPath in activeProcesses.keys {
-            candidateDirs.append(URL(fileURLWithPath: activeRootPath, isDirectory: true))
-        }
+        // External folders are read only after explicit selection in NSOpenPanel.
+        // A process-table entry is metadata, not consent to read its directory.
+        var candidateDirs: [URL] = [home.appending(path: "actions-runner", directoryHint: .isDirectory)]
 
         // Also scan ~/.octorunner/runners/* if present
-        let managedRunnersDir = home.appending(path: ".octorunner/runners", directoryHint: .isDirectory)
-        if let children = try? FileManager.default.contentsOfDirectory(
-            at: managedRunnersDir,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]
-        ) {
-            candidateDirs.append(contentsOf: children)
+        for relativePath in [".octorunner/runners", "Library/Application Support/io.octorunner.macos/runners"] {
+            let managedRunnersDir = home.appending(path: relativePath, directoryHint: .isDirectory)
+            guard RunnerDirectoryAccessPolicy.allowsAutomaticRead(at: managedRunnersDir, homeDirectory: home) else { continue }
+            if let children = try? FileManager.default.contentsOfDirectory(
+                at: managedRunnersDir,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            ) {
+                candidateDirs.append(contentsOf: children)
+            }
         }
+        candidateDirs = candidateDirs.filter {
+            RunnerDirectoryAccessPolicy.allowsAutomaticRead(at: $0.appending(path: ".runner"), homeDirectory: home)
+        }
+        // Explicit user selections may point outside standard roots.
+        candidateDirs.append(contentsOf: additionalDirectories)
 
         var seenPaths: Set<String> = []
         var discovered: [DiscoveredLocalRunner] = []

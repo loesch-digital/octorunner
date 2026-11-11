@@ -111,7 +111,7 @@ public actor GitHubOAuthActor {
 
         return AuthenticatedGitHubSession(
             user: userProfile,
-            scopes: parsedScopes.isEmpty ? GitHubOAuthConfig.defaultScopes : parsedScopes,
+            scopes: parsedScopes,
             authMethod: authMethod
         )
     }

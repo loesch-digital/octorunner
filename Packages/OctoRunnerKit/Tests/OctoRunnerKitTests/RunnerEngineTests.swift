@@ -5,6 +5,27 @@ import Testing
 
 @Suite("RunnerEngine & Process Supervisor Tests")
 struct RunnerEngineTests {
+    @Test("Log reads never follow diagnostic symlinks outside the selected runner", arguments: [false, true])
+    func logSymlinksCannotReadOutsideRunner(linkDirectory: Bool) async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: "OctoRunnerLogBoundary-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let runner = root.appending(path: "runner")
+        let diag = runner.appending(path: "_diag")
+        let external = root.appending(path: "external")
+        try FileManager.default.createDirectory(at: runner, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: external, withIntermediateDirectories: true)
+        let outsideLog = external.appending(path: "Runner.log")
+        try "[INFO] external-file-must-not-be-read".write(to: outsideLog, atomically: true, encoding: .utf8)
+        if linkDirectory {
+            try FileManager.default.createSymbolicLink(at: diag, withDestinationURL: external)
+        } else {
+            try FileManager.default.createDirectory(at: diag, withIntermediateDirectories: true)
+            try FileManager.default.createSymbolicLink(at: diag.appending(path: "Runner.log"), withDestinationURL: outsideLog)
+        }
+        let streamer = RunnerLogStreamerActor()
+        #expect(await streamer.readRecentLogLines(forRunnerRoot: runner).isEmpty)
+    }
+
     @Test("RunnerSupervisorActor queries SMAppService login autostart state safely")
     func loginAutostartStatusQuery() async {
         let supervisor = RunnerSupervisorActor()
