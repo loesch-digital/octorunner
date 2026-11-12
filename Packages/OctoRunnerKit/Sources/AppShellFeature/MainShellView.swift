@@ -28,16 +28,11 @@ public struct MainShellView: View {
 
     @State private var activeConfigRunner: RunnerEntity?
     @State private var activeConsoleRunner: RunnerEntity?
-    @State private var embeddedLogRunnerId: UUID?
-    @State private var embeddedLogLines: [RunnerLogLine] = []
-    @State private var embeddedAutoScroll: Bool = true
-    @State private var explicitlyRequestedLogRoots: Set<URL> = []
 
     private let telemetryActor = HostTelemetryActor()
     private let oauthActor = GitHubOAuthActor()
     private let updaterActor = AppUpdaterActor()
     private let syncActor = GitHubRunnerSyncActor()
-    private let logStreamer = RunnerLogStreamerActor()
     private let provisioner = RunnerProvisionerActor()
 
     public init() {}
@@ -53,6 +48,12 @@ public struct MainShellView: View {
         .searchable(text: $searchText, prompt: "Search runners, labels...")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
+                SettingsLink {
+                    Label { Text("App Settings", bundle: .module) } icon: { Image(systemName: "gearshape") }
+                }
+                .accessibilityLabel(Text("App Settings", bundle: .module))
+                .accessibilityHint(Text("Opens OctoRunner’s application settings", bundle: .module))
+
                 Button("Sync Runners", systemImage: "arrow.triangle.2.circlepath.circle") {
                     Task { await syncLocalAndRemoteRunners(manual: true) }
                 }
@@ -87,8 +88,6 @@ public struct MainShellView: View {
                 isShowingAuthSheet = true
             }
             await syncLocalAndRemoteRunners(manual: false, explicitLogin: initialLogin)
-            guard !Task.isCancelled else { return }
-            await refreshEmbeddedLogStream()
             guard !Task.isCancelled else { return }
             await checkForAppUpdates(manual: false)
         }
@@ -209,7 +208,7 @@ public struct MainShellView: View {
         .background(OctoTheme.surfaceLow)
     }
 
-    // MARK: - Detail Content + Embedded Live Log + Fixed Bottom Footer
+    // MARK: - Dashboard and Status Footer
 
     private var detailContent: some View {
         VStack(spacing: 0) {
@@ -236,7 +235,6 @@ public struct MainShellView: View {
 
                     kpiHeaderRow
                     runnerListCard
-                    embeddedLiveWorkerStreamCard
                 }
                 .padding(20)
             }
@@ -296,7 +294,7 @@ public struct MainShellView: View {
     }
 
     private var kpiHeaderRow: some View {
-        HStack(spacing: 12) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], alignment: .leading, spacing: 12) {
             kpiCard(
                 title: "Running Instances",
                 value: "\(activeRunnerCount) of \(runners.count) active",
@@ -384,214 +382,11 @@ public struct MainShellView: View {
     }
 
     private func runnerRow(_ runner: RunnerEntity) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: "terminal.fill")
-                .font(.system(size: 16))
-                .foregroundStyle(OctoTheme.accentBlue)
-                .frame(width: 32, height: 32)
-                .background(OctoTheme.surfaceHigh, in: .rect(cornerRadius: 7))
-
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 8) {
-                    Text(runner.name)
-                        .font(.system(size: 13, weight: .semibold))
-                    RunnerStatusBadge(status: runner.status)
-                    if runner.isImportedLocal {
-                        Text("IMPORTED")
-                            .font(.system(size: 9, weight: .bold, design: .monospaced))
-                            .foregroundStyle(OctoTheme.accentBlue)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1.5)
-                            .background(OctoTheme.surfaceHighest, in: .rect(cornerRadius: 4))
-                    } else {
-                        Text("MANAGED")
-                            .font(.system(size: 9, weight: .bold, design: .monospaced))
-                            .foregroundStyle(OctoTheme.onlineGreen)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1.5)
-                            .background(OctoTheme.surfaceHighest, in: .rect(cornerRadius: 4))
-                    }
-                    if let version = runner.runnerVersion {
-                        Text("v\(version)")
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                    }
-                    if let pid = runner.pid {
-                        Text("PID \(String(pid))")
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Text(runner.scopeUrlString)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            HStack(spacing: 6) {
-                ForEach(runner.labels, id: \.self) { label in
-                    Text(label)
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(OctoTheme.surfaceHighest, in: .rect(cornerRadius: 4))
-                }
-            }
-
-            HStack(spacing: 6) {
-                if runner.isImportedLocal {
-                    Button("Migrate", systemImage: "arrow.right.doc.on.clipboard") {
-                        Task { await migrateImportedRunnerInline(runner) }
-                    }
-                    .controlSize(.small)
-                    .buttonStyle(.borderedProminent)
-                    .tint(OctoTheme.accentBlue)
-                    .help("Migrate this local runner into OctoRunner's managed folder and enable Autostart")
-                }
-
-                Button("Live Log", systemImage: "apple.terminal") {
-                    activeConsoleRunner = runner
-                }
-                .controlSize(.small)
-                .buttonStyle(.bordered)
-
-                Button("Settings", systemImage: "slider.horizontal.3") {
-                    activeConfigRunner = runner
-                }
-                .labelStyle(.iconOnly)
-                .controlSize(.small)
-                .buttonStyle(.bordered)
-                .help("Configure Runner Labels, Autostart & Workspace")
-
-                Button("Remove", systemImage: "trash", role: .destructive) {
-                    deleteRunner(runner)
-                }
-                .labelStyle(.iconOnly)
-                .buttonStyle(.borderless)
-            }
-        }
-        .padding(10)
-        .background(OctoTheme.surfaceLow, in: .rect(cornerRadius: 8))
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Runner \(runner.name)")
-        .accessibilityValue("\(runner.status.badgeTitle), \(runner.scopeUrlString)")
-    }
-
-    // MARK: - Embedded Live Worker Execution Stream (Dialog 2 Bottom Panel)
-
-    private var embeddedLiveWorkerStreamCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                Image(systemName: "waveform.path.ecg.rectangle.fill")
-                    .foregroundStyle(OctoTheme.accentBlue)
-                Text("Live Worker Execution Stream")
-                    .font(.system(size: 14, weight: .semibold))
-                if let selected = selectedEmbeddedRunner {
-                    Text("• \(selected.name)")
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(OctoTheme.accentBlue)
-                }
-
-                Spacer()
-
-                Toggle("Auto-scroll", isOn: $embeddedAutoScroll)
-                    .toggleStyle(.checkbox)
-                    .font(.system(size: 11))
-
-                Button("Refresh", systemImage: "arrow.clockwise") {
-                    Task { await refreshEmbeddedLogStream(userInitiated: true) }
-                }
-                .controlSize(.small)
-                .buttonStyle(.bordered)
-
-                if let selected = selectedEmbeddedRunner {
-                    Button("Full Console", systemImage: "arrow.up.left.and.arrow.down.right") {
-                        activeConsoleRunner = selected
-                    }
-                    .controlSize(.small)
-                    .buttonStyle(.bordered)
-                }
-            }
-
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 3) {
-                    if embeddedLogLines.isEmpty {
-                        Text("Waiting for runner diagnostic log output (_diag/Runner_*.log)…")
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .padding(8)
-                    } else {
-                        ForEach(embeddedLogLines.suffix(18)) { line in
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Text(line.timestampText)
-                                    .font(.system(size: 10, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 72, alignment: .leading)
-                                Text(line.level.rawValue)
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(color(for: line.level))
-                                    .frame(width: 34, alignment: .leading)
-                                Text(line.message)
-                                    .font(.system(size: 10, design: .monospaced))
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(1)
-                                Spacer(minLength: 0)
-                            }
-                        }
-                    }
-                }
-                .padding(10)
-            }
-            .frame(minHeight: 130, maxHeight: 170)
-            .background(OctoTheme.surfaceLow, in: .rect(cornerRadius: 8))
-        }
-        .padding(14)
-        .background(OctoTheme.surface, in: .rect(cornerRadius: 10))
-        .overlay {
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(OctoTheme.outlineVariant.opacity(0.45), lineWidth: 1)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Live Worker Execution Stream")
-    }
-
-    private var selectedEmbeddedRunner: RunnerEntity? {
-        if let id = embeddedLogRunnerId, let match = runners.first(where: { $0.id == id }) {
-            return match
-        }
-        return runners.first
-    }
-
-    private func color(for level: RunnerLogLevel) -> Color {
-        switch level {
-        case .info:
-            OctoTheme.accentBlue
-        case .warning:
-            OctoTheme.warningOrange
-        case .error:
-            OctoTheme.errorRed
-        case .success:
-            OctoTheme.onlineGreen
-        }
-    }
-
-    private func refreshEmbeddedLogStream(userInitiated: Bool = false) async {
-        guard !Task.isCancelled else { return }
-        guard let runner = selectedEmbeddedRunner else {
-            embeddedLogLines = []
-            return
-        }
-        let rootURL = URL(fileURLWithPath: runner.rootDirectoryPath ?? runner.workDirectoryPath).standardizedFileURL
-        if userInitiated { explicitlyRequestedLogRoots.insert(rootURL) }
-        guard explicitlyRequestedLogRoots.contains(rootURL)
-            || RunnerDirectoryAccessPolicy.allowsAutomaticRead(at: rootURL.appending(path: "_diag")) else {
-            embeddedLogLines = []
-            return
-        }
-        let lines = await logStreamer.readRecentLogLines(forRunnerRoot: rootURL, maxLines: 40)
-        guard !Task.isCancelled else { return }
-        embeddedLogLines = lines
+        DashboardRunnerRow(runner: runner,
+            openLog: { activeConsoleRunner = runner },
+            openSettings: { activeConfigRunner = runner },
+            migrate: { Task { await migrateImportedRunnerInline(runner) } },
+            remove: { deleteRunner(runner) })
     }
 
     private func migrateImportedRunnerInline(_ runner: RunnerEntity) async {
@@ -621,7 +416,6 @@ public struct MainShellView: View {
             )
             try? modelContext.save()
             updateStatusMessage = "Migrated '\(runner.name)' into OctoRunner managed pool with Autostart enabled."
-            await refreshEmbeddedLogStream()
         } catch {
             updateStatusMessage = "Migration failed: \(error.localizedDescription)"
         }
@@ -805,7 +599,6 @@ public struct MainShellView: View {
                 ? "Synced \(count) local runner(s) with GitHub."
                 : "No local .runner instances found in standard paths."
         }
-        await refreshEmbeddedLogStream()
     }
 
     private func importRunnerFolderViaOpenPanel() {

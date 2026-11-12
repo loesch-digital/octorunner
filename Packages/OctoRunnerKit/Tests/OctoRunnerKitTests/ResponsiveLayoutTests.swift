@@ -12,6 +12,34 @@ import Testing
 struct ResponsiveLayoutTests {
     private static var retainedContainers: [ModelContainer] = []
 
+    @Test("Dashboard runner rows stay within narrow and wide viewports with long metadata")
+    func dashboardRunnerRowsFit() throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        Self.retainedContainers.append(container)
+        let runner = RunnerEntity(name: String(repeating: "long-runner-name-", count: 6),
+            scopeUrl: try #require(URL(string: "https://github.com/organization-with-a-long-name/repository-with-a-long-name")),
+            status: .busy, labels: (1...30).map { "long-capability-label-\($0)" },
+            workDirectory: URL(fileURLWithPath: "/tmp/layout-fixture"), runnerVersion: "2.999.123", isImportedLocal: true, pid: 12345)
+        container.mainContext.insert(runner)
+        for width in [320.0, 560, 900] {
+            let viewport = CGSize(width: width, height: 200)
+            let measurement = LayoutMeasurement()
+            let host = NSHostingView(rootView: FixedTestViewport(size: viewport, measurement: measurement) {
+                DashboardRunnerRow(runner: runner, openLog: {}, openSettings: {}, migrate: {}, remove: {})
+            }.modelContainer(container))
+            host.frame = CGRect(origin: .zero, size: viewport)
+            host.layoutSubtreeIfNeeded()
+            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            let measured = try #require(measurement.size.withLock { $0 })
+            #expect(measured.width <= width)
+            #expect(measured.height <= 200)
+            if let path = ProcessInfo.processInfo.environment["OCTORUNNER_LAYOUT_CAPTURE_DIR"] {
+                try #require(bitmap.representation(using: .png, properties: [:])).write(to: URL(fileURLWithPath: path).appending(path: "dashboard-row-\(Int(width)).png"))
+            }
+        }
+    }
+
     @Test("Wizard reports the total across targets rather than instances per repository")
     func plannedRunnerCountIncludesEveryTarget() {
         let vm = AddRunnerWizardViewModel()
