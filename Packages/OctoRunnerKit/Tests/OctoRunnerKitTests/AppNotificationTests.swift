@@ -6,6 +6,13 @@ import UserNotifications
 
 @MainActor
 struct AppNotificationTests {
+    @Test("Foreground notifications request banners and history while respecting content sound")
+    func foregroundPresentation() {
+        #expect(NotificationPresentationDelegate.foregroundOptions.contains(.banner))
+        #expect(NotificationPresentationDelegate.foregroundOptions.contains(.list))
+        #expect(NotificationPresentationDelegate.foregroundOptions.contains(.sound))
+    }
+
     @Test("System authorization maps every known status without transferring notification settings", arguments: [
         UNAuthorizationStatus.notDetermined, .denied, .authorized, .provisional
     ])

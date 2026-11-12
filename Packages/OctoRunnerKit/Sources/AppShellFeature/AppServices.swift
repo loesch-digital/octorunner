@@ -7,6 +7,7 @@ public final class AppServices {
     public let preferences: AppPreferencesStore
     public let integration: AppIntegrationController
     public let notifications: AppNotificationsController
+    public let healthMonitor: RunnerHealthMonitor
 
     public init(
         preferences: AppPreferencesStore = AppPreferencesStore(),
@@ -16,5 +17,6 @@ public final class AppServices {
         self.preferences = preferences
         integration = AppIntegrationController(preferences: preferences, loginService: loginService)
         notifications = AppNotificationsController(preferences: preferences, client: notificationClient)
+        healthMonitor = RunnerHealthMonitor(notifications: notifications, preferences: preferences)
     }
 }

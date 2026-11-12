@@ -8,8 +8,10 @@ import SwiftUI
 public struct MenuBarStatusView: View {
     @Query(sort: \RunnerEntity.name) private var runners: [RunnerEntity]
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.locale) private var locale
+    private let monitor: RunnerHealthMonitor?
 
-    public init() {}
+    public init(monitor: RunnerHealthMonitor? = nil) { self.monitor = monitor }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -55,12 +57,9 @@ public struct MenuBarStatusView: View {
                 .accessibilityHint("Brings the existing OctoRunner dashboard window to the front")
             }
 
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(activeOnlineCount > 0 ? OctoTheme.onlineGreen : .secondary)
-                    .frame(width: 7, height: 7)
-                    .accessibilityHidden(true)
-                Text("Background Engine active (\(activeOnlineCount)/\(runners.count) online)")
+            TimelineView(.periodic(from: .now, by: 15)) { context in
+                let health = monitor?.health(at: context.date) ?? .unknown
+                Label(health.localizedTitle(locale: locale), systemImage: health.symbolName)
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(.secondary)
             }
@@ -69,8 +68,7 @@ public struct MenuBarStatusView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(OctoTheme.surface, in: .rect(cornerRadius: 6))
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Background Engine Status")
-            .accessibilityValue("\(activeOnlineCount) of \(runners.count) runners online")
+            .accessibilityLabel(Text("Local runner status", bundle: .module))
         }
     }
 
@@ -189,7 +187,4 @@ public struct MenuBarStatusView: View {
         }
     }
 
-    private var activeOnlineCount: Int {
-        runners.count(where: { $0.status == .idle || $0.status == .busy })
-    }
 }

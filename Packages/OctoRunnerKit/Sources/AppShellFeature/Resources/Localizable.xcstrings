@@ -1122,6 +1122,261 @@
           }
         }
       }
+    },
+    "Runner status unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner status unknown"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Status unbekannt"
+          }
+        }
+      }
+    },
+    "Runners busy or restarting": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runners busy or restarting"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner beschäftigt oder im Neustart"
+          }
+        }
+      }
+    },
+    "Runner offline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner offline"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner offline"
+          }
+        }
+      }
+    },
+    "Runner online": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner online"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner online"
+          }
+        }
+      }
+    },
+    "Runner error": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner error"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Fehler"
+          }
+        }
+      }
+    },
+    "Runner comes online": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner comes online"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner geht online"
+          }
+        }
+      }
+    },
+    "Reports a detected transition to online, excluding initial app startup.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports a detected transition to online, excluding initial app startup."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldet einen erkannten Wechsel zu online, außer beim ersten Start der App."
+          }
+        }
+      }
+    },
+    "Runner enters an error state": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner enters an error state"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner meldet einen Fehler"
+          }
+        }
+      }
+    },
+    "Reports a detected transition to a runner error state.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports a detected transition to a runner error state."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldet einen erkannten Wechsel in einen Fehlerzustand."
+          }
+        }
+      }
+    },
+    "Local runner status": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local runner status"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokaler Runner-Status"
+          }
+        }
+      }
+    },
+    "All local runners active": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All local runners active"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle lokalen Runner aktiv"
+          }
+        }
+      }
+    },
+    "Runner process stopped": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner process stopped"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Prozess beendet"
+          }
+        }
+      }
+    },
+    "Runner process started": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner process started"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Prozess gestartet"
+          }
+        }
+      }
+    },
+    "Runner events track local process availability. Monitoring continues with windows closed. Quitting OctoRunner stops monitoring and new status notifications.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner events track local process availability. Monitoring continues with windows closed. Quitting OctoRunner stops monitoring and new status notifications."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Ereignisse beziehen sich auf lokale Prozesse. Die Überwachung läuft auch bei geschlossenen Fenstern weiter. Das Beenden von OctoRunner stoppt die Überwachung und neue Statusmitteilungen."
+          }
+        }
+      }
+    },
+    "Runner error alerts require crash supervision in v0.6.0 and are not active yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner error alerts require crash supervision in v0.6.0 and are not active yet."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Fehlermeldungen benötigen die Crash-Überwachung aus v0.6.0 und sind noch nicht aktiv."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

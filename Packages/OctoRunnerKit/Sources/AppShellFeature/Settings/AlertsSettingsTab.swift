@@ -40,11 +40,26 @@ public struct AlertsSettingsTab: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Section {
+                Toggle(isOn: $preferences.notificationPolicy.runnerOnline) {
+                    Text("Runner comes online", bundle: .module)
+                }
+                .accessibilityLabel(Text("Runner comes online", bundle: .module))
+                .accessibilityHint(Text("Reports a detected transition to online, excluding initial app startup.", bundle: .module))
                 Toggle(isOn: $preferences.notificationPolicy.runnerOffline) {
                     Text("Runner goes offline", bundle: .module)
                 }
                 .accessibilityLabel(Text("Runner goes offline", bundle: .module))
                 .accessibilityHint(Text("Reports a detected transition from online to offline.", bundle: .module))
+                Toggle(isOn: $preferences.notificationPolicy.runnerError) {
+                    Text("Runner enters an error state", bundle: .module)
+                }
+                .accessibilityLabel(Text("Runner enters an error state", bundle: .module))
+                .accessibilityHint(Text("Reports a detected transition to a runner error state.", bundle: .module))
+                .disabled(true)
+                Text("Runner error alerts require crash supervision in v0.6.0 and are not active yet.", bundle: .module)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Toggle(isOn: $preferences.notificationPolicy.jobFailure) {
                     Text("Local workflow job fails", bundle: .module)
                 }
@@ -57,6 +72,9 @@ public struct AlertsSettingsTab: View {
                 .accessibilityHint(Text("Warns when available space crosses the configured storage threshold.", bundle: .module))
             } header: {
                 Text("Events", bundle: .module)
+            } footer: {
+                Text("Runner events track local process availability. Monitoring continues with windows closed. Quitting OctoRunner stops monitoring and new status notifications.", bundle: .module)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .disabled(!preferences.notificationPolicy.enabled)
         }

@@ -3,9 +3,22 @@ import AppShellFeature
 import CoreModels
 import SwiftData
 import SwiftUI
+import UserNotifications
 
+@MainActor
 public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
-    var integration: AppIntegrationController?
+    let services = AppServices()
+    let modelContainer = OctoRunnerPersistence.makeSharedContainer()
+    private let notificationPresenter = NotificationPresentationDelegate()
+
+    public func applicationDidFinishLaunching(_ notification: Notification) {
+        UNUserNotificationCenter.current().delegate = notificationPresenter
+        services.healthMonitor.start(container: modelContainer)
+    }
+
+    public func applicationWillTerminate(_ notification: Notification) {
+        services.healthMonitor.stop()
+    }
 
     public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         AppQuitConfirmation.shouldTerminate(after: AppQuitConfirmation.makeAlert().runModal())
@@ -20,17 +33,17 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
         // Re-evaluate after AppKit processes window and preference changes, including
         // when the dashboard is closed. A visible Settings window also keeps its Dock icon.
         let hasVisibleWindow = NSApplication.shared.windows.contains { $0.canBecomeMain && $0.isVisible }
-        integration?.applyDockVisibility(hasVisibleDashboard: hasVisibleWindow)
+        services.integration.applyDockVisibility(hasVisibleDashboard: hasVisibleWindow)
     }
 }
 
 @main
 struct OctoRunnerApp: App {
     @NSApplicationDelegateAdaptor(OctoRunnerAppDelegate.self) private var appDelegate
-    @State private var services = AppServices()
-    private let modelContainer: ModelContainer = OctoRunnerPersistence.makeSharedContainer()
 
     var body: some Scene {
+        let services = appDelegate.services
+        let modelContainer = appDelegate.modelContainer
         @Bindable var preferences = services.preferences
         Window("OctoRunner", id: "main-dashboard") {
             MainShellView()
@@ -39,7 +52,6 @@ struct OctoRunnerApp: App {
                 .environment(services.notifications)
                 .environment(\.locale, preferences.language.locale)
                 .frame(minWidth: 960, minHeight: 620)
-                .task { appDelegate.integration = services.integration }
         }
         .modelContainer(modelContainer)
         .windowToolbarStyle(.unified)
@@ -53,13 +65,16 @@ struct OctoRunnerApp: App {
         }
         .modelContainer(modelContainer)
 
-        MenuBarExtra("OctoRunner", systemImage: "infinity.circle.fill", isInserted: $preferences.showInMenuBar) {
-            MenuBarStatusView()
+        MenuBarExtra(isInserted: $preferences.showInMenuBar) {
+            MenuBarStatusView(monitor: services.healthMonitor)
                 .environment(services.preferences)
                 .environment(services.integration)
                 .environment(services.notifications)
                 .environment(\.locale, preferences.language.locale)
                 .modelContainer(modelContainer)
+        } label: {
+            RunnerMenuBarLabel(monitor: services.healthMonitor)
+                .environment(\.locale, preferences.language.locale)
         }
         .menuBarExtraStyle(.window)
     }

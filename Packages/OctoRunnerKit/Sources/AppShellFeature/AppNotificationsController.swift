@@ -71,6 +71,8 @@ public final class AppNotificationsController {
         guard policy.enabled else { return false }
         switch kind {
         case .runnerOffline: return policy.runnerOffline
+        case .runnerOnline: return policy.runnerOnline
+        case .runnerError: return policy.runnerError
         case .jobFailure: return policy.jobFailure
         case .lowDiskSpace: return policy.lowDiskSpace
         }
