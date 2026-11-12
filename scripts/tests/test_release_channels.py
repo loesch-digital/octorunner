@@ -7,14 +7,20 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'release_tools.py'
 
 
 class ReleaseChannelTests(unittest.TestCase):
     def run_tool(self, *arguments, env=None):
+        child_env = dict(os.environ if env is None else env)
+        if env is None:
+            child_env.pop('GITHUB_OUTPUT', None)
+        child_env.pop('GH_TOKEN', None)
+        child_env.pop('GITHUB_TOKEN', None)
         return subprocess.run([sys.executable, str(SCRIPT), *arguments],
-                              capture_output=True, text=True, env=env)
+                              capture_output=True, text=True, env=child_env)
 
     def test_metadata_distinguishes_numeric_bundle_and_full_beta_version(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -82,6 +88,16 @@ class ReleaseChannelTests(unittest.TestCase):
             result = self.run_tool('stamp', 'v0.6.0-beta.1', str(app))
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(info.read_bytes(), before)
+
+    def test_cli_fixture_does_not_write_to_the_parent_workflow_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            parent_output = Path(directory) / 'parent-output'
+            parent_output.write_text('parent=value\n')
+            with patch.dict(os.environ, {'GITHUB_OUTPUT': str(parent_output)}):
+                result = self.run_tool('metadata', 'v0.5.0')
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(parent_output.read_text(), 'parent=value\n')
+            self.assertIn('update_homebrew=true', result.stdout)
 
     def test_stable_metadata_allows_homebrew(self):
         result = self.run_tool('metadata', 'v0.5.0')
