@@ -25,6 +25,15 @@ final class SettingsNavigationUITests: XCTestCase {
             app.buttons[category].firstMatch.click()
             XCTAssertTrue(app.descendants(matching: .any)[control].firstMatch.waitForExistence(timeout: 5), "Missing content for \(category)")
         }
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "Settings search is missing from the toolbar")
+        search.click()
+        search.typeText("notification sound")
+        let result = app.buttons["settings.search.notifications"]
+        XCTAssertTrue(result.waitForExistence(timeout: 5), "Search did not find notification sound options")
+        result.click()
+        XCTAssertTrue(app.descendants(matching: .any)["Enable macOS notifications"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertEqual(search.value as? String, "", "Selecting a result should leave normal category navigation available")
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.lifetime = .keepAlways
         add(attachment)

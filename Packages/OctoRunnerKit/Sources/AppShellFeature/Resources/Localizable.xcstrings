@@ -3465,6 +3465,380 @@
           }
         }
       }
+    },
+    "Control app visibility and interface language.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control app visibility and interface language."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege die Sichtbarkeit der App und die Sprache der Oberfläche fest."
+          }
+        }
+      }
+    },
+    "Choose where OctoRunner appears while it is running.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose where OctoRunner appears while it is running."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege fest, wo OctoRunner während des Betriebs sichtbar ist."
+          }
+        }
+      }
+    },
+    "Choose the language used throughout OctoRunner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the language used throughout OctoRunner."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle die Sprache für die gesamte Oberfläche."
+          }
+        }
+      }
+    },
+    "Keep app startup separate from your independent runner services.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep app startup separate from your independent runner services."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-Start und unabhängig laufende Runner-Dienste werden getrennt verwaltet."
+          }
+        }
+      }
+    },
+    "System startup & login persistence": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System startup & login persistence"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systemstart & Anmeldung"
+          }
+        }
+      }
+    },
+    "Choose whether the OctoRunner app opens when you sign in.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose whether the OctoRunner app opens when you sign in."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege fest, ob die OctoRunner-App bei deiner Anmeldung startet."
+          }
+        }
+      }
+    },
+    "Set the shell environment and tool paths for newly created runners.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set the shell environment and tool paths for newly created runners."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konfiguriere Shell-Umgebung und Werkzeugpfade für neu angelegte Runner."
+          }
+        }
+      }
+    },
+    "Configure recovery for newly installed runner services.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure recovery for newly installed runner services."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konfiguriere den Wiederanlauf neu installierter Runner-Dienste."
+          }
+        }
+      }
+    },
+    "Choose how launchd restarts a runner after its process exits.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose how launchd restarts a runner after its process exits."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege fest, wie launchd einen beendeten Runner-Prozess neu startet."
+          }
+        }
+      }
+    },
+    "Choose which local events should notify you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose which local events should notify you."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle die lokalen Ereignisse aus, über die du informiert werden möchtest."
+          }
+        }
+      }
+    },
+    "Enable native macOS delivery and optional notification sounds.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable native macOS delivery and optional notification sounds."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktiviere native macOS-Mitteilungen und bei Bedarf einen Hinweiston."
+          }
+        }
+      }
+    },
+    "Event notification triggers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Event notification triggers"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ereignisse für Mitteilungen"
+          }
+        }
+      }
+    },
+    "Select the runner, workflow and storage events you want to receive.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select the runner, workflow and storage events you want to receive."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle die gewünschten Runner-, Workflow- und Speicherereignisse aus."
+          }
+        }
+      }
+    },
+    "Manage GitHub identities and review local credential security.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage GitHub identities and review local credential security."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwalte GitHub-Konten und prüfe den lokalen Schutz der Zugangsdaten."
+          }
+        }
+      }
+    },
+    "Connect an identity and choose which account OctoRunner uses.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect an identity and choose which account OctoRunner uses."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinde ein Konto und wähle aus, welches OctoRunner verwendet."
+          }
+        }
+      }
+    },
+    "GitHub account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub account"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Konto"
+          }
+        }
+      }
+    },
+    "Review authentication and permissions reported by GitHub.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review authentication and permissions reported by GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüfe Anmeldung und die von GitHub gemeldeten Berechtigungen."
+          }
+        }
+      }
+    },
+    "Credentials stay in macOS Keychain; token contents are never displayed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credentials stay in macOS Keychain; token contents are never displayed."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugangsdaten bleiben im macOS-Schlüsselbund; Token-Inhalte werden nicht angezeigt."
+          }
+        }
+      }
+    },
+    "Changes are saved automatically": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes are saved automatically"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Änderungen werden automatisch gespeichert"
+          }
+        }
+      }
+    },
+    "Search settings…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search settings…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einstellungen durchsuchen …"
+          }
+        }
+      }
+    },
+    "Matching settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matching settings"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passende Einstellungen"
+          }
+        }
+      }
+    },
+    "Choose a category to open its matching options.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a category to open its matching options."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle einen Bereich aus, um die passenden Optionen zu öffnen."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

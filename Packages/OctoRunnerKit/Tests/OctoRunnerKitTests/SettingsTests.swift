@@ -13,6 +13,49 @@ import Testing
 struct SettingsTests {
     private static var retainedContainers: [ModelContainer] = []
 
+    @Test("Settings cards render every category at narrow and wide widths in both languages and appearances")
+    func settingsCardsRendering() throws {
+        let name = "octorunner-settings-cards-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let services = AppServices(preferences: AppPreferencesStore(defaults: defaults),
+            loginService: SettingsLoginService(), notificationClient: SettingsNotificationClient())
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        Self.retainedContainers.append(container)
+        let pages: [(String, AnyView)] = [
+            ("general", AnyView(GeneralSettingsTab())),
+            ("background", AnyView(BackgroundSettingsTab())),
+            ("failover", AnyView(FailoverSettingsTab())),
+            ("auth", AnyView(SecurityTokenSettingsTab(accountSession: services.accounts))),
+            ("notifications", AnyView(AlertsSettingsTab()))
+        ]
+        for (page, view) in pages {
+            for language in ["de", "en"] {
+                for width in [620.0, 960.0] {
+                    for scheme in [ColorScheme.light, .dark] {
+                        let host = NSHostingView(rootView: view
+                            .environment(services.preferences).environment(services.integration)
+                            .environment(services.notifications).modelContainer(container)
+                            .environment(\.locale, Locale(identifier: language)).preferredColorScheme(scheme)
+                            .frame(width: width, height: 600))
+                        host.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
+                        host.frame = CGRect(x: 0, y: 0, width: width, height: 600)
+                        host.layoutSubtreeIfNeeded()
+                        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                        host.cacheDisplay(in: host.bounds, to: bitmap)
+                        #expect(host.fittingSize.width <= width)
+                        #expect(bitmap.pixelsWide > 0 && bitmap.pixelsHigh > 0)
+                        if let path = ProcessInfo.processInfo.environment["OCTORUNNER_LAYOUT_CAPTURE_DIR"] {
+                            try #require(bitmap.representation(using: .png, properties: [:])).write(to:
+                                URL(fileURLWithPath: path).appending(path: "settings-page-\(page)-\(language)-\(Int(width))-\(scheme == .dark ? "dark" : "light").png"))
+                        }
+                    }
+                }
+            }
+        }
+        #expect(!services.preferences.launchAtLogin && !services.preferences.notificationPolicy.enabled)
+    }
+
     @Test("The main sidebar offers general app settings rather than a runner-count category")
     func mainSettingsDestination() {
         #expect(SidebarSection.launchdSettings.title == "Settings")
@@ -131,6 +174,27 @@ struct SettingsTests {
                         foregroundRGB: (foreground.redComponent, foreground.greenComponent, foreground.blueComponent),
                         backgroundRGB: (background.redComponent, background.greenComponent, background.blueComponent))
                     #expect(ratio >= 4.5, "Appearance: \(name.rawValue), ratio: \(ratio), foreground: \(foreground), background: \(background)")
+                }
+            }
+        }
+    }
+
+    @Test("Settings explanations retain AA contrast on card and page backgrounds in Light and Dark")
+    func settingsSupportingTextContrast() throws {
+        for name in [NSAppearance.Name.aqua, .darkAqua] {
+            let appearance = try #require(NSAppearance(named: name))
+            appearance.performAsCurrentDrawingAppearance {
+                for surface in [OctoTheme.surface, OctoTheme.surfaceLowest] {
+                    let foreground = NSColor(OctoTheme.secondaryText).usingColorSpace(.sRGB)!
+                    let background = NSColor(surface).usingColorSpace(.sRGB)!
+                    let alpha = foreground.alphaComponent
+                    let ratio = OctoTheme.wcagContrastRatio(
+                        foregroundRGB: (
+                            foreground.redComponent * alpha + background.redComponent * (1 - alpha),
+                            foreground.greenComponent * alpha + background.greenComponent * (1 - alpha),
+                            foreground.blueComponent * alpha + background.blueComponent * (1 - alpha)),
+                        backgroundRGB: (background.redComponent, background.greenComponent, background.blueComponent))
+                    #expect(ratio >= 4.5)
                 }
             }
         }
