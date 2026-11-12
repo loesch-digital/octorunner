@@ -9,7 +9,7 @@ public actor GitHubOAuthActor: GitHubAuthenticating {
     private let clientID: String
 
     public init(
-        session: URLSession = .shared,
+        session: URLSession = URLSession(configuration: .ephemeral),
         keychain: KeychainVaultActor = KeychainVaultActor(),
         clientID: String = GitHubOAuthConfig.defaultClientID,
         transport: (any GitHubActionsTransport)? = nil,
@@ -90,11 +90,14 @@ public actor GitHubOAuthActor: GitHubAuthenticating {
     /// Validate token against `GET https://api.github.com/user`, verify scopes, and store in macOS Keychain.
     public func validateAndStoreToken(_ token: String, authMethod: String) async throws -> AuthenticatedGitHubSession {
         try Task.checkCancellation()
+        guard !token.isEmpty, token.utf8.allSatisfy({ (33...126).contains($0) }) else {
+            throw GitHubAuthError.invalidTokenOrUnauthorized
+        }
         var request = URLRequest(url: GitHubOAuthConfig.userProfileEndpoint)
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        request.setValue("2026-03-10", forHTTPHeaderField: "X-GitHub-Api-Version")
 
         let response = try await transport.send(request)
         try Task.checkCancellation()

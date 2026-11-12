@@ -9,6 +9,55 @@ import Testing
 struct AuthCancellationTests {
     private static var containers: [ModelContainer] = []
 
+    @Test("Successful PAT authentication publishes metadata once and clears the entered secret")
+    func successfulPAT() async throws {
+        let context = try makeContext()
+        let fixture = GatedAuthenticationFixture(immediate: true)
+        let model = OAuthDeviceFlowViewModel(oauthActor: fixture)
+        model.patInput = "synthetic-fixture"
+        await model.validatePersonalAccessToken(modelContext: context)
+        guard case .authenticated(let session) = model.state else {
+            Issue.record("Expected authenticated state")
+            return
+        }
+        #expect(model.patInput.isEmpty && !model.isValidatingPAT && model.errorMessage == nil)
+        let account = try #require(context.fetch(FetchDescriptor<GitHubAccountEntity>()).first)
+        #expect(account.githubUserId == session.user.id && account.keychainAccountKey == session.keychainAccountKey)
+        #expect(try context.fetchCount(FetchDescriptor<AuditLogEntity>()) == 1)
+        #expect(await fixture.calls == 1)
+        #expect(await fixture.discardedCredentials == 0)
+    }
+
+    @Test("A duplicate PAT click cannot start another authentication or save a second account")
+    func duplicatePAT() async throws {
+        let context = try makeContext()
+        let fixture = GatedAuthenticationFixture()
+        let model = OAuthDeviceFlowViewModel(oauthActor: fixture)
+        model.patInput = "synthetic-fixture"
+        let task = Task { await model.validatePersonalAccessToken(modelContext: context) }
+        await fixture.waitForRequest()
+        await model.validatePersonalAccessToken(modelContext: context)
+        #expect(await fixture.calls == 1)
+        await fixture.releaseSession()
+        await task.value
+        #expect(try context.fetchCount(FetchDescriptor<GitHubAccountEntity>()) == 1)
+        #expect(try context.fetchCount(FetchDescriptor<AuditLogEntity>()) == 1)
+    }
+
+    @Test("Failed PAT authentication leaves no account or success audit and allows retry")
+    func failedPAT() async throws {
+        let context = try makeContext()
+        let fixture = GatedAuthenticationFixture(fails: true)
+        let model = OAuthDeviceFlowViewModel(oauthActor: fixture)
+        model.patInput = "synthetic-fixture"
+        await model.validatePersonalAccessToken(modelContext: context)
+        #expect(model.state == .initial && model.errorMessage != nil && !model.isValidatingPAT)
+        #expect(try context.fetchCount(FetchDescriptor<GitHubAccountEntity>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<AuditLogEntity>()) == 0)
+        model.cancelFlow()
+        #expect(model.errorMessage == nil && model.patInput.isEmpty)
+    }
+
     @Test("Closing PAT authentication rejects a late successful response without metadata writes")
     func latePAT() async throws {
         let context = try makeContext()
@@ -69,6 +118,7 @@ struct AuthCancellationTests {
 
 private actor GatedAuthenticationFixture: GitHubAuthenticating {
     let immediate: Bool
+    let fails: Bool
     private var sessionResponse: CheckedContinuation<AuthenticatedGitHubSession, Error>?
     private var deviceResponse: CheckedContinuation<GitHubDeviceCodeResponse, Error>?
     private var started: CheckedContinuation<Void, Never>?
@@ -76,7 +126,7 @@ private actor GatedAuthenticationFixture: GitHubAuthenticating {
     private(set) var responseWasCancelled = false
     private(set) var discardedCredentials = 0
     func discardSessionCredential(_ session: AuthenticatedGitHubSession) async throws { discardedCredentials += 1 }
-    init(immediate: Bool = false) { self.immediate = immediate }
+    init(immediate: Bool = false, fails: Bool = false) { self.immediate = immediate; self.fails = fails }
     func requestDeviceCode(scopes: [String]) async throws -> GitHubDeviceCodeResponse {
         calls += 1
         let response: GitHubDeviceCodeResponse = try await withCheckedThrowingContinuation {
@@ -90,6 +140,7 @@ private actor GatedAuthenticationFixture: GitHubAuthenticating {
     }
     func authenticateWithPersonalAccessToken(_ pat: String) async throws -> AuthenticatedGitHubSession {
         calls += 1
+        if fails { throw GitHubAuthError.accessDenied }
         if immediate { return session }
         let response: AuthenticatedGitHubSession = try await withCheckedThrowingContinuation {
             sessionResponse = $0; started?.resume(); started = nil

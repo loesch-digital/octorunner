@@ -23,7 +23,7 @@ struct AuthCredentialIdentityTests {
         let transport = AuthIdentityTransport()
         let writer = CancellingIdentityWriter(vault: vault)
         let authenticator = GitHubOAuthActor(keychain: vault, transport: transport, tokenWriter: writer)
-        let task = Task {
+        let task = Task<Void, Never> {
             await #expect(throws: CancellationError.self) {
                 _ = try await authenticator.authenticateWithPersonalAccessToken("synthetic-new")
             }

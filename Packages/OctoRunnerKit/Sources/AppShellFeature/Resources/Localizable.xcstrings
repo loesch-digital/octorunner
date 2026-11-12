@@ -2614,6 +2614,566 @@
           }
         }
       }
+    },
+    "Auth & Tokens": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auth & Tokens"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auth & Tokens"
+          }
+        }
+      }
+    },
+    "Reauthentication required": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reauthentication required"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erneute Anmeldung erforderlich"
+          }
+        }
+      }
+    },
+    "Selected account": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected account"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausgewählter Account"
+          }
+        }
+      }
+    },
+    "Personal access token": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal access token"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persönlicher Zugriffstoken"
+          }
+        }
+      }
+    },
+    "GitHub device flow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub device flow"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Geräteanmeldung"
+          }
+        }
+      }
+    },
+    "Unknown authentication method": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown authentication method"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unbekannte Anmeldemethode"
+          }
+        }
+      }
+    },
+    "Authentication method": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authentication method"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anmeldemethode"
+          }
+        }
+      }
+    },
+    "Last authenticated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last authenticated"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuletzt angemeldet"
+          }
+        }
+      }
+    },
+    "Last reported OAuth scopes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last reported OAuth scopes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuletzt gemeldete OAuth-Rechte"
+          }
+        }
+      }
+    },
+    "GitHub did not report OAuth scopes. Fine-grained token permissions are checked by each API operation.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub did not report OAuth scopes. Fine-grained token permissions are checked by each API operation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub hat keine OAuth-Rechte gemeldet. Rechte fein abgestufter Tokens werden bei der jeweiligen API-Aktion geprüft."
+          }
+        }
+      }
+    },
+    "Use account": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use account"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account verwenden"
+          }
+        }
+      }
+    },
+    "Selects this account for GitHub API requests without stopping runners.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selects this account for GitHub API requests without stopping runners."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wählt diesen Account für GitHub-API-Anfragen aus, ohne Runner zu stoppen."
+          }
+        }
+      }
+    },
+    "Re-authenticate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-authenticate"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erneut anmelden"
+          }
+        }
+      }
+    },
+    "Sign in with the same GitHub identity to replace its credentials.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with the same GitHub identity to replace its credentials."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich mit derselben GitHub-Identität an, um ihre Zugangsdaten zu ersetzen."
+          }
+        }
+      }
+    },
+    "Disconnect account…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect account…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account trennen …"
+          }
+        }
+      }
+    },
+    "Asks before removing this account and its local credentials. Runner services keep running.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks before removing this account and its local credentials. Runner services keep running."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fragt vor dem Entfernen dieses Accounts und seiner lokalen Zugangsdaten nach. Runner-Dienste laufen weiter."
+          }
+        }
+      }
+    },
+    "Connect GitHub account…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect GitHub account…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Account verbinden …"
+          }
+        }
+      }
+    },
+    "Opens GitHub device login or personal access token validation.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens GitHub device login or personal access token validation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet die GitHub-Geräteanmeldung oder die Prüfung eines persönlichen Zugriffstokens."
+          }
+        }
+      }
+    },
+    "No GitHub accounts connected. Connect an account to manage runners and load workflow history.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No GitHub accounts connected. Connect an account to manage runners and load workflow history."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine GitHub-Accounts verbunden. Verbinde einen Account, um Runner zu verwalten und den Workflow-Verlauf zu laden."
+          }
+        }
+      }
+    },
+    "Removing local credentials…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removing local credentials…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Zugangsdaten werden entfernt …"
+          }
+        }
+      }
+    },
+    "Connected GitHub accounts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected GitHub accounts"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbundene GitHub-Accounts"
+          }
+        }
+      }
+    },
+    "The selected account is used for GitHub requests. Its token is checked when used; selection alone does not confirm current permissions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The selected account is used for GitHub requests. Its token is checked when used; selection alone does not confirm current permissions."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der ausgewählte Account wird für GitHub-Anfragen verwendet. Sein Token wird bei Verwendung geprüft; die Auswahl allein bestätigt keine aktuellen Berechtigungen."
+          }
+        }
+      }
+    },
+    "Credentials are stored only in macOS Keychain.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credentials are stored only in macOS Keychain."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugangsdaten werden ausschließlich im macOS-Schlüsselbund gespeichert."
+          }
+        }
+      }
+    },
+    "Sign in with the same GitHub identity to replace credentials. A different identity is added as a separate account.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with the same GitHub identity to replace credentials. A different identity is added as a separate account."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich mit derselben GitHub-Identität an, um Zugangsdaten zu ersetzen. Eine andere Identität wird als eigener Account hinzugefügt."
+          }
+        }
+      }
+    },
+    "Token contents and expiration dates are not exposed here. Fine-grained PAT permissions depend on the resources you selected on GitHub.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token contents and expiration dates are not exposed here. Fine-grained PAT permissions depend on the resources you selected on GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token-Inhalte und Ablaufdaten werden hier nicht angezeigt. Die Rechte fein abgestufter PATs hängen von den auf GitHub ausgewählten Ressourcen ab."
+          }
+        }
+      }
+    },
+    "Credential security": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credential security"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sicherheit der Zugangsdaten"
+          }
+        }
+      }
+    },
+    "Disconnect removes local credentials only. Revoke a token or OAuth authorization separately in GitHub Settings. Installed runner services keep running.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect removes local credentials only. Revoke a token or OAuth authorization separately in GitHub Settings. Installed runner services keep running."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Trennen entfernt nur lokale Zugangsdaten. Widerrufe Tokens oder OAuth-Freigaben separat in den GitHub-Einstellungen. Installierte Runner-Dienste laufen weiter."
+          }
+        }
+      }
+    },
+    "Disconnect GitHub account?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect GitHub account?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Account trennen?"
+          }
+        }
+      }
+    },
+    "Remove local credentials": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove local credentials"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Zugangsdaten entfernen"
+          }
+        }
+      }
+    },
+    "Removes the confirmed account and its local credentials. It does not revoke access on GitHub.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removes the confirmed account and its local credentials. It does not revoke access on GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernt den bestätigten Account und seine lokalen Zugangsdaten. Der Zugriff auf GitHub wird nicht widerrufen."
+          }
+        }
+      }
+    },
+    "Local credentials for @%@ will be removed. Runner services keep running; GitHub authorization is not revoked.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local credentials for @%@ will be removed. Runner services keep running; GitHub authorization is not revoked."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die lokalen Zugangsdaten für @%@ werden entfernt. Runner-Dienste laufen weiter; die GitHub-Freigabe wird nicht widerrufen."
+          }
+        }
+      }
+    },
+    "macOS Keychain Updated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS Keychain Updated"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS-Schlüsselbund aktualisiert"
+          }
+        }
+      }
+    },
+    "Credentials saved in macOS Keychain on this Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credentials saved in macOS Keychain on this Mac."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugangsdaten im macOS-Schlüsselbund auf diesem Mac gespeichert."
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig"
+          }
+        }
+      }
+    },
+    "Closes authentication and returns to the previous view.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closes authentication and returns to the previous view."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schließt die Anmeldung und kehrt zur vorherigen Ansicht zurück."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

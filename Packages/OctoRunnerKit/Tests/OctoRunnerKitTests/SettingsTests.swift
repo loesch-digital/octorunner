@@ -5,11 +5,37 @@ import DesignSystem
 import Foundation
 import RunnerEngine
 import SwiftUI
+import SwiftData
 import Testing
 
 @MainActor
 @Suite("Settings system integration", .serialized)
 struct SettingsTests {
+    private static var retainedContainers: [ModelContainer] = []
+
+    @Test("The main sidebar offers general app settings rather than a runner-count category")
+    func mainSettingsDestination() {
+        #expect(SidebarSection.launchdSettings.title == "Settings")
+        #expect(SidebarSection.launchdSettings.systemImage == "gearshape")
+    }
+
+    @Test("App settings render inside the main window with the same shared system services")
+    func mainSettingsRender() throws {
+        let name = "octorunner-main-settings-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let services = AppServices(preferences: AppPreferencesStore(defaults: defaults),
+            loginService: SettingsLoginService(), notificationClient: SettingsNotificationClient())
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        Self.retainedContainers.append(container)
+        let host = NSHostingView(rootView: MainShellView(section: .launchdSettings, accountSession: services.accounts)
+            .environment(services.preferences).environment(services.integration).environment(services.notifications)
+            .modelContainer(container))
+        host.frame = CGRect(x: 0, y: 0, width: 960, height: 620)
+        host.layoutSubtreeIfNeeded()
+        #expect(host.bitmapImageRepForCachingDisplay(in: host.bounds) != nil)
+        #expect(!services.preferences.launchAtLogin && !services.preferences.notificationPolicy.enabled)
+    }
     @Test("Language selection resolves explicit locales and preserves the system fallback")
     func languageLocale() {
         #expect(AppLanguage.german.locale.identifier == "de")
@@ -56,10 +82,13 @@ struct SettingsTests {
         defer { defaults.removePersistentDomain(forName: name) }
         let preferences = AppPreferencesStore(defaults: defaults)
         let services = AppServices(preferences: preferences, loginService: SettingsLoginService(), notificationClient: SettingsNotificationClient())
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        Self.retainedContainers.append(container)
         for language in [AppLanguage.english, .german] {
             for scheme in [ColorScheme.light, .dark] {
                 preferences.language = language
                 let host = NSHostingView(rootView: SettingsWindowView()
+                    .modelContainer(container)
                     .environment(preferences)
                     .environment(services.integration)
                     .environment(services.notifications)

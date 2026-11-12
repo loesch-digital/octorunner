@@ -57,7 +57,7 @@ struct OctoRunnerApp: App {
         .windowToolbarStyle(.unified)
 
         Settings {
-            SettingsWindowView()
+            SettingsWindowView(accountSession: services.accounts)
                 .environment(services.preferences)
                 .environment(services.integration)
                 .environment(services.notifications)

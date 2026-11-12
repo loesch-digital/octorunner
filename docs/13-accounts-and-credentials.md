@@ -31,5 +31,31 @@ Accountwechsel, parallele Abmeldung und Savefehler einschließlich eines später
 erfolgreichen Context-Saves. Die Keychain-Integration nutzt ausschließlich
 synthetische Werte in jeweils eigenen UUID-Testservices.
 
-Offen in diesem Zwischenstand: Auth-&-Tokens-Settings-Ansicht und interaktive
-Abnahme mit echten Accounts. Dieser Stand ist noch kein vollständiges v0.5.0.
+„Auth & Tokens“ ist über die Einstellungen im Hauptfenster und über die native
+Settings Scene erreichbar. Der ausgewählte Account steht zuerst. Die Ansicht
+unterstützt Verbinden, erneute Anmeldung, Accountauswahl und bestätigtes Trennen.
+Sie lädt keine Token-Inhalte beim Öffnen und zeigt weder erfundene Ablaufdaten
+noch einen unimplementierten Touch-ID-Schalter. Auth-Anfragen verwenden die anhand
+der [GitHub-Dokumentation](https://docs.github.com/en/rest/about-the-rest-api/api-versions)
+verifizierte REST-Version `2026-03-10`; ungültige Token-Zeichen werden vor dem
+Aufbau eines HTTP-Credential-Headers verworfen.
+
+NSHostingView-Tests und geprüfte Render-Abbilder decken leere Ansichten und 80
+Accounts mit langen Namen/Rechten bei 620 und 900 Punkten, Deutsch/Englisch sowie
+Light/Dark ab. Die native Dialoginteraktion mit echten Accounts ist noch manuell
+abzunehmen:
+
+- Hauptfenster: Einstellungen öffnen; zusätzlich ⌘, und den Auth-Tab prüfen.
+- Zwei Testaccounts verbinden, auswählen und prüfen, dass Jobs und Wizard den
+  ausgewählten Account verwenden. Erneute Anmeldung derselben Identität ersetzt
+  deren Zugangsdaten, eine andere Identität wird separat hinzugefügt.
+- PAT-/Geräteanmeldung starten, abbrechen und erneut öffnen; keine späte
+  Erfolgsmeldung, kein gelöschter oder unbeabsichtigt gewechselter Account.
+- „Account trennen …“ zunächst abbrechen, dann für einen Testaccount bestätigen.
+  Der andere Account und laufende Runner-Dienste bleiben erhalten.
+- Bei fehlenden OAuth-Scope-Headern bleiben Rechte ausdrücklich unbekannt; Tokens
+  und Ablaufdaten werden nicht vorgetäuscht.
+
+Offen sind die interaktive Abnahme und die übrigen Step-5-Bereiche, insbesondere
+Storage, vollständige Telemetrie und Audit-UI. Dieser Stand ist noch kein
+vollständiges v0.5.0.

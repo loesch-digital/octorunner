@@ -118,11 +118,13 @@ public struct MainShellView: View {
                         HStack {
                             if section == .queueWorkpools {
                                 Label { Text("Jobs & Workflow Runs", bundle: .module) } icon: { Image(systemName: section.systemImage) }
+                            } else if section == .launchdSettings {
+                                Label { Text("App Settings", bundle: .module) } icon: { Image(systemName: section.systemImage) }
                             } else {
                                 Label(section.title, systemImage: section.systemImage)
                             }
                             Spacer()
-                            if section != .queueWorkpools {
+                            if section != .queueWorkpools && section != .launchdSettings {
                               Text("\(count(for: section))")
                                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
                                 .foregroundStyle(.secondary)
@@ -225,6 +227,8 @@ public struct MainShellView: View {
     @ViewBuilder private var detailContent: some View {
         if selectedSection == .queueWorkpools {
             WorkflowJobHistoryView(rateBudget: historyRateBudget)
+        } else if selectedSection == .launchdSettings {
+            SettingsWindowView(accountSession: accountSession)
         } else {
             runnerDashboardContent
         }
@@ -502,7 +506,7 @@ public struct MainShellView: View {
                 isShowingAccountPopover = false
                 selectedSection = .launchdSettings
             } label: {
-                Label("Autostart & Background Settings", systemImage: "gearshape.2.fill")
+                Label { Text("App Settings", bundle: .module) } icon: { Image(systemName: "gearshape") }
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
