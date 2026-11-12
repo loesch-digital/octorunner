@@ -12,6 +12,50 @@ import Testing
 struct ResponsiveLayoutTests {
     private static var retainedContainers: [ModelContainer] = []
 
+    @Test("Workflow history fits small windows with long names and many loaded jobs")
+    func workflowHistoryFits() throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        Self.retainedContainers.append(container)
+        let run = JobRunEntity(githubRunId: 42, workflowName: String(repeating: "Long workflow name ", count: 8), repositoryFullName: "organization-with-a-long-name/repository-with-a-long-name", branchName: String(repeating: "branch-", count: 20), commitSha: String(repeating: "a", count: 40), statusRaw: "in_progress")
+        run.accountGitHubUserID = 7
+        run.runAttempt = 1
+        run.observedAt = .now
+        container.mainContext.insert(run)
+        run.sourceRaw = "github"
+        var entries = [WorkflowHistoryEntry(run)]
+        for number in 1...80 {
+            let job = JobRunEntity(githubRunId: 42, workflowName: run.workflowName, repositoryFullName: run.repositoryFullName, branchName: run.branchName, commitSha: run.commitSha, statusRaw: "in_progress")
+            job.recordKindRaw = "job"
+            job.accountGitHubUserID = 7
+            job.runAttempt = 1
+            job.githubJobId = Int64(number)
+            job.jobName = String(repeating: "matrix-build-name-", count: 8)
+            job.runnerNameSnapshot = String(repeating: "runner-name-", count: 8)
+            job.observedAt = .now
+            job.sourceRaw = "github"
+            container.mainContext.insert(job)
+            entries.append(WorkflowHistoryEntry(job))
+        }
+        for scheme in [ColorScheme.light, .dark] {
+            for viewport in [CGSize(width: 560, height: 480), CGSize(width: 900, height: 800)] {
+                let measurement = LayoutMeasurement()
+                let host = NSHostingView(rootView: FixedTestViewport(size: viewport, measurement: measurement) {
+                    WorkflowHistoryContent(entries: entries, repositories: [run.repositoryFullName] + (1...80).map { "long-organization/repository-\($0)" }, repository: .constant(run.repositoryFullName), filter: .constant(WorkflowHistoryFilter()), durationTarget: .constant(nil), isLoading: false, errorMessage: nil, lastRefresh: .now, rateLimitRemaining: 4990, canLoadOlder: false, refresh: {}, loadOlder: {})
+                }.preferredColorScheme(scheme).environment(\.locale, Locale(identifier: "de")))
+                host.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
+                host.frame = CGRect(origin: .zero, size: viewport)
+                host.layoutSubtreeIfNeeded()
+                let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                host.cacheDisplay(in: host.bounds, to: bitmap)
+                let measured = try #require(measurement.size.withLock { $0 })
+                #expect(measured.width <= viewport.width && measured.height <= viewport.height)
+                if let path = ProcessInfo.processInfo.environment["OCTORUNNER_LAYOUT_CAPTURE_DIR"] {
+                    try #require(bitmap.representation(using: .png, properties: [:])).write(to: URL(fileURLWithPath: path).appending(path: "history-\(Int(viewport.width))-\(scheme == .dark ? "dark" : "light").png"))
+                }
+            }
+        }
+    }
+
     @Test("Dashboard runner rows stay within narrow and wide viewports with long metadata")
     func dashboardRunnerRowsFit() throws {
         let container = try OctoRunnerPersistence.makeInMemoryContainer()

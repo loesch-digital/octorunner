@@ -14,18 +14,21 @@ public final class WorkflowHistoryViewModel {
     public private(set) var rateLimit: GitHubRateLimitSnapshot?
     public private(set) var lastRefresh: Date?
 
+    public private(set) var repositoryFailures: [WorkflowHistoryRepositoryFailure] = []
+    private let rateBudget: WorkflowHistoryRateBudget
     private let loader: any WorkflowHistoryLoading
     private var selection: WorkflowHistorySelection?
     private var generation = 0
     private var hasLoadedPage = false
-    private var retryDeadlines: [Int64: Date] = [:]
-    private var rateFailures: [Int64: Int] = [:]
 
     public var retryNotBefore: Date? {
-        selection.flatMap { retryDeadlines[$0.accountID] }
+        selection.flatMap { rateBudget.deadline(for: $0.accountID) }
     }
 
-    public init(loader: any WorkflowHistoryLoading = GitHubWorkflowHistoryLoader()) { self.loader = loader }
+    public init(loader: any WorkflowHistoryLoading = GitHubWorkflowHistoryLoader(), rateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget()) {
+        self.loader = loader
+        self.rateBudget = rateBudget
+    }
 
     public func select(_ selection: WorkflowHistorySelection?, in context: ModelContext) throws {
         invalidate()
@@ -33,6 +36,7 @@ public final class WorkflowHistoryViewModel {
         nextPage = nil
         rateLimit = nil
         error = nil
+        repositoryFailures = []
         lastRefresh = nil
         hasLoadedPage = false
         entries = []
@@ -42,6 +46,38 @@ public final class WorkflowHistoryViewModel {
     public func invalidate() {
         generation += 1
         isLoading = false
+    }
+
+    /// Refresh a bounded recent window for each configured repository. All sources
+    /// belong to one credential; account changes and cancellation end the batch.
+    public func refreshRepositories(_ selections: [WorkflowHistorySelection], in context: ModelContext) async {
+        guard !Task.isCancelled else { return }
+        guard let first = selections.first, selections.allSatisfy({
+            $0.accountID == first.accountID && $0.keychainAccountKey == first.keychainAccountKey
+        }) else {
+            do { try select(nil, in: context) } catch { self.error = .unavailable }
+            return
+        }
+        var failures: [WorkflowHistoryRepositoryFailure] = []
+        for source in selections {
+            guard !Task.isCancelled else { return }
+            do { try select(source, in: context) }
+            catch { self.error = .unavailable; return }
+            repositoryFailures = failures
+            let batchGeneration = generation
+            await load(in: context, refresh: true)
+            guard isCurrent(batchGeneration, selection: source) else { return }
+            if let error {
+                switch error {
+                case .authenticationRequired, .rateLimited: return
+                case .permissionDenied, .tooManyPages, .unavailable:
+                    failures.append(WorkflowHistoryRepositoryFailure(repository: source.repository, error: error))
+                    repositoryFailures = failures
+                    self.error = nil
+                }
+            }
+            if let deadline = retryNotBefore, deadline > .now { return }
+        }
     }
 
     public func load(in context: ModelContext, refresh: Bool = false, now: Date? = nil) async {
@@ -74,9 +110,8 @@ public final class WorkflowHistoryViewModel {
             }
             nextPage = response.nextPage
             rateLimit = response.rateLimit
-            if response.rateLimit?.remaining != 0 && (retryDeadlines[selection.accountID] ?? .distantPast) <= (now ?? .now) {
-                retryDeadlines.removeValue(forKey: selection.accountID)
-                rateFailures.removeValue(forKey: selection.accountID)
+            if response.rateLimit?.remaining != 0 {
+                rateBudget.clearExpired(for: selection.accountID, now: now ?? .now)
             }
             lastRefresh = response.observedAt
             hasLoadedPage = true
@@ -91,11 +126,7 @@ public final class WorkflowHistoryViewModel {
     }
 
     private func setBackoff(until deadline: Date?, accountID: Int64, now: Date) {
-        let failures = min((rateFailures[accountID] ?? 0) + 1, 7)
-        rateFailures[accountID] = failures
-        let fallback = now.addingTimeInterval(min(3_600, 60 * pow(2, Double(failures - 1))))
-        let proposed = deadline.flatMap { $0 > now ? $0 : nil } ?? fallback
-        retryDeadlines[accountID] = max(retryDeadlines[accountID] ?? .distantPast, proposed)
+        rateBudget.recordLimit(until: deadline, accountID: accountID, now: now)
     }
 
     private func isCurrent(_ generation: Int, selection: WorkflowHistorySelection) -> Bool {

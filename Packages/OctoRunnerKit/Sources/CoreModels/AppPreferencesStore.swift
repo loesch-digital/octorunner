@@ -66,6 +66,14 @@ public final class AppPreferencesStore {
     public var notificationPolicy: NotificationPolicy {
         didSet { persist(notificationPolicy, forKey: "preferences.notificationPolicy") }
     }
+    private var storedHistoryPreferences = WorkflowHistoryPreferences()
+    public var historyPreferences: WorkflowHistoryPreferences {
+        get { storedHistoryPreferences }
+        set {
+            storedHistoryPreferences = newValue.validated()
+            persist(storedHistoryPreferences, forKey: "preferences.historyPreferences")
+        }
+    }
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -79,6 +87,7 @@ public final class AppPreferencesStore {
         storedRuntimePolicy = Self.load(RunnerRuntimePolicy.self, from: defaults, key: "preferences.runtimePolicy")?.validated() ?? RunnerRuntimePolicy()
         storedStoragePolicy = Self.load(StoragePolicy.self, from: defaults, key: "preferences.storagePolicy")?.validated() ?? StoragePolicy()
         notificationPolicy = Self.load(NotificationPolicy.self, from: defaults, key: "preferences.notificationPolicy") ?? NotificationPolicy()
+        storedHistoryPreferences = Self.load(WorkflowHistoryPreferences.self, from: defaults, key: "preferences.historyPreferences")?.validated() ?? WorkflowHistoryPreferences()
     }
 
     private static func clamp(_ value: Int, to range: ClosedRange<Int>) -> Int {
@@ -91,7 +100,7 @@ public final class AppPreferencesStore {
     }
 
     private func persist<Value: Encodable>(_ value: Value, forKey key: String) {
-        // These policy values contain only enums, bounded integers and booleans.
+        // Policy values contain no credentials; repository identities are validated before persistence.
         // Keep the previous stored value if a future encoder ever rejects a value.
         guard let data = try? JSONEncoder().encode(value) else { return }
         defaults.set(data, forKey: key)

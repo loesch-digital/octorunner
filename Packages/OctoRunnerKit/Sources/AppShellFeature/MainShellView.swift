@@ -14,7 +14,8 @@ public struct MainShellView: View {
     @Query(sort: \RunnerEntity.name) private var runners: [RunnerEntity]
     @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
 
-    @State private var selectedSection: SidebarSection? = .allRunners
+    @State private var historyRateBudget: WorkflowHistoryRateBudget
+    @State private var selectedSection: SidebarSection?
     @State private var searchText: String = ""
     @State private var hostSnapshot: HostTelemetrySnapshot?
     @State private var isShowingAuthSheet: Bool = false
@@ -35,7 +36,10 @@ public struct MainShellView: View {
     private let syncActor = GitHubRunnerSyncActor()
     private let provisioner = RunnerProvisionerActor()
 
-    public init() {}
+    public init(section: SidebarSection = .allRunners, historyRateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget()) {
+        _historyRateBudget = State(initialValue: historyRateBudget)
+        _selectedSection = State(initialValue: section)
+    }
 
     public var body: some View {
         NavigationSplitView {
@@ -45,7 +49,6 @@ public struct MainShellView: View {
             detailContent
         }
         .navigationTitle("OctoRunner")
-        .searchable(text: $searchText, prompt: "Search runners, labels...")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 SettingsLink {
@@ -110,11 +113,17 @@ public struct MainShellView: View {
                 Section("RUNNER STATUS") {
                     ForEach(SidebarSection.allCases) { section in
                         HStack {
-                            Label(section.title, systemImage: section.systemImage)
+                            if section == .queueWorkpools {
+                                Label { Text("Jobs & Workflow Runs", bundle: .module) } icon: { Image(systemName: section.systemImage) }
+                            } else {
+                                Label(section.title, systemImage: section.systemImage)
+                            }
                             Spacer()
-                            Text("\(count(for: section))")
+                            if section != .queueWorkpools {
+                              Text("\(count(for: section))")
                                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
                                 .foregroundStyle(.secondary)
+                            }
                         }
                         .padding(.vertical, 5)
                         .tag(section)
@@ -210,7 +219,15 @@ public struct MainShellView: View {
 
     // MARK: - Dashboard and Status Footer
 
-    private var detailContent: some View {
+    @ViewBuilder private var detailContent: some View {
+        if selectedSection == .queueWorkpools {
+            WorkflowJobHistoryView(rateBudget: historyRateBudget)
+        } else {
+            runnerDashboardContent
+        }
+    }
+
+    private var runnerDashboardContent: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -245,6 +262,7 @@ public struct MainShellView: View {
             statusFooterBar
         }
         .background(OctoTheme.surfaceLowest)
+        .searchable(text: $searchText, prompt: "Search runners, labels...")
     }
 
     private func updateAvailableBanner(_ update: AppUpdateInfo) -> some View {

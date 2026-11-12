@@ -11,6 +11,18 @@ import Testing
 
 @Suite("AppShell UI, Layout & Preview Rendering Tests", .serialized)
 struct AppShellUITests {
+    @Test("Jobs route renders in the main application with the shared preferences")
+    @MainActor
+    func jobsRouteRenders() throws {
+        let container = try Self.makePreviewContainer()
+        let host = NSHostingView(rootView: MainShellView(section: .queueWorkpools)
+            .environment(AppPreferencesStore()).modelContainer(container))
+        host.frame = CGRect(x: 0, y: 0, width: 1120, height: 740)
+        host.layoutSubtreeIfNeeded()
+        #expect(host.bitmapImageRepForCachingDisplay(in: host.bounds) != nil)
+        host.rootView = MainShellView(section: .allRunners).environment(AppPreferencesStore()).modelContainer(container)
+    }
+
     @Test("Quit confirmation cancels safely and only explicit confirmation terminates the app")
     @MainActor
     func quitConfirmationRequiresExplicitChoice() {

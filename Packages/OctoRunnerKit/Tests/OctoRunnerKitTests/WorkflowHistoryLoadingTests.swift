@@ -254,6 +254,81 @@ struct WorkflowHistoryLoadingTests {
         #expect(later.runningCount == 0 && later.stalePendingCount == 1)
     }
 
+    @Test("Global refresh loads repository sources sequentially without mixing accounts")
+    func globalRefresh() async throws {
+        let context = try makeContext()
+        let loader = HistoryPageQueue([try page(), try page()])
+        let model = WorkflowHistoryViewModel(loader: loader)
+        let second = WorkflowHistorySelection(accountID: 7, keychainAccountKey: "fixture-account", repository: "example/second")
+        await model.refreshRepositories([selection, second], in: context)
+        #expect(model.entries.count == 2)
+        #expect(Set(model.entries.map(\.repository)) == ["example/repo", "example/second"])
+        #expect(await loader.requests.count == 2)
+        await model.refreshRepositories([], in: context)
+        #expect(model.entries.isEmpty)
+        let foreign = WorkflowHistorySelection(accountID: 8, keychainAccountKey: "other-account", repository: "other/repo")
+        await model.refreshRepositories([selection, foreign], in: context)
+        #expect(model.entries.isEmpty)
+        #expect(await loader.requests.count == 2)
+    }
+
+    @Test("Invalidation or cancellation interrupts global refresh before the next source", arguments: [true, false])
+    func globalRefreshCancellation(cancelTask: Bool) async throws {
+        let context = try makeContext()
+        let loader = GatedHistoryLoader()
+        let model = WorkflowHistoryViewModel(loader: loader)
+        let second = WorkflowHistorySelection(accountID: 7, keychainAccountKey: "fixture-account", repository: "example/second")
+        let task = Task { await model.refreshRepositories([selection, second], in: context) }
+        await loader.waitForRequest()
+        if cancelTask { task.cancel() } else { model.invalidate() }
+        await loader.release(try page())
+        await task.value
+        #expect(await loader.calls == 1)
+        #expect(try context.fetchCount(FetchDescriptor<JobRunEntity>()) == 0)
+    }
+
+    @Test("An inaccessible repository cannot starve later sources; failures stay visible")
+    func repositoryFailureIsolation() async throws {
+        let context = try makeContext()
+        let loader = ScriptedHistoryLoader([.failure(.permissionDenied), .success(try page())])
+        let model = WorkflowHistoryViewModel(loader: loader)
+        let second = WorkflowHistorySelection(accountID: 7, keychainAccountKey: "fixture-account", repository: "example/second")
+        await model.refreshRepositories([selection, second], in: context)
+        #expect(await loader.calls == 2)
+        #expect(model.entries.map(\.repository) == ["example/second"])
+        #expect(model.repositoryFailures.map(\.repository) == ["example/repo"])
+        #expect(model.repositoryFailures.first?.error == .permissionDenied)
+        #expect(model.error == nil)
+    }
+
+    @Test("Global refresh stops on authentication and rate failures", arguments: [WorkflowHistoryLoadError.authenticationRequired, .rateLimited(until: nil)])
+    func batchStopsForAccountFailures(error: WorkflowHistoryLoadError) async throws {
+        let context = try makeContext()
+        let loader = ScriptedHistoryLoader([.failure(error), .success(try page())])
+        let model = WorkflowHistoryViewModel(loader: loader)
+        let second = WorkflowHistorySelection(accountID: 7, keychainAccountKey: "fixture-account", repository: "example/second")
+        await model.refreshRepositories([selection, second], in: context)
+        #expect(await loader.calls == 1)
+        #expect(model.error == error)
+        #expect(model.entries.isEmpty)
+    }
+
+    @Test("Account rate budgets survive replacing the history view model")
+    func sharedRateBudget() async throws {
+        let context = try makeContext()
+        let deadline = Date.now.addingTimeInterval(300)
+        let loader = ScriptedHistoryLoader([.failure(.rateLimited(until: deadline)), .success(try page())])
+        let budget = WorkflowHistoryRateBudget()
+        let first = WorkflowHistoryViewModel(loader: loader, rateBudget: budget)
+        try first.select(selection, in: context)
+        await first.load(in: context, refresh: true)
+        let replacement = WorkflowHistoryViewModel(loader: loader, rateBudget: budget)
+        try replacement.select(selection, in: context)
+        await replacement.load(in: context, refresh: true)
+        #expect(await loader.calls == 1)
+        #expect(replacement.retryNotBefore == deadline)
+    }
+
     private func makeContext() throws -> ModelContext {
         let container = try OctoRunnerPersistence.makeInMemoryContainer()
         Self.containers.append(container)
@@ -335,5 +410,16 @@ private actor GatedHistoryLoader: WorkflowHistoryLoading {
     func fail(_ error: WorkflowHistoryLoadError) {
         response?.resume(throwing: error)
         response = nil
+    }
+}
+
+private actor ScriptedHistoryLoader: WorkflowHistoryLoading {
+    var responses: [Result<WorkflowHistoryPage, WorkflowHistoryLoadError>]
+    private(set) var calls = 0
+    init(_ responses: [Result<WorkflowHistoryPage, WorkflowHistoryLoadError>]) { self.responses = responses }
+    func page(selection: WorkflowHistorySelection, nextPage: URL?, completedAttempts: Set<String>) async throws -> WorkflowHistoryPage {
+        calls += 1
+        guard !responses.isEmpty else { throw WorkflowHistoryLoadError.unavailable }
+        return try responses.removeFirst().get()
     }
 }
