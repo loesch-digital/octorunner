@@ -30,7 +30,7 @@ struct RunnerLaunchConfigurationTests {
     }
 
     @Test("Archive extraction accepts real filesystem paths containing spaces")
-    func archivePaths() throws {
+    func archivePaths() async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: "runner archive test \(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         let source = root.appending(path: "archive source")
@@ -45,8 +45,18 @@ struct RunnerLaunchConfigurationTests {
         try tar.run()
         tar.waitUntilExit()
         #expect(tar.terminationStatus == 0)
-        try RunnerProvisionerActor.extractArchive(archiveURL: archive, into: destination)
+        try await RunnerProvisionerActor.extractArchive(archiveURL: archive, into: destination)
         #expect(try String(contentsOf: destination.appending(path: "payload"), encoding: .utf8) == "fixture")
+    }
+
+    @Test("A cancelled extraction never launches tar or attempts to read the archive")
+    func cancelledExtraction() async {
+        let root = FileManager.default.temporaryDirectory.appending(path: "absent-runner-archive-\(UUID().uuidString)")
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            try await RunnerProvisionerActor.extractArchive(archiveURL: root, into: root)
+        }
+        await #expect(throws: CancellationError.self) { try await task.value }
     }
 
     @Test("Inherited PATH rejects relative and empty entries and preserves valid precedence without duplicates")

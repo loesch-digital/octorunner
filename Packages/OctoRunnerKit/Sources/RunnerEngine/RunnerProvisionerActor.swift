@@ -100,8 +100,8 @@ public actor RunnerProvisionerActor {
                     try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
                     try FileManager.default.createDirectory(at: diagDir, withIntermediateDirectories: true)
 
-                    try Self.extractArchive(archiveURL: archiveURL, into: instanceRoot)
-                    try Self.runConfigScript(
+                    try await Self.extractArchive(archiveURL: archiveURL, into: instanceRoot)
+                    try await Self.runConfigScript(
                         in: instanceRoot,
                         scopeURL: scopeURL,
                         registrationToken: tokenDTO.token,
@@ -218,15 +218,14 @@ public actor RunnerProvisionerActor {
         return stripped.isEmpty ? nil : stripped
     }
 
-    static func extractArchive(archiveURL: URL, into destination: URL) throws {
+    static func extractArchive(archiveURL: URL, into destination: URL) async throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
         process.arguments = ["-xzf", archiveURL.path(percentEncoded: false), "-C", destination.path(percentEncoded: false)]
-        try process.run()
-        process.waitUntilExit()
+        let status = try await ConfigurationProcessRunner.run(process)
 
-        guard process.terminationStatus == 0 else {
-            throw RunnerEngineError.extractionFailed(process.terminationStatus)
+        guard status == 0 else {
+            throw RunnerEngineError.extractionFailed(status)
         }
     }
 
@@ -237,7 +236,7 @@ public actor RunnerProvisionerActor {
         runnerName: String,
         labels: [String],
         configuration: RunnerLaunchConfiguration
-    ) throws {
+    ) async throws {
         let configScript = instanceRoot.appending(path: "config.sh")
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
@@ -259,12 +258,11 @@ public actor RunnerProvisionerActor {
         process.standardInput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         process.standardOutput = FileHandle.nullDevice
-        try process.run()
-        process.waitUntilExit()
+        let status = try await ConfigurationProcessRunner.run(process)
 
-        guard process.terminationStatus == 0 else {
+        guard status == 0 else {
             throw RunnerEngineError.configurationFailed(
-                process.terminationStatus,
+                status,
                 "Configuration output was omitted to protect registration credentials."
             )
         }
