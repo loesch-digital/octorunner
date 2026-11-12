@@ -91,25 +91,27 @@ public actor AppUpdaterActor {
     }
 
     public static var currentBundleVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.2.1"
+        bundleReleaseVersion(
+            shortVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+            releaseVersion: Bundle.main.infoDictionary?["OctoRunnerReleaseVersion"] as? String
+        )
+    }
+
+    static func bundleReleaseVersion(shortVersion: String?, releaseVersion: String?) -> String {
+        if let releaseVersion, ReleaseVersion(releaseVersion) != nil { return releaseVersion }
+        if let shortVersion, ReleaseVersion(shortVersion) != nil { return shortVersion }
+        return "0.0.0"
     }
 
     /// Returns `true` if `candidate` is strictly newer than `current` (e.g. "0.3.0" > "0.2.1").
     public static func isVersion(_ candidate: String, newerThan current: String) -> Bool {
-        let cleanCandidate = candidate.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
-        let cleanCurrent = current.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
-
-        let candidateParts = cleanCandidate.split(separator: ".").map { Int($0) ?? 0 }
-        let currentParts = cleanCurrent.split(separator: ".").map { Int($0) ?? 0 }
-        let maxCount = max(candidateParts.count, currentParts.count)
-
-        for index in 0..<maxCount {
-            let cVal = index < candidateParts.count ? candidateParts[index] : 0
-            let curVal = index < currentParts.count ? currentParts[index] : 0
-            if cVal > curVal { return true }
-            if cVal < curVal { return false }
+        func parse(_ raw: String) -> ReleaseVersion? {
+            var value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if value.hasPrefix("v") || value.hasPrefix("V") { value.removeFirst() }
+            return ReleaseVersion(value)
         }
-        return false
+        guard let candidate = parse(candidate), let current = parse(current) else { return false }
+        return candidate > current
     }
 
     public func checkForUpdates(currentVersion: String = AppUpdaterActor.currentBundleVersion) async throws -> AppUpdateInfo {

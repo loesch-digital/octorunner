@@ -67,3 +67,19 @@ The unit tests exercise success and rejection paths with command stubs; only a
 real release using Apple credentials verifies the certificate and notarization.
 
 Reference: [Apple: Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).
+
+## Prereleases
+
+Validated tags may also use `vX.Y.Z-beta.N` or `vX.Y.Z-rc.N` (positive N).
+`scripts/release_tools.py` separates the complete release version from Apple's
+numeric `CFBundleShortVersionString` / `CFBundleVersion`. Before signing, it
+checks the built bundle identity and numeric versions, then writes the complete
+version into `OctoRunnerReleaseVersion`; the app uses this for display and SemVer
+update checks. A generic `INFOPLIST_KEY_` build setting did not preserve the custom
+key in the verified local Xcode build, so stamping is explicit.
+
+Prereleases are published with `--prerelease --latest=false`, use reviewed notes
+from `docs/releases/<tag>.md` when available, and skip the stable Homebrew tap.
+They retain the same Developer ID/notarization/Gatekeeper requirements. Direct
+ZIP installation is their acceptance path. Stable releases keep the Homebrew
+upgrade check. No archive or existing release is replaced.
