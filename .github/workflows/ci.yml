@@ -62,3 +62,25 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=YES \
             build
+
+      - name: Test Settings Navigation in the App
+        run: |
+          xcodebuild -project OctoRunner.xcodeproj \
+            -scheme OctoRunner \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath DerivedData/UITests \
+            -resultBundlePath DerivedData/SettingsUITests.xcresult \
+            -parallel-testing-enabled NO \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=YES \
+            test
+
+      - name: Preserve Settings UI Test Results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: settings-ui-tests-xcode-27
+          path: DerivedData/SettingsUITests.xcresult
+          retention-days: 7
