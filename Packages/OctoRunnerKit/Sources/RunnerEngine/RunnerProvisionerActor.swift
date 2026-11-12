@@ -230,7 +230,7 @@ public actor RunnerProvisionerActor {
         }
     }
 
-    private static func runConfigScript(
+    static func runConfigScript(
         in instanceRoot: URL,
         scopeURL: URL,
         registrationToken: String,
@@ -253,20 +253,19 @@ public actor RunnerProvisionerActor {
             "--replace"
         ]
         process.environment = ProcessInfo.processInfo.environment.merging(configuration.environment) { _, configured in configured }
-        let stderrPipe = Pipe()
-        let stdoutPipe = Pipe()
-        process.standardError = stderrPipe
-        process.standardOutput = stdoutPipe
+        // Unattended setup has no interactive input. Its output can contain the
+        // registration credential, so never retain it in errors or diagnostic logs.
+        // Null handles also avoid filling an undrained pipe while awaiting exit.
+        process.standardInput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        process.standardOutput = FileHandle.nullDevice
         try process.run()
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
-            let errData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-            let outData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-            let combined = (String(data: outData, encoding: .utf8) ?? "") + "\n" + (String(data: errData, encoding: .utf8) ?? "")
             throw RunnerEngineError.configurationFailed(
                 process.terminationStatus,
-                combined.trimmingCharacters(in: .whitespacesAndNewlines)
+                "Configuration output was omitted to protect registration credentials."
             )
         }
     }
