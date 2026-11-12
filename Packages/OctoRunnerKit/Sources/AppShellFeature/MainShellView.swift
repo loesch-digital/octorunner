@@ -415,33 +415,30 @@ public struct MainShellView: View {
     }
 
     private func migrateImportedRunnerInline(_ runner: RunnerEntity) async {
-        let sourceURL = URL(fileURLWithPath: runner.rootDirectoryPath ?? runner.workDirectoryPath)
+        guard !Task.isCancelled else { return }
+        let runnerID = runner.id
+        let runnerName = runner.name
+        let sourcePath = runner.rootDirectoryPath ?? runner.workDirectoryPath
+        let actorLogin = accounts.first(where: { $0.isActive })?.login
         do {
-            let previousPath = runner.rootDirectoryPath
             let managedRoot = try await provisioner.migrateImportedRunnerDirectory(
-                runnerName: runner.name,
-                sourceRootDirectory: sourceURL,
+                runnerName: runnerName,
+                sourceRootDirectory: URL(fileURLWithPath: sourcePath),
                 registerLaunchAgent: true
             )
-            runner.rootDirectoryPath = managedRoot.path(percentEncoded: false)
-            runner.workDirectoryPath = managedRoot.appending(path: "_work").path(percentEncoded: false)
-            runner.isImportedLocal = false
-            runner.lastHeartbeat = .now
-
-            AuditLogRecorder.record(
-                in: modelContext,
-                category: .configuration,
-                severity: .info,
-                title: "Runner Migrated into OctoRunner",
-                summary: "Migrated \(runner.name) into \(managedRoot.path(percentEncoded: false)) and enabled Autostart",
-                actorAccountLogin: accounts.first?.login,
-                targetRunnerName: runner.name,
-                previousValue: previousPath,
-                newValue: managedRoot.path(percentEncoded: false)
-            )
-            try? modelContext.save()
-            updateStatusMessage = "Migrated '\(runner.name)' into OctoRunner managed pool with Autostart enabled."
+            try Task.checkCancellation()
+            guard let migratedName = try RunnerMigrationCompletion.apply(
+                runnerID: runnerID, expectedSourcePath: sourcePath, managedRoot: managedRoot,
+                context: modelContext, actorLogin: actorLogin
+            ) else {
+                updateStatusMessage = "Migration finished on disk, but the runner changed or was removed. Review the managed folder before retrying."
+                return
+            }
+            updateStatusMessage = "Migrated '\(migratedName)' into OctoRunner managed pool with Autostart enabled."
+        } catch is CancellationError {
+            return
         } catch {
+            guard !Task.isCancelled else { return }
             updateStatusMessage = "Migration failed: \(error.localizedDescription)"
         }
     }

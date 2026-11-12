@@ -130,7 +130,7 @@ public actor RunnerProvisionerActor {
                         )
                         try plistData.write(to: plistURL, options: .atomic)
                         launchdLabel = label
-                        launchedPID = Self.bootstrapLaunchAgent(plistURL: plistURL)
+                        launchedPID = try await Self.bootstrapLaunchAgent(plistURL: plistURL)
                     } else {
                         launchedPID = Self.spawnDetachedRunnerProcess(in: instanceRoot, configuration: configuration)
                     }
@@ -164,7 +164,7 @@ public actor RunnerProvisionerActor {
         sourceRootDirectory: URL,
         registerLaunchAgent: Bool,
         configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration()
-    ) throws -> URL {
+    ) async throws -> URL {
         try Self.validateRunnerName(runnerName)
         try FileManager.default.createDirectory(at: baseRunnersDirectory, withIntermediateDirectories: true)
         let destinationRoot = baseRunnersDirectory.appending(path: runnerName, directoryHint: .isDirectory)
@@ -195,7 +195,7 @@ public actor RunnerProvisionerActor {
                 withIntermediateDirectories: true
             )
             try plistData.write(to: plistURL, options: .atomic)
-            _ = Self.bootstrapLaunchAgent(plistURL: plistURL)
+            _ = try await Self.bootstrapLaunchAgent(plistURL: plistURL)
         }
 
         return destinationRoot
@@ -268,13 +268,18 @@ public actor RunnerProvisionerActor {
         }
     }
 
-    private static func bootstrapLaunchAgent(plistURL: URL) -> Int32? {
+    static func bootstrapLaunchAgent(plistURL: URL, executableURL: URL = URL(fileURLWithPath: "/bin/launchctl")) async throws -> Int32? {
         let uid = getuid()
         let bootstrap = Process()
-        bootstrap.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        bootstrap.executableURL = executableURL
         bootstrap.arguments = ["bootstrap", "gui/\(uid)", plistURL.path(percentEncoded: false)]
-        try? bootstrap.run()
-        bootstrap.waitUntilExit()
+        bootstrap.standardInput = FileHandle.nullDevice
+        bootstrap.standardOutput = FileHandle.nullDevice
+        bootstrap.standardError = FileHandle.nullDevice
+        let status = try await ConfigurationProcessRunner.run(bootstrap)
+        guard status == 0 else {
+            throw RunnerEngineError.launchAgentRegistrationFailed(status, "The service was not registered. Registration output was omitted.")
+        }
         return nil
     }
 
