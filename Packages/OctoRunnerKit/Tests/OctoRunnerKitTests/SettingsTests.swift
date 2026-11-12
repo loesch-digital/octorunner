@@ -39,6 +39,12 @@ struct SettingsTests {
                     let request = VNRecognizeTextRequest()
                     request.recognitionLevel = .accurate
                     request.recognitionLanguages = [language]
+                    // Hosted macOS runners need no GPU/Neural Engine for this
+                    // small deterministic rendering assertion.
+                    for (stage, devices) in try request.supportedComputeStageDevices {
+                        let cpu = try #require(devices.first { if case .cpu = $0 { true } else { false } })
+                        request.setComputeDevice(cpu, for: stage)
+                    }
                     try VNImageRequestHandler(cgImage: try #require(bitmap.cgImage)).perform([request])
                     let visibleText = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
                         .joined().filter { !$0.isWhitespace }.lowercased()
