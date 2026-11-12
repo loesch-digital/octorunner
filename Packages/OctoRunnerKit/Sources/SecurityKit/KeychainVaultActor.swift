@@ -8,7 +8,7 @@ import Security
 /// - Uses Add-or-Update pattern with fresh dictionaries per call.
 /// - Uses `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` for background daemon/runner access.
 /// - Targets macOS Data Protection Keychain (`kSecUseDataProtectionKeychain: true`, TN3137) with graceful fallback when running ad-hoc without a provisioning profile (`errSecMissingEntitlement`).
-public actor KeychainVaultActor: SecretReading {
+public actor KeychainVaultActor: SecretReading, SecretWriting, SecretDeleting {
     private let servicePrefix: String
     private let itemDeleter: any KeychainItemDeleting
 
@@ -23,6 +23,7 @@ public actor KeychainVaultActor: SecretReading {
     }
 
     public func saveSecret(_ secret: String, account: String, category: String = "github-oauth") throws {
+        try Task.checkCancellation()
         guard let data = secret.data(using: .utf8) else {
             throw KeychainError.invalidDataEncoding
         }

@@ -8,6 +8,7 @@ public final class AppServices {
     public let integration: AppIntegrationController
     public let notifications: AppNotificationsController
     public let historyRateBudget = WorkflowHistoryRateBudget()
+    public let accounts = AccountSessionController()
     public let healthMonitor: RunnerHealthMonitor
 
     public init(

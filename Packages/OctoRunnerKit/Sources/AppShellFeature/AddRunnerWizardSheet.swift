@@ -45,7 +45,8 @@ public struct AddRunnerWizardSheet: View {
         .frame(minWidth: 560, idealWidth: 680, minHeight: 420, idealHeight: 680)
         .background(OctoTheme.surfaceLowest)
         .task {
-            await viewModel.loadGitHubTargets(forAccountLogin: accounts.first?.login)
+            let key = accounts.first(where: { $0.isActive })?.keychainAccountKey
+            await viewModel.loadGitHubTargets(forAccountKey: key)
         }
         .onDisappear { provisioningTask?.cancel() }
     }
@@ -354,10 +355,13 @@ public struct AddRunnerWizardSheet: View {
 
             Button {
                 let configuration = RunnerLaunchConfiguration(runtimePolicy: preferences.runtimePolicy, inheritHostPath: preferences.inheritHostPath)
-                let login = accounts.first?.login
+                let account = accounts.first(where: { $0.isActive })
+                let login = account?.login
+                let key = account?.keychainAccountKey
                 provisioningTask = Task {
                     let ok = await viewModel.provisionAndPersistRunners(
                         accountLogin: login,
+                        keychainAccountKey: key,
                         modelContext: modelContext,
                         configuration: configuration
                     )

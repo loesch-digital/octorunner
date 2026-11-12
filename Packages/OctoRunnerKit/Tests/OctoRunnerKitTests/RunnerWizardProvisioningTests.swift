@@ -24,13 +24,14 @@ struct RunnerWizardProvisioningTests {
         let configuration = RunnerLaunchConfiguration(runtimePolicy: policy, inheritHostPath: false, hostPath: "/ignored")
         let container = try OctoRunnerPersistence.makeInMemoryContainer()
         let context = container.mainContext
-        let task = Task { await vm.provisionAndPersistRunners(accountLogin: "fixture", modelContext: context, configuration: configuration) }
+        let task = Task { await vm.provisionAndPersistRunners(accountLogin: "fixture", keychainAccountKey: "github-user:7", modelContext: context, configuration: configuration) }
         await gate.waitUntilEntered()
         vm.baseNamePrefix = "changed"
         vm.selectedScope = .organization
         vm.selectedLabels = ["changed"]
         await gate.release()
         #expect(await task.value)
+        #expect(await client.requestedKey == "github-user:7")
         let request = try #require(await engine.request)
         #expect(request.names == ["original-1"])
         #expect(request.scope == .repository)
@@ -49,9 +50,9 @@ struct RunnerWizardProvisioningTests {
         vm.manualTargetInput = "owner/repository"
         let container = try OctoRunnerPersistence.makeInMemoryContainer()
         let context = container.mainContext
-        let task = Task { await vm.provisionAndPersistRunners(accountLogin: "fixture", modelContext: context) }
+        let task = Task { await vm.provisionAndPersistRunners(accountLogin: "fixture", keychainAccountKey: "github-user:7", modelContext: context) }
         await gate.waitUntilEntered()
-        #expect(!((await vm.provisionAndPersistRunners(accountLogin: "fixture", modelContext: context))))
+        #expect(!((await vm.provisionAndPersistRunners(accountLogin: "fixture", keychainAccountKey: "github-user:7", modelContext: context))))
         task.cancel()
         await gate.release()
         #expect(!(await task.value))
@@ -76,9 +77,11 @@ private actor WizardGate {
 }
 
 private actor WizardTargetClient: RunnerTargetLoading {
+    private(set) var requestedKey: String?
     let gate: WizardGate?
     init(gate: WizardGate? = nil) { self.gate = gate }
     func readToken(for accountLogin: String) async throws -> String {
+        requestedKey = accountLogin
         if let gate { await gate.enter() }
         return "test-only-credential"
     }

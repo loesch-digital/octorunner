@@ -2550,6 +2550,70 @@
           }
         }
       }
+    },
+    "This account is no longer connected.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account is no longer connected."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Account ist nicht mehr verbunden."
+          }
+        }
+      }
+    },
+    "This account changed during sign-out. Review it and try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account changed during sign-out. Review it and try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Account wurde während der Abmeldung geändert. Prüfe ihn und versuche es erneut."
+          }
+        }
+      }
+    },
+    "The Keychain credential could not be removed. The account is still connected; please try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Keychain credential could not be removed. The account is still connected; please try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Zugangsdaten konnten nicht aus dem Schlüsselbund entfernt werden. Der Account bleibt verbunden; bitte versuche es erneut."
+          }
+        }
+      }
+    },
+    "Account changes could not be saved. Please try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account changes could not be saved. Please try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Account-Änderungen konnten nicht gespeichert werden. Bitte versuche es erneut."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -15,6 +15,8 @@ public struct MainShellView: View {
     @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
 
     @State private var historyRateBudget: WorkflowHistoryRateBudget
+    @State private var accountSession: AccountSessionController
+    @State private var accountTask: Task<Void, Never>?
     @State private var selectedSection: SidebarSection?
     @State private var searchText: String = ""
     @State private var hostSnapshot: HostTelemetrySnapshot?
@@ -31,13 +33,13 @@ public struct MainShellView: View {
     @State private var activeConsoleRunner: RunnerEntity?
 
     private let telemetryActor = HostTelemetryActor()
-    private let oauthActor = GitHubOAuthActor()
     private let updaterActor = AppUpdaterActor()
     private let syncActor = GitHubRunnerSyncActor()
     private let provisioner = RunnerProvisionerActor()
 
-    public init(section: SidebarSection = .allRunners, historyRateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget()) {
+    public init(section: SidebarSection = .allRunners, historyRateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(), accountSession: AccountSessionController = AccountSessionController()) {
         _historyRateBudget = State(initialValue: historyRateBudget)
+        _accountSession = State(initialValue: accountSession)
         _selectedSection = State(initialValue: section)
     }
 
@@ -74,6 +76,7 @@ public struct MainShellView: View {
         .sheet(isPresented: $isShowingAuthSheet) {
             OAuthDeviceFlowSheet()
         }
+        .onDisappear { accountTask?.cancel() }
         .sheet(isPresented: $isShowingAddRunnerSheet) {
             AddRunnerWizardSheet()
         }
@@ -84,13 +87,13 @@ public struct MainShellView: View {
             RunnerConsoleLogSheet(runner: runner)
         }
         .task {
-            let initialLogin = accounts.first?.login
+            let initialKey = accounts.first(where: { $0.isActive })?.keychainAccountKey
             let hasConnectedAccount = !accounts.isEmpty
             guard !Task.isCancelled else { return }
             if !hasConnectedAccount {
                 isShowingAuthSheet = true
             }
-            await syncLocalAndRemoteRunners(manual: false, explicitLogin: initialLogin)
+            await syncLocalAndRemoteRunners(manual: false, explicitKey: initialKey)
             guard !Task.isCancelled else { return }
             await checkForAppUpdates(manual: false)
         }
@@ -144,7 +147,7 @@ public struct MainShellView: View {
 
     private var sidebarBottomAccountCard: some View {
         Group {
-            if let activeAccount = accounts.first {
+            if let activeAccount = accounts.first(where: { $0.isActive }) {
                 Button {
                     isShowingAccountPopover.toggle()
                 } label: {
@@ -533,6 +536,7 @@ public struct MainShellView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
+            .disabled(accountSession.isBusy)
         }
         .padding(14)
         .frame(width: 265)
@@ -600,14 +604,14 @@ public struct MainShellView: View {
     private func syncLocalAndRemoteRunners(
         manual: Bool,
         extraDirs: [URL] = [],
-        explicitLogin: String? = nil
+        explicitKey: String? = nil
     ) async {
-        let login = explicitLogin ?? accounts.first?.login
+        let key = explicitKey ?? accounts.first(where: { $0.isActive })?.keychainAccountKey
         isSyncingRunners = true
         defer { isSyncingRunners = false }
 
         let discovered = await syncActor.discoverAndReconcileRunners(
-            accountLogin: login,
+            accountKey: key,
             additionalDirectories: extraDirs
         )
         guard !Task.isCancelled else { return }
@@ -709,21 +713,17 @@ public struct MainShellView: View {
     }
 
     private func signOut(_ account: GitHubAccountEntity) {
-        let login = account.login
-        modelContext.delete(account)
-        AuditLogRecorder.record(
-            in: modelContext,
-            category: .authentication,
-            severity: .warning,
-            title: "GitHub Account Signed Out",
-            summary: "Signed out @\(login) and removed token from Keychain",
-            actorAccountLogin: login
-        )
-        try? modelContext.save()
-        Task {
-            try? await oauthActor.signOut(login: login)
+        let id = account.id
+        guard !accountSession.isBusy else { return }
+        accountTask = Task {
+            let success = await accountSession.disconnect(accountID: id, in: modelContext)
+            guard !Task.isCancelled else { return }
+            if success {
+                isShowingAuthSheet = true
+            } else if let error = accountSession.error {
+                updateStatusMessage = error.localizedMessage(locale: locale)
+            }
         }
-        isShowingAuthSheet = true
     }
 
     private func checkForAppUpdates(manual: Bool) async {

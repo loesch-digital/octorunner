@@ -5,6 +5,18 @@ import Synchronization
 import Testing
 
 struct KeychainDeletionTests {
+    @Test("A queued cancelled save does not leave a credential behind")
+    func cancelledSave() async throws {
+        let vault = KeychainVaultActor(servicePrefix: "io.octorunner.macos.tests.\(UUID())")
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            await #expect(throws: CancellationError.self) { try await vault.saveSecret("synthetic-fixture", account: "fixture") }
+        }
+        await task.value
+        #expect(try await vault.readSecret(account: "fixture") == nil)
+        try await vault.deleteSecret(account: "fixture")
+    }
+
     @Test("Logout removes both modern and legacy copies of exactly one credential")
     func deletesBothCopies() async throws {
         let fixture = DeletionFixture(modern: errSecSuccess, legacy: errSecSuccess)

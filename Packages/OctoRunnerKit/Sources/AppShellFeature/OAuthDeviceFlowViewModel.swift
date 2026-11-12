@@ -23,11 +23,14 @@ public final class OAuthDeviceFlowViewModel {
     public var copiedToClipboard: Bool = false
     public var errorMessage: String?
 
-    private let oauthActor: GitHubOAuthActor
+    private let oauthActor: any GitHubAuthenticating
     private var pollingTask: Task<Void, Never>?
+    private var deviceRequest: Task<GitHubDeviceCodeResponse, Error>?
+    private var tokenRequest: Task<AuthenticatedGitHubSession, Error>?
+    private var generation = 0
 
     public init(
-        oauthActor: GitHubOAuthActor = GitHubOAuthActor(),
+        oauthActor: any GitHubAuthenticating = GitHubOAuthActor(),
         initialState: AuthFlowState = .initial,
         copiedToClipboard: Bool = false
     ) {
@@ -37,19 +40,36 @@ public final class OAuthDeviceFlowViewModel {
     }
 
     public func startDeviceFlow(modelContext: ModelContext, autoOpenBrowser: Bool = true) async {
+        guard !Task.isCancelled, !isValidatingPAT else { return }
+        if case .requestingDeviceCode = state { return }
+        generation += 1
+        let revision = generation
+        pollingTask?.cancel()
+        deviceRequest?.cancel()
+        tokenRequest?.cancel()
         errorMessage = nil
         state = .requestingDeviceCode
         do {
-            let response = try await oauthActor.requestDeviceCode()
+            let authenticator = oauthActor
+            let request = Task { try await authenticator.requestDeviceCode(scopes: GitHubOAuthConfig.defaultScopes) }
+            deviceRequest = request
+            defer { if generation == revision { deviceRequest = nil } }
+            let response = try await withTaskCancellationHandler {
+                try await request.value
+            } onCancel: {
+                request.cancel()
+            }
+            guard isCurrent(revision) else { return }
             copyUserCode(response.userCode)
             if autoOpenBrowser {
                 NSWorkspace.shared.open(response.verificationUri)
             }
             state = .polling(response)
-            beginPolling(response, modelContext: modelContext)
+            beginPolling(response, modelContext: modelContext, revision: revision)
         } catch is CancellationError {
-            state = .initial
+            if generation == revision { state = .initial }
         } catch {
+            guard isCurrent(revision) else { return }
             errorMessage = error.localizedDescription
             state = .initial
         }
@@ -68,7 +88,8 @@ public final class OAuthDeviceFlowViewModel {
 
     private func beginPolling(
         _ response: GitHubDeviceCodeResponse,
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        revision: Int
     ) {
         pollingTask?.cancel()
         pollingTask = Task {
@@ -77,11 +98,11 @@ public final class OAuthDeviceFlowViewModel {
                     deviceCode: response.deviceCode,
                     initialIntervalSeconds: response.interval
                 )
-                persistAccountSession(session, in: modelContext)
-                state = .authenticated(session)
+                try await finishAuthentication(session, revision: revision, in: modelContext)
             } catch is CancellationError {
                 // Cooperative cancellation on modal close or user cancel
             } catch {
+                guard isCurrent(revision) else { return }
                 errorMessage = error.localizedDescription
                 state = .initial
             }
@@ -89,63 +110,74 @@ public final class OAuthDeviceFlowViewModel {
     }
 
     public func validatePersonalAccessToken(modelContext: ModelContext) async {
+        guard !Task.isCancelled, !isValidatingPAT else { return }
+        generation += 1
+        let revision = generation
+        let input = patInput
+        pollingTask?.cancel()
         errorMessage = nil
         isValidatingPAT = true
-        defer { isValidatingPAT = false }
+        defer { if generation == revision { isValidatingPAT = false } }
 
         do {
-            let session = try await oauthActor.authenticateWithPersonalAccessToken(patInput)
-            patInput = ""
-            persistAccountSession(session, in: modelContext)
-            state = .authenticated(session)
+            deviceRequest?.cancel()
+            tokenRequest?.cancel()
+            let authenticator = oauthActor
+            let request = Task { try await authenticator.authenticateWithPersonalAccessToken(input) }
+            tokenRequest = request
+            defer { if generation == revision { tokenRequest = nil } }
+            let session = try await withTaskCancellationHandler {
+                try await request.value
+            } onCancel: {
+                request.cancel()
+            }
+            try await finishAuthentication(session, revision: revision, in: modelContext)
         } catch is CancellationError {
             return
         } catch {
+            guard isCurrent(revision) else { return }
             errorMessage = error.localizedDescription
         }
     }
 
     public func cancelFlow() {
+        generation += 1
         pollingTask?.cancel()
         pollingTask = nil
+        deviceRequest?.cancel()
+        deviceRequest = nil
+        tokenRequest?.cancel()
+        tokenRequest = nil
+        patInput = ""
+        isPATVisible = false
+        isValidatingPAT = false
+        copiedToClipboard = false
         errorMessage = nil
         state = .initial
     }
 
-    private func persistAccountSession(_ session: AuthenticatedGitHubSession, in modelContext: ModelContext) {
-        let login = session.user.login
-        let descriptor = FetchDescriptor<GitHubAccountEntity>(
-            predicate: #Predicate<GitHubAccountEntity> { $0.login == login }
-        )
-        if let existing = try? modelContext.fetch(descriptor).first {
-            existing.displayName = session.user.name
-            existing.avatarUrlString = session.user.avatarUrl
-            existing.scopes = session.scopes
-            existing.authMethodRaw = session.authMethod
-            existing.connectedAt = .now
-            existing.isActive = true
-        } else {
-            let entity = GitHubAccountEntity(
-                githubUserId: session.user.id,
-                login: session.user.login,
-                displayName: session.user.name,
-                avatarUrlString: session.user.avatarUrl,
-                scopes: session.scopes,
-                authMethodRaw: session.authMethod,
-                keychainAccountKey: session.user.login,
-                isActive: true
-            )
-            modelContext.insert(entity)
+    private func isCurrent(_ revision: Int) -> Bool {
+        !Task.isCancelled && revision == generation
+    }
+
+    isolated deinit {
+        pollingTask?.cancel()
+        deviceRequest?.cancel()
+        tokenRequest?.cancel()
+    }
+
+    private func finishAuthentication(_ session: AuthenticatedGitHubSession, revision: Int, in modelContext: ModelContext) async throws {
+        guard isCurrent(revision) else {
+            try await oauthActor.discardSessionCredential(session)
+            return
         }
-        AuditLogRecorder.record(
-            in: modelContext,
-            category: .authentication,
-            severity: .info,
-            title: "GitHub Account Connected",
-            summary: "Authenticated @\(session.user.login) via \(session.authMethod)",
-            actorAccountLogin: session.user.login,
-            newValue: session.scopes.joined(separator: ",")
-        )
-        try? modelContext.save()
+        do {
+            try GitHubAccountStore.upsert(session, in: modelContext)
+        } catch {
+            try await oauthActor.discardSessionCredential(session)
+            throw error
+        }
+        patInput = ""
+        state = .authenticated(session)
     }
 }

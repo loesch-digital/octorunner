@@ -46,7 +46,7 @@ struct OctoRunnerApp: App {
         let modelContainer = appDelegate.modelContainer
         @Bindable var preferences = services.preferences
         Window("OctoRunner", id: "main-dashboard") {
-            MainShellView(historyRateBudget: services.historyRateBudget)
+            MainShellView(historyRateBudget: services.historyRateBudget, accountSession: services.accounts)
                 .environment(services.preferences)
                 .environment(services.integration)
                 .environment(services.notifications)

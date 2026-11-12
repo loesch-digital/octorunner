@@ -132,13 +132,13 @@ public final class AddRunnerWizardViewModel {
         customLabelInput = ""
     }
 
-    public func loadGitHubTargets(forAccountLogin login: String?) async {
-        guard let login else { return }
+    public func loadGitHubTargets(forAccountKey key: String?) async {
+        guard let key, !key.isEmpty else { return }
         isLoadingTargets = true
         defer { isLoadingTargets = false }
 
         do {
-            let token = try await provisioningClient.readToken(for: login)
+            let token = try await provisioningClient.readToken(for: key)
             async let reposTask = provisioningClient.fetchUserRepositories(token: token)
             async let orgsTask = provisioningClient.fetchUserOrganizations(token: token)
 
@@ -212,12 +212,13 @@ public final class AddRunnerWizardViewModel {
 
     public func provisionAndPersistRunners(
         accountLogin: String?,
+        keychainAccountKey: String?,
         modelContext: ModelContext,
         configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration()
     ) async -> Bool {
         guard !isProvisioning, !Task.isCancelled else { return false }
         errorMessage = nil
-        guard let login = accountLogin else {
+        guard let login = accountLogin, let key = keychainAccountKey, !key.isEmpty else {
             errorMessage = "Please sign in with GitHub before provisioning a runner."
             return false
         }
@@ -239,7 +240,7 @@ public final class AddRunnerWizardViewModel {
         }
 
         do {
-            let token = try await provisioningClient.readToken(for: login)
+            let token = try await provisioningClient.readToken(for: key)
             try Task.checkCancellation()
 
             for target in targets {
