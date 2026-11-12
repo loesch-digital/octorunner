@@ -17,12 +17,15 @@ struct SettingsTests {
         #expect(AppLanguage.system.locale.identifier == Locale.autoupdatingCurrent.identifier)
     }
 
-    @Test("The package ships German and English settings catalog translations")
-    func catalogTranslations() throws {
-        let germanPath = try #require(Bundle.module.path(forResource: "de", ofType: "lproj"))
-        let german = try #require(Bundle(path: germanPath))
-        #expect(german.localizedString(forKey: "General", value: nil, table: nil) == "Allgemein")
-        #expect(german.localizedString(forKey: "Enable macOS notifications", value: nil, table: nil) == "macOS-Mitteilungen aktivieren")
+    @Test("The app module resolves its German and English catalog translations")
+    func catalogTranslations() {
+        // Exercise the production bundle lookup. Bundle.module here belongs to
+        // the test target as soon as it has its own fixture resources.
+        #expect(RunnerFleetHealth.healthy.localizedTitle(locale: Locale(identifier: "de")) == "Alle lokalen Runner aktiv")
+        #expect(RunnerFleetHealth.unknown.localizedTitle(locale: Locale(identifier: "de")) == "Runner-Status unbekannt")
+        #expect(RunnerFleetHealth.healthy.localizedTitle(locale: Locale(identifier: "en")) == "All local runners active")
+        #expect(AppLocalization.string("General", locale: Locale(identifier: "de")) == "Allgemein")
+        #expect(AppLocalization.string("Enable macOS notifications", locale: Locale(identifier: "de")) == "macOS-Mitteilungen aktivieren")
     }
 
     @Test("Settings windows are never mistaken for the dashboard")

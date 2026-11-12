@@ -19,13 +19,13 @@ public struct RunnerHealthTransitionTracker: Sendable {
             let title: String
             if status == .faulted {
                 kind = .runnerError
-                title = String(localized: "Runner error", bundle: .module, locale: locale)
+                title = AppLocalization.string("Runner error", locale: locale)
             } else if status == .offline && wasOnline {
                 kind = .runnerOffline
-                title = String(localized: "Runner process stopped", bundle: .module, locale: locale)
+                title = AppLocalization.string("Runner process stopped", locale: locale)
             } else if isOnline && !wasOnline {
                 kind = .runnerOnline
-                title = String(localized: "Runner process started", bundle: .module, locale: locale)
+                title = AppLocalization.string("Runner process started", locale: locale)
             } else { continue }
             events.append(AppNotificationEvent(id: "runner-transition-\(observation.id)-\(UUID())", kind: kind, title: title, message: observation.name))
         }

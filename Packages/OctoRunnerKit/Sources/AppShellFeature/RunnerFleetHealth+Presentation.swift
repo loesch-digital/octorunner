@@ -13,11 +13,11 @@ extension RunnerFleetHealth {
 
     public func localizedTitle(locale: Locale) -> String {
         switch self {
-        case .unknown: String(localized: "Runner status unknown", bundle: .module, locale: locale)
-        case .healthy: String(localized: "All local runners active", bundle: .module, locale: locale)
-        case .busy: String(localized: "Runners busy or restarting", bundle: .module, locale: locale)
-        case .offline: String(localized: "Runner offline", bundle: .module, locale: locale)
-        case .faulted: String(localized: "Runner error", bundle: .module, locale: locale)
+        case .unknown: AppLocalization.string("Runner status unknown", locale: locale)
+        case .healthy: AppLocalization.string("All local runners active", locale: locale)
+        case .busy: AppLocalization.string("Runners busy or restarting", locale: locale)
+        case .offline: AppLocalization.string("Runner offline", locale: locale)
+        case .faulted: AppLocalization.string("Runner error", locale: locale)
         }
     }
 }
