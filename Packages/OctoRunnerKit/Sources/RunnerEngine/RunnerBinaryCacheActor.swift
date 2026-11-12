@@ -35,10 +35,12 @@ public enum RunnerEngineError: LocalizedError, Sendable {
 public actor RunnerBinaryCacheActor {
     private let cacheDirectory: URL
     private let urlSession: URLSession
+    private let checksumResolver: any GitHubRunnerChecksumResolving
 
     public init(
         cacheDirectory: URL? = nil,
-        urlSession: URLSession = .shared
+        urlSession: URLSession = URLSession(configuration: .ephemeral),
+        checksumResolver: any GitHubRunnerChecksumResolving = GitHubRunnerChecksumResolver()
     ) {
         if let cacheDirectory {
             self.cacheDirectory = cacheDirectory
@@ -48,46 +50,66 @@ public actor RunnerBinaryCacheActor {
             self.cacheDirectory = caches.appending(path: "io.octorunner.macos/binaries", directoryHint: .isDirectory)
         }
         self.urlSession = urlSession
+        self.checksumResolver = checksumResolver
     }
 
     public static func verifySHA256(of fileURL: URL, expectedHex: String) throws -> Bool {
-        let cleanExpected = expectedHex.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !cleanExpected.isEmpty else { return true }
+        guard let expected = SHA256Checksum(expectedHex) else { return false }
 
-        let data = try Data(contentsOf: fileURL, options: .mappedIfSafe)
-        let digest = SHA256.hash(data: data)
-        let actualHex = digest.map { String(format: "%02x", $0) }.joined()
-        return actualHex == cleanExpected
+        return try sha256(of: fileURL) == expected.hex
+    }
+
+    private static func sha256(of fileURL: URL) throws -> String {
+        let handle = try FileHandle(forReadingFrom: fileURL)
+        defer { try? handle.close() }
+        var hasher = SHA256()
+        while true {
+            try Task.checkCancellation()
+            let chunk = try autoreleasepool { try handle.read(upToCount: 65_536) }
+            guard let chunk, !chunk.isEmpty else { break }
+            hasher.update(data: chunk)
+        }
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
     public func ensureBinaryDownloadedAndVerified(
         package: GitHubRunnerDownloadDTO
     ) async throws -> URL {
+        try Task.checkCancellation()
+        let expected = try await checksumResolver.checksum(for: package)
+        try Task.checkCancellation()
         try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
         let destinationURL = cacheDirectory.appending(path: package.filename)
 
-        if FileManager.default.fileExists(atPath: destinationURL.path()),
-           let isValid = try? Self.verifySHA256(of: destinationURL, expectedHex: package.sha256Checksum ?? ""),
+        if FileManager.default.fileExists(atPath: destinationURL.path(percentEncoded: false)),
+           let isValid = try? Self.verifySHA256(of: destinationURL, expectedHex: expected.hex),
            isValid {
             return destinationURL
         }
 
-        let (tempURL, response) = try await urlSession.download(from: package.downloadUrl)
+        try Task.checkCancellation()
+        let tempURL: URL
+        let response: URLResponse
+        do { (tempURL, response) = try await urlSession.download(from: package.downloadUrl) }
+        catch {
+            if Task.isCancelled || error is CancellationError { throw CancellationError() }
+            // A redirected asset URL or transport diagnostic can contain temporary
+            // credentials. Keep the displayed error independent of that content.
+            throw RunnerEngineError.downloadFailed("The archive download failed. Try again later.")
+        }
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+        try Task.checkCancellation()
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw RunnerEngineError.downloadFailed("HTTP error downloading \(package.downloadUrl.absoluteString)")
+            throw RunnerEngineError.downloadFailed("The archive server did not return a successful HTTP response.")
         }
 
-        if let expected = package.sha256Checksum, !expected.isEmpty {
-            let valid = try Self.verifySHA256(of: tempURL, expectedHex: expected)
-            if !valid {
-                let data = try Data(contentsOf: tempURL, options: .mappedIfSafe)
-                let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-                try? FileManager.default.removeItem(at: tempURL)
-                throw RunnerEngineError.sha256Mismatch(expected: expected, actual: actual)
-            }
+        let actual = try Self.sha256(of: tempURL)
+        guard actual == expected.hex else {
+            throw RunnerEngineError.sha256Mismatch(expected: expected.hex, actual: actual)
         }
 
-        if FileManager.default.fileExists(atPath: destinationURL.path()) {
+        try Task.checkCancellation()
+        if FileManager.default.fileExists(atPath: destinationURL.path(percentEncoded: false)) {
             try FileManager.default.removeItem(at: destinationURL)
         }
         try FileManager.default.moveItem(at: tempURL, to: destinationURL)

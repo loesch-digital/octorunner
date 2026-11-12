@@ -36,6 +36,7 @@ Das Gesamtkonzept ist nach Architektur, Infrastruktur und den einzelnen Release-
 | **[11-runner-status-and-notifications.md](./11-runner-status-and-notifications.md)** | Lokaler Menüleistenstatus, bedarfsgesteuerte macOS-Mitteilungen und Abnahmeschritte | In Arbeit für **`v0.5.0`** |
 | **[12-jobs-history-and-metrics.md](./12-jobs-history-and-metrics.md)** | Jobs-API, Persistenzmigration und Definition der Kennzahlen | In Arbeit für **`v0.5.0`** |
 | **[13-accounts-and-credentials.md](./13-accounts-and-credentials.md)** | Account-Identität, Credential-Lifecycle und Abbruch-/Fehlerfälle | In Arbeit für **`v0.5.0`** |
+| **[14-runner-archive-integrity.md](./14-runner-archive-integrity.md)** | Verpflichtende SHA-256-Prüfung und öffentliche Release-Digests ohne zusätzliche Token-Rechte | In Arbeit für **`v0.5.0`** |
 
 ---
 
