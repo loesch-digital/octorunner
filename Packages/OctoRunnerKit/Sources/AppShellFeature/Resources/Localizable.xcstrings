@@ -3244,6 +3244,210 @@
           }
         }
       }
+    },
+    "Workspace variables & build paths": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspace variables & build paths"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspace-Variablen & Build-Pfade"
+          }
+        }
+      }
+    },
+    "The pipeline directory inside this runner's _work folder. Use it for build folders outside the checkout, such as DerivedData, SourcePackages and TestResults.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The pipeline directory inside this runner's _work folder. Use it for build folders outside the checkout, such as DerivedData, SourcePackages and TestResults."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Pipeline-Verzeichnis im _work-Ordner dieses Runners. Nutze es für Build-Ordner außerhalb des Checkouts, etwa DerivedData, SourcePackages und TestResults."
+          }
+        }
+      }
+    },
+    "The checkout and default working directory for workflow steps. With the default checkout layout it sits inside RUNNER_WORKSPACE; custom checkout paths can change the layout.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The checkout and default working directory for workflow steps. With the default checkout layout it sits inside RUNNER_WORKSPACE; custom checkout paths can change the layout."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Checkout und das Standard-Arbeitsverzeichnis für Workflow-Schritte. Beim Standard-Checkout liegt es innerhalb von RUNNER_WORKSPACE; eigene Checkout-Pfade können den Aufbau ändern."
+          }
+        }
+      }
+    },
+    "Temporary job files. GitHub cleans this directory at the beginning and end of each job, subject to file permissions.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporary job files. GitHub cleans this directory at the beginning and end of each job, subject to file permissions."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporäre Job-Dateien. GitHub bereinigt dieses Verzeichnis am Anfang und Ende jedes Jobs, soweit die Dateirechte das erlauben."
+          }
+        }
+      }
+    },
+    "The registered runner name, for example itemflux-1 or itemflux-2. It identifies the runner; it does not configure build paths or simulator isolation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The registered runner name, for example itemflux-1 or itemflux-2. It identifies the runner; it does not configure build paths or simulator isolation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der registrierte Runner-Name, zum Beispiel itemflux-1 oder itemflux-2. Er identifiziert den Runner; Build-Pfade und getrennte Simulatoren werden dadurch nicht konfiguriert."
+          }
+        }
+      }
+    },
+    "Fastfile example": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fastfile example"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fastfile-Beispiel"
+          }
+        }
+      }
+    },
+    "Each runner instance has its own _work folder. Later jobs on the same runner can reuse these paths. For separate results per attempt, add GITHUB_RUN_ID and GITHUB_RUN_ATTEMPT to the results path.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each runner instance has its own _work folder. Later jobs on the same runner can reuse these paths. For separate results per attempt, add GITHUB_RUN_ID and GITHUB_RUN_ATTEMPT to the results path."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jede Runner-Instanz hat ihren eigenen _work-Ordner. Spätere Jobs auf demselben Runner können diese Pfade wiederverwenden. Für getrennte Ergebnisse pro Versuch ergänze GITHUB_RUN_ID und GITHUB_RUN_ATTEMPT im Ergebnispfad."
+          }
+        }
+      }
+    },
+    "Clean only your own build subfolders after all consumers finish. Do not delete _work or RUNNER_WORKSPACE while the job or its post-steps are running. Deleting SourcePackages also removes its cache benefit. Simulators and global Xcode caches require separate configuration.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean only your own build subfolders after all consumers finish. Do not delete _work or RUNNER_WORKSPACE while the job or its post-steps are running. Deleting SourcePackages also removes its cache benefit. Simulators and global Xcode caches require separate configuration."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereinige nur deine eigenen Build-Unterordner, nachdem alle Nutzer der Dateien fertig sind. Lösche weder _work noch RUNNER_WORKSPACE, solange der Job oder seine Post-Schritte laufen. Beim Löschen von SourcePackages entfällt der Cache-Vorteil. Simulatoren und globale Xcode-Caches müssen separat konfiguriert werden."
+          }
+        }
+      }
+    },
+    "RUNNER_WORKSPACE is set by the GitHub runner implementation but is currently absent from GitHub's variables reference. This example requires it and stops if it is missing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RUNNER_WORKSPACE is set by the GitHub runner implementation but is currently absent from GitHub's variables reference. This example requires it and stops if it is missing."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RUNNER_WORKSPACE wird vom GitHub-Runner gesetzt, ist aber derzeit nicht in GitHubs Variablenreferenz aufgeführt. Dieses Beispiel setzt die Variable voraus und bricht ab, falls sie fehlt."
+          }
+        }
+      }
+    },
+    "GitHub Actions variable reference": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Actions variable reference"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Actions-Variablenreferenz"
+          }
+        }
+      }
+    },
+    "Opens the official documentation in your browser": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the official documentation in your browser"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet die offizielle Dokumentation im Browser"
+          }
+        }
+      }
+    },
+    "Expand for variable explanations, a selectable Fastfile example and cleanup guidance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expand for variable explanations, a selectable Fastfile example and cleanup guidance"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufklappen für Variablen-Erklärungen, ein kopierbares Fastfile-Beispiel und Hinweise zur Bereinigung"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

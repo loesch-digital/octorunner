@@ -31,6 +31,7 @@ public struct AddRunnerWizardSheet: View {
                     targetSelectionSection(bindableVM: bindableVM)
                     instanceCountAndNamingSection(bindableVM: bindableVM)
                     labelsSection(bindableVM: bindableVM)
+                    RunnerWorkspaceHelp()
                     launchAgentSection(bindableVM: bindableVM)
                     RunnerProvisioningFeedback(progress: viewModel.provisioningProgressMessage, errorMessage: viewModel.errorMessage)
                 }
