@@ -14,10 +14,12 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     public func applicationDidFinishLaunching(_ notification: Notification) {
         UNUserNotificationCenter.current().delegate = notificationPresenter
         services.healthMonitor.start(container: modelContainer)
+        services.diskMonitor.start()
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
         services.healthMonitor.stop()
+        services.diskMonitor.stop()
     }
 
     public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

@@ -3174,6 +3174,24 @@
           }
         }
       }
+    },
+    "%@ GB available on the home volume (warning threshold: %@ GB).": {
+      "extractionState": "manual",
+      "comment": "Local-only disk warning. First placeholder: available decimal GB; second: configured warning threshold in GB.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ GB available on the home volume (warning threshold: %@ GB)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ GB auf dem Home-Volume verfügbar (Warngrenze: %@ GB)."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

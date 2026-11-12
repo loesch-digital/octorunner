@@ -10,6 +10,7 @@ public final class AppServices {
     public let historyRateBudget = WorkflowHistoryRateBudget()
     public let accounts = AccountSessionController()
     public let healthMonitor: RunnerHealthMonitor
+    public let diskMonitor: DiskSpaceMonitor
 
     public init(
         preferences: AppPreferencesStore = AppPreferencesStore(),
@@ -20,5 +21,6 @@ public final class AppServices {
         integration = AppIntegrationController(preferences: preferences, loginService: loginService)
         notifications = AppNotificationsController(preferences: preferences, client: notificationClient)
         healthMonitor = RunnerHealthMonitor(notifications: notifications, preferences: preferences)
+        diskMonitor = DiskSpaceMonitor(preferences: preferences, notifications: notifications)
     }
 }
