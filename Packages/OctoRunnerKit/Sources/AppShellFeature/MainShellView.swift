@@ -398,8 +398,8 @@ public struct MainShellView: View {
                 sourceRootDirectory: sourceURL,
                 registerLaunchAgent: true
             )
-            runner.rootDirectoryPath = managedRoot.path()
-            runner.workDirectoryPath = managedRoot.appending(path: "_work").path()
+            runner.rootDirectoryPath = managedRoot.path(percentEncoded: false)
+            runner.workDirectoryPath = managedRoot.appending(path: "_work").path(percentEncoded: false)
             runner.isImportedLocal = false
             runner.lastHeartbeat = .now
 
@@ -408,11 +408,11 @@ public struct MainShellView: View {
                 category: .configuration,
                 severity: .info,
                 title: "Runner Migrated into OctoRunner",
-                summary: "Migrated \(runner.name) into \(managedRoot.path()) and enabled Autostart",
+                summary: "Migrated \(runner.name) into \(managedRoot.path(percentEncoded: false)) and enabled Autostart",
                 actorAccountLogin: accounts.first?.login,
                 targetRunnerName: runner.name,
                 previousValue: previousPath,
-                newValue: managedRoot.path()
+                newValue: managedRoot.path(percentEncoded: false)
             )
             try? modelContext.save()
             updateStatusMessage = "Migrated '\(runner.name)' into OctoRunner managed pool with Autostart enabled."
@@ -539,8 +539,8 @@ public struct MainShellView: View {
                 existing.name = item.config.agentName
                 existing.scopeType = item.config.inferredScopeType
                 existing.scopeUrlString = item.config.gitHubUrl.absoluteString
-                existing.workDirectoryPath = item.workDirectory.path()
-                existing.rootDirectoryPath = item.rootDirectory.path()
+                existing.workDirectoryPath = item.workDirectory.path(percentEncoded: false)
+                existing.rootDirectoryPath = item.rootDirectory.path(percentEncoded: false)
                 existing.runnerVersion = item.runnerVersion
                 existing.labels = item.labels
                 existing.pid = item.listenerPID
@@ -554,7 +554,7 @@ public struct MainShellView: View {
                     status: item.localStatus,
                     labels: item.labels,
                     workDirectory: item.workDirectory,
-                    rootDirectoryPath: item.rootDirectory.path(),
+                    rootDirectoryPath: item.rootDirectory.path(percentEncoded: false),
                     runnerVersion: item.runnerVersion,
                     isImportedLocal: true,
                     pid: item.listenerPID
