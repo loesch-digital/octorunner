@@ -77,6 +77,10 @@ public final class AddRunnerWizardViewModel {
         return (1...clampedCount).map { "\(prefix)-\($0)" }
     }
 
+    public var plannedRunnerCount: Int {
+        resolvedTargetSummaries.count * previewInstanceNames.count
+    }
+
     public var scopeExplanationText: String {
         switch selectedScope {
         case .repository:

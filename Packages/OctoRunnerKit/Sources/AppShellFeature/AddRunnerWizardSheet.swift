@@ -32,31 +32,9 @@ public struct AddRunnerWizardSheet: View {
                     instanceCountAndNamingSection(bindableVM: bindableVM)
                     labelsSection(bindableVM: bindableVM)
                     launchAgentSection(bindableVM: bindableVM)
+                    RunnerProvisioningFeedback(progress: viewModel.provisioningProgressMessage, errorMessage: viewModel.errorMessage)
                 }
                 .padding(.vertical, 2)
-            }
-
-            if let progress = viewModel.provisioningProgressMessage {
-                HStack(spacing: 10) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text(progress)
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(OctoTheme.accentBlue)
-                }
-                .padding(10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(OctoTheme.surfaceHigh, in: .rect(cornerRadius: 8))
-            }
-
-            if let errorMessage = viewModel.errorMessage {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(OctoTheme.errorRed)
-                    Text(errorMessage)
-                        .font(.system(size: 12))
-                        .foregroundStyle(OctoTheme.errorRed)
-                }
             }
 
             Divider()
@@ -64,7 +42,7 @@ public struct AddRunnerWizardSheet: View {
             footerActions
         }
         .padding(22)
-        .frame(width: 640, height: 640)
+        .frame(minWidth: 560, idealWidth: 680, minHeight: 420, idealHeight: 680)
         .background(OctoTheme.surfaceLowest)
         .task {
             await viewModel.loadGitHubTargets(forAccountLogin: accounts.first?.login)
@@ -119,8 +97,9 @@ public struct AddRunnerWizardSheet: View {
                 Text("Personal Account (Multi-Repo)").tag(RunnerScopeType.personalMultiRepo)
                 Text("Organization Pool").tag(RunnerScopeType.organization)
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+            .pickerStyle(.menu)
+            .accessibilityLabel("Runner registration scope")
+            .accessibilityHint("Select one repository, multiple personal repositories, or an organization pool")
 
             infoCallout(vm.scopeExplanationText)
         }
@@ -168,7 +147,7 @@ public struct AddRunnerWizardSheet: View {
             case .personalMultiRepo:
                 if !vm.repositories.isEmpty {
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 4) {
+                        LazyVStack(alignment: .leading, spacing: 4) {
                             ForEach(vm.repositories) { repo in
                                 let isChecked = vm.selectedRepositoryFullNames.contains(repo.fullName)
                                 Button {
@@ -180,6 +159,9 @@ public struct AddRunnerWizardSheet: View {
                                         Text(repo.fullName)
                                             .font(.system(size: 12, design: .monospaced))
                                             .foregroundStyle(.primary)
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+                                            .help(repo.fullName)
                                         if repo.isPrivate {
                                             Text("PRIVATE")
                                                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
@@ -195,6 +177,9 @@ public struct AddRunnerWizardSheet: View {
                                     .contentShape(.rect)
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel("Repository \(repo.fullName)")
+                                .accessibilityValue(isChecked ? "Selected" : "Not selected")
+                                .accessibilityHint("Toggles this repository in the runner setup")
                             }
                         }
                     }
@@ -387,13 +372,15 @@ public struct AddRunnerWizardSheet: View {
                         Text("Provisioning…")
                     } else {
                         Image(systemName: "bolt.fill")
-                        Text("Create & Start \(viewModel.instanceCount) Runner\(viewModel.instanceCount > 1 ? "s" : "")")
+                        Text("Create & Start \(viewModel.plannedRunnerCount) Runner\(viewModel.plannedRunnerCount == 1 ? "" : "s")")
                     }
                 }
             }
             .buttonStyle(.borderedProminent)
             .tint(OctoTheme.accentBlue)
-            .disabled(viewModel.isProvisioning)
+            .disabled(viewModel.isProvisioning || viewModel.plannedRunnerCount == 0)
+            .accessibilityLabel("Create and start \(viewModel.plannedRunnerCount) runners")
+            .accessibilityHint("Creates the selected number of instances for every selected target")
         }
     }
 }
