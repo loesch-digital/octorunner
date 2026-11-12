@@ -7,11 +7,56 @@ import RunnerEngine
 import SwiftUI
 import SwiftData
 import Testing
+import Vision
 
 @MainActor
 @Suite("Settings system integration", .serialized)
 struct SettingsTests {
     private static var retainedContainers: [ModelContainer] = []
+
+    @Test("Every settings category stays directly visible without overflow navigation")
+    func visibleSettingsNavigation() throws {
+        let name = "octorunner-settings-navigation-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let services = AppServices(preferences: AppPreferencesStore(defaults: defaults),
+            loginService: SettingsLoginService(), notificationClient: SettingsNotificationClient())
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        Self.retainedContainers.append(container)
+        for language in ["de", "en"] {
+            for width in [620.0, 960.0] {
+                for scheme in [ColorScheme.light, .dark] {
+                    let host = NSHostingView(rootView: SettingsWindowView(accountSession: services.accounts)
+                        .environment(services.preferences).environment(services.integration)
+                        .environment(services.notifications).modelContainer(container)
+                        .environment(\.locale, Locale(identifier: language)).preferredColorScheme(scheme))
+                    let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: width, height: 520),
+                        styleMask: [.titled], backing: .buffered, defer: false)
+                    window.contentView = host
+                    host.layoutSubtreeIfNeeded()
+                    let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                    host.cacheDisplay(in: host.bounds, to: bitmap)
+                    let request = VNRecognizeTextRequest()
+                    request.recognitionLevel = .accurate
+                    request.recognitionLanguages = [language]
+                    try VNImageRequestHandler(cgImage: try #require(bitmap.cgImage)).perform([request])
+                    let visibleText = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                        .joined().filter { !$0.isWhitespace }.lowercased()
+                    let expected: [String.LocalizationValue] = ["General", "Autostart & Background", "Failover", "Auth & Tokens", "Notifications"]
+                    for key in expected {
+                        let title = AppLocalization.string(key, locale: Locale(identifier: language))
+                        #expect(visibleText.contains(title.filter { !$0.isWhitespace }.lowercased()),
+                            "Missing visible category: \(title), width: \(width)")
+                    }
+                    if let path = ProcessInfo.processInfo.environment["OCTORUNNER_LAYOUT_CAPTURE_DIR"] {
+                        try #require(bitmap.representation(using: .png, properties: [:])).write(to:
+                            URL(fileURLWithPath: path).appending(path: "settings-\(language)-\(Int(width))-\(scheme == .dark ? "dark" : "light").png"))
+                    }
+                    window.contentView = nil
+                }
+            }
+        }
+    }
 
     @Test("The main sidebar offers general app settings rather than a runner-count category")
     func mainSettingsDestination() {

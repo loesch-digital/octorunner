@@ -3448,6 +3448,23 @@
           }
         }
       }
+    },
+    "Open this settings category": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open this settings category"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diesen Einstellungsbereich öffnen"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
