@@ -10,9 +10,16 @@ import Security
 /// - Targets macOS Data Protection Keychain (`kSecUseDataProtectionKeychain: true`, TN3137) with graceful fallback when running ad-hoc without a provisioning profile (`errSecMissingEntitlement`).
 public actor KeychainVaultActor: SecretReading {
     private let servicePrefix: String
+    private let itemDeleter: any KeychainItemDeleting
 
     public init(servicePrefix: String = "io.octorunner.macos") {
         self.servicePrefix = servicePrefix
+        itemDeleter = SystemKeychainItemDeleter()
+    }
+
+    init(servicePrefix: String, itemDeleter: any KeychainItemDeleting) {
+        self.servicePrefix = servicePrefix
+        self.itemDeleter = itemDeleter
     }
 
     public func saveSecret(_ secret: String, account: String, category: String = "github-oauth") throws {
@@ -66,18 +73,19 @@ public actor KeychainVaultActor: SecretReading {
     public func deleteSecret(account: String, category: String = "github-oauth") throws {
         let service = "\(servicePrefix).\(category)"
 
-        var status = performDelete(service: service, account: account, useDataProtection: true)
-        if status == errSecMissingEntitlement || status == errSecItemNotFound {
-            status = performDelete(service: service, account: account, useDataProtection: false)
-        }
-
-        switch status {
-        case errSecSuccess, errSecItemNotFound:
-            return
-        case errSecInteractionNotAllowed:
-            throw KeychainError.interactionNotAllowed
-        default:
-            throw KeychainError.unexpectedStatus(status)
+        // Reads support both macOS implementations. Removing only the preferred
+        // copy could expose an older fallback credential on the next read.
+        let modern = performDelete(service: service, account: account, useDataProtection: true)
+        let legacy = performDelete(service: service, account: account, useDataProtection: false)
+        for status in [modern == errSecMissingEntitlement ? errSecItemNotFound : modern, legacy] {
+            switch status {
+            case errSecSuccess, errSecItemNotFound:
+                continue
+            case errSecInteractionNotAllowed:
+                throw KeychainError.interactionNotAllowed
+            default:
+                throw KeychainError.unexpectedStatus(status)
+            }
         }
     }
 
@@ -136,14 +144,6 @@ public actor KeychainVaultActor: SecretReading {
     }
 
     private func performDelete(service: String, account: String, useDataProtection: Bool) -> OSStatus {
-        var query: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: account
-        ]
-        if useDataProtection {
-            query[kSecUseDataProtectionKeychain] = true
-        }
-        return SecItemDelete(query as CFDictionary)
+        itemDeleter.delete(service: service, account: account, useDataProtection: useDataProtection)
     }
 }
