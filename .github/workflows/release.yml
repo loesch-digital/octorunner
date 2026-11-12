@@ -16,6 +16,7 @@ jobs:
   release:
     name: Build & Publish OctoRunner Release
     runs-on: xcode-27
+    timeout-minutes: 60
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
     steps:

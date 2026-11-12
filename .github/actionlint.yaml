@@ -1,0 +1,5 @@
+# Additional label verified on actual GitHub Actions jobs. actionlint's built-in
+# label registry does not currently include this image (actionlint v1.7.12).
+self-hosted-runner:
+  labels:
+    - xcode-27

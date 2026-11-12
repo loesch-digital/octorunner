@@ -46,6 +46,14 @@ The workflow uses Xcode 27.2 explicitly, runs the Python signing regressions,
 serializes publications, and refuses existing GitHub releases. Failed releases
 must use a new patch tag; the workflow never uploads assets with `--clobber`.
 
+CI jobs have an explicit 20-minute execution limit. Release jobs have a
+60-minute limit, including the notarization command's separate 30-minute wait
+limit. These limits apply after a runner starts the job; queue time is separate.
+When a watch stops updating, check the run's current status and step directly
+instead of treating an open local watch as evidence that GitHub is still busy.
+The additional `xcode-27` label is registered in `.github/actionlint.yaml` for
+local validation because actionlint's built-in label list does not include it.
+
 ## Verification
 
 ```bash
