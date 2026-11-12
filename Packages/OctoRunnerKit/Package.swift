@@ -78,6 +78,7 @@ let package = Package(
                 "TelemetryKit",
                 "AppShellFeature"
             ],
+            resources: [.copy("Fixtures")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         )
     ]

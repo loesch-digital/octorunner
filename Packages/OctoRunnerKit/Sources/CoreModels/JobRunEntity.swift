@@ -14,6 +14,34 @@ public final class JobRunEntity {
     public var durationSeconds: Double = 0
     public var runner: RunnerEntity?
 
+    // Additive fields keep existing stores and their original timestamps intact.
+    // A workflow record is distinct from its matrix jobs and retry attempts.
+    public var recordKindRaw: String = "workflow"
+    public var sourceRaw: String = "legacy"
+    public var accountGitHubUserID: Int64? = nil
+    public var githubJobId: Int64? = nil
+    public var runAttempt: Int? = nil
+    public var jobName: String? = nil
+    public var conclusion: String? = nil
+    public var createdAt: Date? = nil
+    public var actualStartedAt: Date? = nil
+    public var completedAt: Date? = nil
+    public var event: String? = nil
+    public var htmlURLString: String? = nil
+    public var githubRunnerIDSnapshot: Int64? = nil
+    public var runnerNameSnapshot: String? = nil
+
+    /// Only an observed start and completion define a remote duration. Legacy
+    /// durations remain available without inventing a conclusion or attempt.
+    public var measuredDurationSeconds: Double? {
+        if sourceRaw == "legacy" {
+            return durationSeconds.isFinite && durationSeconds >= 0 ? durationSeconds : nil
+        }
+        guard statusRaw == "completed", let actualStartedAt, let completedAt else { return nil }
+        let duration = completedAt.timeIntervalSince(actualStartedAt)
+        return duration.isFinite && duration >= 0 ? duration : nil
+    }
+
     public init(
         id: UUID = UUID(),
         githubRunId: Int64,

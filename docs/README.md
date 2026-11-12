@@ -34,6 +34,7 @@ Das Gesamtkonzept ist nach Architektur, Infrastruktur und den einzelnen Release-
 | **[09-pipeline-privacy-and-test-audit.md](./09-pipeline-privacy-and-test-audit.md)** | Pipeline-Prüfung, bedarfsgesteuerter Ordnerzugriff, minimale GitHub-Rechte und offene Testlücken | **`v0.4.4`** |
 | **[10-development-and-acceptance.md](./10-development-and-acceptance.md)** | Entwicklungsstand aus Xcode abnehmen; Release-ZIP ohne Homebrew installieren | Abnahme |
 | **[11-runner-status-and-notifications.md](./11-runner-status-and-notifications.md)** | Lokaler Menüleistenstatus, bedarfsgesteuerte macOS-Mitteilungen und Abnahmeschritte | In Arbeit für **`v0.5.0`** |
+| **[12-jobs-history-and-metrics.md](./12-jobs-history-and-metrics.md)** | Jobs-API, Persistenzmigration und Definition der Kennzahlen | In Arbeit für **`v0.5.0`** |
 
 ---
 

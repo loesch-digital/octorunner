@@ -113,9 +113,9 @@ struct CoreModelsTests {
         #expect(parsedLog.message.contains("Listening for Jobs"))
     }
 
-    @Test("OctoRunnerPersistence migrates legacy v0.2.x SQLite store in-place and self-heals corrupted stores without fatalError")
+    @Test("OctoRunnerPersistence recreates a store with an invalid SQLite header without fatalError")
     @MainActor
-    func persistenceLightweightMigrationAndSelfHealing() throws {
+    func persistenceCorruptHeaderRecovery() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appending(path: "octorunner-migration-test-\(UUID().uuidString)", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
