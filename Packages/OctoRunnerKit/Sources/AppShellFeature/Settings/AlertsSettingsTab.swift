@@ -75,6 +75,8 @@ public struct AlertsSettingsTab: View {
             } footer: {
                 Text("Runner events track local process availability. Monitoring continues with windows closed. Quitting OctoRunner stops monitoring and new status notifications.", bundle: .module)
                     .fixedSize(horizontal: false, vertical: true)
+                Text("Job alerts check recent GitHub runs while OctoRunner is running. The first check establishes a baseline. Configure organization repositories under Jobs → History sources.", bundle: .module)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .disabled(!preferences.notificationPolicy.enabled)
         }

@@ -64,8 +64,15 @@ public final class AppPreferencesStore {
         }
     }
     public var notificationPolicy: NotificationPolicy {
-        didSet { persist(notificationPolicy, forKey: "preferences.notificationPolicy") }
+        didSet {
+            if oldValue.enabled != notificationPolicy.enabled || oldValue.jobFailure != notificationPolicy.jobFailure {
+                jobNotificationConsentRevision &+= 1
+            }
+            persist(notificationPolicy, forKey: "preferences.notificationPolicy")
+        }
     }
+    /// In-memory revision detects off/on cycles even between background polls.
+    public private(set) var jobNotificationConsentRevision: UInt64 = 0
     private var storedHistoryPreferences = WorkflowHistoryPreferences()
     public var historyPreferences: WorkflowHistoryPreferences {
         get { storedHistoryPreferences }

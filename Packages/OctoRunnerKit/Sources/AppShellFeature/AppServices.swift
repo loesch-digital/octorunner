@@ -11,6 +11,7 @@ public final class AppServices {
     public let accounts = AccountSessionController()
     public let healthMonitor: RunnerHealthMonitor
     public let diskMonitor: DiskSpaceMonitor
+    public let jobFailureMonitor: LocalJobFailureMonitor
 
     public init(
         preferences: AppPreferencesStore = AppPreferencesStore(),
@@ -22,5 +23,6 @@ public final class AppServices {
         notifications = AppNotificationsController(preferences: preferences, client: notificationClient)
         healthMonitor = RunnerHealthMonitor(notifications: notifications, preferences: preferences)
         diskMonitor = DiskSpaceMonitor(preferences: preferences, notifications: notifications)
+        jobFailureMonitor = LocalJobFailureMonitor(preferences: preferences, notifications: notifications, rateBudget: historyRateBudget)
     }
 }

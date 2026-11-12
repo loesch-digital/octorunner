@@ -3192,6 +3192,58 @@
           }
         }
       }
+    },
+    "Local workflow job failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local workflow job failed"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokaler Workflow-Job fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "A workflow job failed on %@ in %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A workflow job failed on %@ in %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Workflow-Job auf %@ in %@ ist fehlgeschlagen."
+          }
+        }
+      },
+      "comment": "First placeholder: local runner name. Second: canonical owner/repository. No workflow output or credentials."
+    },
+    "Job alerts check recent GitHub runs while OctoRunner is running. The first check establishes a baseline. Configure organization repositories under Jobs → History sources.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job alerts check recent GitHub runs while OctoRunner is running. The first check establishes a baseline. Configure organization repositories under Jobs → History sources."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jobmeldungen prüfen aktuelle GitHub-Läufe, während OctoRunner läuft. Die erste Prüfung erfasst die Ausgangslage. Repositories für Organisationsrunner lassen sich unter Jobs → Historienquellen hinzufügen."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

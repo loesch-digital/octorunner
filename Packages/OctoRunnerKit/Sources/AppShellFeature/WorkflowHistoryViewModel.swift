@@ -17,6 +17,7 @@ public final class WorkflowHistoryViewModel {
     public private(set) var repositoryFailures: [WorkflowHistoryRepositoryFailure] = []
     private let rateBudget: WorkflowHistoryRateBudget
     private let loader: any WorkflowHistoryLoading
+    private let acceptResponse: @MainActor () -> Bool
     private var selection: WorkflowHistorySelection?
     private var generation = 0
     private var hasLoadedPage = false
@@ -25,9 +26,11 @@ public final class WorkflowHistoryViewModel {
         selection.flatMap { rateBudget.deadline(for: $0.accountID) }
     }
 
-    public init(loader: any WorkflowHistoryLoading = GitHubWorkflowHistoryLoader(), rateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget()) {
+    public init(loader: any WorkflowHistoryLoading = GitHubWorkflowHistoryLoader(), rateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(),
+                acceptResponse: @escaping @MainActor () -> Bool = { true }) {
         self.loader = loader
         self.rateBudget = rateBudget
+        self.acceptResponse = acceptResponse
     }
 
     public func select(_ selection: WorkflowHistorySelection?, in context: ModelContext) throws {
@@ -60,7 +63,7 @@ public final class WorkflowHistoryViewModel {
         }
         var failures: [WorkflowHistoryRepositoryFailure] = []
         for source in selections {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, acceptResponse() else { return }
             do { try select(source, in: context) }
             catch { self.error = .unavailable; return }
             repositoryFailures = failures
@@ -81,7 +84,7 @@ public final class WorkflowHistoryViewModel {
     }
 
     public func load(in context: ModelContext, refresh: Bool = false, now: Date? = nil) async {
-        guard !Task.isCancelled, let selection, !isLoading, refresh || !hasLoadedPage || nextPage != nil else { return }
+        guard !Task.isCancelled, acceptResponse(), let selection, !isLoading, refresh || !hasLoadedPage || nextPage != nil else { return }
         if let deadline = retryNotBefore, deadline > (now ?? .now) { return }
         let currentGeneration = generation
         isLoading = true
@@ -130,7 +133,7 @@ public final class WorkflowHistoryViewModel {
     }
 
     private func isCurrent(_ generation: Int, selection: WorkflowHistorySelection) -> Bool {
-        !Task.isCancelled && self.generation == generation && self.selection == selection
+        !Task.isCancelled && self.generation == generation && self.selection == selection && acceptResponse()
     }
 
     private func reloadEntries(in context: ModelContext) throws {
