@@ -8,7 +8,7 @@ import SwiftData
 public enum WorkflowHistoryStore {
     @discardableResult
     public static func upsert(run: GitHubWorkflowRunDTO, jobs: [GitHubWorkflowJobDTO],
-        repository: String, accountID: Int64, jobsComplete: Bool = false,
+        repository: String, accountID: Int64, jobsComplete: Bool = false, observedAt: Date = .now,
         in context: ModelContext) throws -> JobRunEntity {
         try Task.checkCancellation()
         let repository = try canonicalRepository(repository)
@@ -23,15 +23,19 @@ public enum WorkflowHistoryStore {
         }))
         let workflow = record(jobID: nil, attempt: run.runAttempt, from: records, in: context)
         update(workflow, run: run, repository: repository, accountID: accountID)
+        workflow.observedAt = observedAt
+        if run.status != "completed" { workflow.jobDetailsComplete = false }
         // updated_at is not a completion timestamp. Only a complete job response
         // can establish the end of a completed workflow's execution interval.
         if jobsComplete {
+            workflow.jobDetailsComplete = true
             workflow.completedAt = run.status == "completed" && !jobs.isEmpty && jobs.allSatisfy({ $0.status == "completed" && $0.completedAt != nil })
                 ? jobs.compactMap(\.completedAt).max() : nil
         }
         for job in jobs {
             let entity = record(jobID: job.id, attempt: run.runAttempt, from: records, in: context)
             update(entity, run: run, repository: repository, accountID: accountID)
+            entity.observedAt = observedAt
             entity.recordKindRaw = "job"
             entity.githubJobId = job.id
             entity.jobName = job.name

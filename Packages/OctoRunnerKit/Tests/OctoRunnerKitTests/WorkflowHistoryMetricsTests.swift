@@ -77,6 +77,7 @@ struct WorkflowHistoryMetricsTests {
         status: String = "completed", runner: Int64? = nil) -> WorkflowHistoryEntry {
         let entity = JobRunEntity(githubRunId: run, workflowName: "CI", repositoryFullName: repository, branchName: "main", commitSha: "fixture-sha", statusRaw: status)
         entity.sourceRaw = "github"
+        entity.observedAt = now
         entity.accountGitHubUserID = account
         entity.runAttempt = attempt
         entity.conclusion = conclusion

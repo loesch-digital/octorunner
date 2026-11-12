@@ -61,8 +61,10 @@ struct GitHubActionsTests {
         #expect(first.items.first?.conclusion == nil)
         #expect(first.items.first?.startedAt != nil)
         #expect(first.nextPage?.absoluteString == next)
+        #expect(first.rateLimit?.remaining == 4999)
         let second = try await client.workflowRuns(repository: "example/repo", token: "fixture-token", page: first.nextPage)
         #expect(second.items.isEmpty && second.nextPage == nil)
+        #expect(second.rateLimit == nil)
         let requests = await transport.requests
         #expect(requests.count == 2)
         #expect(requests.allSatisfy { $0.httpMethod == "GET" && $0.value(forHTTPHeaderField: "Authorization") == "Bearer fixture-token" })
@@ -112,7 +114,13 @@ struct GitHubActionsTests {
     func httpErrors(_ status: Int) async {
         let transport = ActionsFixtureTransport([GitHubActionsHTTPResponse(statusCode: status, headers: ["X-RateLimit-Limit": "5000", "X-RateLimit-Remaining": "0", "Retry-After": "60"], data: Data("reflected fixture-token".utf8))])
         let client = GitHubActionsClient(transport: transport)
-        await #expect(throws: GitHubActionsError.httpStatus(status)) { try await client.workflowRuns(repository: "example/repo", token: "fixture-token") }
+        do {
+            _ = try await client.workflowRuns(repository: "example/repo", token: "fixture-token")
+            Issue.record("Expected an HTTP failure")
+        } catch GitHubActionsError.httpStatus(let receivedStatus, let rate) {
+            #expect(receivedStatus == status)
+            #expect(rate?.remaining == 0 && rate?.retryAfterSeconds == 60)
+        } catch { Issue.record("Expected a typed HTTP status error") }
         #expect(await client.rateLimit?.remaining == 0)
         #expect(await client.rateLimit?.retryAfterSeconds == 60)
     }

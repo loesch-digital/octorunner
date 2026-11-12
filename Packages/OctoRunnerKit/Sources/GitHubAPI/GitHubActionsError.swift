@@ -4,5 +4,5 @@ public enum GitHubActionsError: Error, Sendable, Equatable {
     case invalidResponse
     case invalidRunAttempt
     case invalidToken
-    case httpStatus(Int)
+    case httpStatus(Int, rateLimit: GitHubRateLimitSnapshot? = nil)
 }

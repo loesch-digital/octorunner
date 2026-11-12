@@ -30,6 +30,8 @@ public final class JobRunEntity {
     public var htmlURLString: String? = nil
     public var githubRunnerIDSnapshot: Int64? = nil
     public var runnerNameSnapshot: String? = nil
+    public var observedAt: Date? = nil
+    public var jobDetailsComplete: Bool = false
 
     /// Only an observed start and completion define a remote duration. Legacy
     /// durations remain available without inventing a conclusion or attempt.

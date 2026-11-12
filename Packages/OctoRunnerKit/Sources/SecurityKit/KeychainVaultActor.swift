@@ -8,7 +8,7 @@ import Security
 /// - Uses Add-or-Update pattern with fresh dictionaries per call.
 /// - Uses `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` for background daemon/runner access.
 /// - Targets macOS Data Protection Keychain (`kSecUseDataProtectionKeychain: true`, TN3137) with graceful fallback when running ad-hoc without a provisioning profile (`errSecMissingEntitlement`).
-public actor KeychainVaultActor {
+public actor KeychainVaultActor: SecretReading {
     private let servicePrefix: String
 
     public init(servicePrefix: String = "io.octorunner.macos") {

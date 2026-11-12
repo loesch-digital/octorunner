@@ -2,6 +2,8 @@ import Foundation
 
 /// Read-only Actions REST API. Credentials never appear in URLs, errors or storage.
 public actor GitHubActionsClient {
+    /// Last observed metadata across requests. Use a page/error's own snapshot
+    /// when making decisions about that specific request or credential.
     public private(set) var rateLimit: GitHubRateLimitSnapshot?
     private let transport: any GitHubActionsTransport
 
@@ -11,21 +13,21 @@ public actor GitHubActionsClient {
 
     public func workflowRuns(repository: String, token: String, page: URL? = nil) async throws -> GitHubActionsPage<GitHubWorkflowRunDTO> {
         let path = try repositoryPath(repository) + "/actions/runs"
-        let (data, next) = try await load(path: path, page: page, token: token)
+        let (data, next, rate) = try await load(path: path, page: page, token: token)
         let result = try Self.decoder().decode(GitHubWorkflowRunsResponse.self, from: data)
-        return GitHubActionsPage(items: result.workflowRuns, nextPage: next, totalCount: result.totalCount)
+        return GitHubActionsPage(items: result.workflowRuns, nextPage: next, totalCount: result.totalCount, rateLimit: rate)
     }
 
     public func workflowJobs(repository: String, runID: Int64, attempt: Int, token: String, page: URL? = nil) async throws -> GitHubActionsPage<GitHubWorkflowJobDTO> {
         guard runID > 0, attempt > 0 else { throw GitHubActionsError.invalidRunAttempt }
         let path = try repositoryPath(repository) + "/actions/runs/\(runID)/attempts/\(attempt)/jobs"
-        let (data, next) = try await load(path: path, page: page, token: token)
+        let (data, next, rate) = try await load(path: path, page: page, token: token)
         let result = try Self.decoder().decode(GitHubWorkflowJobsResponse.self, from: data)
         guard result.jobs.allSatisfy({ $0.runID == runID }) else { throw GitHubActionsError.invalidResponse }
-        return GitHubActionsPage(items: result.jobs, nextPage: next, totalCount: result.totalCount)
+        return GitHubActionsPage(items: result.jobs, nextPage: next, totalCount: result.totalCount, rateLimit: rate)
     }
 
-    private func load(path: String, page: URL?, token: String) async throws -> (Data, URL?) {
+    private func load(path: String, page: URL?, token: String) async throws -> (Data, URL?, GitHubRateLimitSnapshot?) {
         try Task.checkCancellation()
         guard !token.isEmpty, token.utf8.allSatisfy({ (33...126).contains($0) }) else { throw GitHubActionsError.invalidToken }
         guard let initial = URL(string: "https://api.github.com\(path)?per_page=100&page=1") else { throw GitHubActionsError.invalidRepository }
@@ -39,12 +41,12 @@ public actor GitHubActionsClient {
         request.setValue("2026-03-10", forHTTPHeaderField: "X-GitHub-Api-Version")
         let response = try await transport.send(request)
         try Task.checkCancellation()
-        if response.headers.keys.contains(where: { $0.hasPrefix("x-ratelimit-") || $0 == "retry-after" }) {
-            rateLimit = GitHubRateLimitSnapshot(headers: response.headers)
-        }
-        guard response.statusCode == 200 else { throw GitHubActionsError.httpStatus(response.statusCode) }
+        let hasRateHeaders = response.headers.keys.contains { $0.hasPrefix("x-ratelimit-") || $0 == "retry-after" }
+        let responseRate = hasRateHeaders ? GitHubRateLimitSnapshot(headers: response.headers) : nil
+        if let responseRate { rateLimit = responseRate }
+        guard response.statusCode == 200 else { throw GitHubActionsError.httpStatus(response.statusCode, rateLimit: responseRate) }
         let next = try nextPage(from: response.headers["link"], path: path)
-        return (response.data, next)
+        return (response.data, next, responseRate)
     }
 
     private func repositoryPath(_ repository: String) throws -> String {

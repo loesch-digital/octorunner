@@ -1,7 +1,7 @@
 # Jobs-Historie: Daten und Kennzahlen
 
-In Arbeit für v0.5.0. API, Persistenz und Kennzahlen sind implementiert; die
-Jobs-Oberfläche und deren Lade-/Accountwechselsteuerung folgen noch.
+In Arbeit für v0.5.0. API, Persistenz, Kennzahlen und Lade-/Accountwechselsteuerung
+sind implementiert; die Jobs-Oberfläche folgt noch.
 
 Der neue Actions-Client liest ausschließlich Workflow-Runs und Jobs über GET.
 Er fordert keine zusätzlichen Schreibrechte an. Weiterleitungen werden abgelehnt;
@@ -31,6 +31,29 @@ Die Kennzahlen beschreiben nur das geladene Historienfenster:
   Kennzahl bewertet Laufzeit, nicht erfolgreichen Abschluss.
 - „Heute abgeschlossen“ verwendet bekannte Abschlusszeiten und den übergebenen
   Kalender. Fehlende Zeitwerte werden nicht durch den aktuellen Zeitpunkt ersetzt.
+- Live-Zähler für laufende und wartende Workflows benötigen eine Beobachtung aus
+  den letzten 90 Sekunden. Ältere offene Zustände werden getrennt als veraltet
+  gezählt; die Historie behält ihren zuletzt beobachteten Status.
+
+Der Loader lädt zehn Workflow-Runs pro Seite und alle zugehörigen Job-Seiten
+(höchstens 20 pro Versuch; zyklische Pagination wird abgelehnt). Vollständig
+geladene, abgeschlossene Versuche verwenden ihre gespeicherten Job-Details weiter.
+Laufende Versuche werden erneut abgefragt. Fehlende Versuchszahlen werden nicht
+durch einen geschätzten ersten Versuch ersetzt.
+
+Account- und Auswahlwechsel sowie Cancellation verwerfen verspätete Daten vor
+jedem SwiftData-Zugriff. Rate-Limit-Metadaten gehören dagegen zur jeweiligen
+Antwort und ihrem Account: Eine spät eintreffende Sperre bleibt auch nach einem
+Auswahlwechsel erhalten und verkürzt keine bereits bekannte längere Wartezeit.
+Ein Repositorywechsel umgeht die Kontosperre nicht; andere Accounts bleiben
+nutzbar. Bei ausgeschöpftem Budget werden keine weiteren Job-Abfragen gesendet.
+Partielle Details gelten dabei nicht als vollständig geladen.
+
+Vor einem neuen Aufruf werden sowohl `Retry-After` als auch der Reset eines
+ausgeschöpften Budgets beachtet. Fehlt ein brauchbarer Servertermin, beginnt die
+Wartezeit bei einer Minute und verdoppelt sich bei erneuten Limit-Fehlern bis auf
+eine Stunde. Der Loader startet selbst keine automatischen Wiederholungen.
+Siehe [GitHubs Regeln für Rate-Limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
 
 GitHubs `updated_at` ist kein Abschlusszeitpunkt. Ein Workflow-Ende wird deshalb
 erst aus der vollständigen Job-Liste mit bekannten Abschlusszeiten abgeleitet.
@@ -43,8 +66,9 @@ Der Test verwendet keine automatische Löschung oder Neuerstellung des Stores.
 Zusätzlich prüft er, dass neue Historien-Einträge nach der Migration gespeichert
 und in einem frischen ModelContext wieder gelesen werden können.
 
-Lokaler Zwischenstand vom 12. November 2026: 113 Swift-Tests grün mit
+Lokaler Zwischenstand vom 12. November 2026: 129 Swift-Tests grün mit
 Coverage-Instrumentierung; Zeilenabdeckung Historien-Store 99 %, Kennzahlen 100 %,
-Historienfilter rund 97 % und Actions-Client rund 97 %. Diese Werte betreffen die
+Historienfilter rund 97 %, Actions-Client rund 97 %, Loader 100 % und Lade-ViewModel
+rund 98 %. Diese Werte betreffen die
 SPM-Datenlogik. Sie ersetzen weder die noch ausstehende Jobs-UI-Abnahme noch einen
 Test aller unterstützten macOS-Versionen oder der vollständigen Anwendung.

@@ -23,6 +23,7 @@ public struct WorkflowHistoryEntry: Sendable, Identifiable {
     public let runnerName: String?
     public let event: String?
     public let htmlURL: URL?
+    public let observedAt: Date?
 
     @MainActor
     public init(_ entity: JobRunEntity) {
@@ -47,6 +48,13 @@ public struct WorkflowHistoryEntry: Sendable, Identifiable {
         runnerName = entity.runnerNameSnapshot ?? entity.runner?.name
         event = entity.event
         htmlURL = entity.htmlURLString.flatMap(URL.init(string:))
+        observedAt = entity.observedAt
+    }
+
+    public func isFresh(at now: Date, maxAge: TimeInterval = 90) -> Bool {
+        guard let observedAt else { return false }
+        let age = now.timeIntervalSince(observedAt)
+        return age >= -5 && age <= maxAge
     }
 
     var runKey: String { "\(accountID.map(String.init) ?? "legacy")|\(repository.lowercased())|\(githubRunID)" }

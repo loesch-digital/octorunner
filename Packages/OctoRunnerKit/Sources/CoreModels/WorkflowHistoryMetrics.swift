@@ -5,6 +5,7 @@ import Foundation
 public struct WorkflowHistoryMetrics: Sendable {
     public let runningCount: Int
     public let queuedCount: Int
+    public let stalePendingCount: Int
     public let completedToday: Int
     public let resolvedRunCount: Int
     public let durationSampleCount: Int
@@ -16,8 +17,9 @@ public struct WorkflowHistoryMetrics: Sendable {
 
     public init(entries: [WorkflowHistoryEntry], now: Date = .now, calendar: Calendar = .current, durationSLASeconds: Double? = nil) {
         let runs = WorkflowHistoryFilter.latestWorkflows(in: entries)
-        runningCount = runs.count { $0.status == "in_progress" }
-        queuedCount = runs.count { WorkflowHistoryStatusFilter.queued.matches($0) }
+        runningCount = runs.count { $0.status == "in_progress" && $0.isFresh(at: now) }
+        queuedCount = runs.count { WorkflowHistoryStatusFilter.queued.matches($0) && $0.isFresh(at: now) }
+        stalePendingCount = runs.count { ($0.status == "in_progress" || WorkflowHistoryStatusFilter.queued.matches($0)) && !$0.isFresh(at: now) }
         completedToday = runs.count {
             $0.status == "completed" && $0.completedAt.map { $0 <= now && calendar.isDate($0, inSameDayAs: now) } == true
         }
