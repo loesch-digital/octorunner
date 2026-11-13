@@ -5,6 +5,7 @@ public enum SidebarSection: String, CaseIterable, Sendable, Identifiable {
     case activeDaemons = "active_daemons"
     case failedFaulted = "failed_faulted"
     case queueWorkpools = "queue_workpools"
+    case hostTelemetry = "host_telemetry"
     case launchdSettings = "launchd_settings"
 
     public var id: String { rawValue }
@@ -21,6 +22,8 @@ public enum SidebarSection: String, CaseIterable, Sendable, Identifiable {
             return "Queue & Workpools"
         case .launchdSettings:
             return "Settings"
+        case .hostTelemetry:
+            return "Host Telemetry"
         }
     }
 
@@ -36,6 +39,8 @@ public enum SidebarSection: String, CaseIterable, Sendable, Identifiable {
             return "list.bullet.rectangle"
         case .launchdSettings:
             return "gearshape"
+        case .hostTelemetry:
+            return "waveform.path.ecg"
         }
     }
 }

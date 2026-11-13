@@ -5225,6 +5225,470 @@
           }
         }
       }
+    },
+    "Host Telemetry": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host-Telemetrie"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host Telemetry"
+          }
+        }
+      }
+    },
+    "CPU Load": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU-Auslastung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU Load"
+          }
+        }
+      }
+    },
+    "Total CPU load": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU-Gesamtauslastung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total CPU load"
+          }
+        }
+      }
+    },
+    "Performance cores": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Performance-Kerne"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Performance cores"
+          }
+        }
+      }
+    },
+    "Efficiency cores": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Effizienz-Kerne"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Efficiency cores"
+          }
+        }
+      }
+    },
+    "Physical memory": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Physischer Speicher"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Physical memory"
+          }
+        }
+      }
+    },
+    "Used physical memory": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belegter physischer Speicher"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used physical memory"
+          }
+        }
+      }
+    },
+    "App memory": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-Speicher"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App memory"
+          }
+        }
+      }
+    },
+    "Wired memory": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wired-Speicher"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wired memory"
+          }
+        }
+      }
+    },
+    "Compressed memory": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Komprimierter Speicher"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compressed memory"
+          }
+        }
+      }
+    },
+    "Host-wide resident memory; filesystem cache size is a separate disk measurement.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Residenter Speicher des gesamten Hosts; die Größe von Dateisystem-Caches ist eine separate Festplattenmessung."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host-wide resident memory; filesystem cache size is a separate disk measurement."
+          }
+        }
+      }
+    },
+    "Storage & Device I/O": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speicher & Geräte-I/O"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage & Device I/O"
+          }
+        }
+      }
+    },
+    "Available on home volume": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verfügbar auf dem Benutzer-Volume"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available on home volume"
+          }
+        }
+      }
+    },
+    "Volume capacity": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume-Kapazität"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume capacity"
+          }
+        }
+      }
+    },
+    "Device read": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geräte lesen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device read"
+          }
+        }
+      }
+    },
+    "Device write": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geräte schreiben"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device write"
+          }
+        }
+      }
+    },
+    "Throughput covers available host block devices, not an individual APFS volume. Storage analysis is in Cache & Storage settings.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Durchsatz umfasst verfügbare Blockgeräte des Hosts, kein einzelnes APFS-Volume. Die Speicheranalyse befindet sich unter Cache & Speicher."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Throughput covers available host block devices, not an individual APFS volume. Storage analysis is in Cache & Storage settings."
+          }
+        }
+      }
+    },
+    "GitHub API": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-API"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub API"
+          }
+        }
+      }
+    },
+    "Request limit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anfragelimit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request limit"
+          }
+        }
+      }
+    },
+    "Remaining API budget": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbleibendes API-Budget"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remaining API budget"
+          }
+        }
+      }
+    },
+    "Resets at": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zurücksetzung um"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resets at"
+          }
+        }
+      }
+    },
+    "Observation age": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alter der Messung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Observation age"
+          }
+        }
+      }
+    },
+    "Sample interval": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messintervall"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sample interval"
+          }
+        }
+      }
+    },
+    "Change how often host metrics are sampled while this screen is open.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ändert, wie oft Host-Messwerte bei geöffnetem Bildschirm erfasst werden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change how often host metrics are sampled while this screen is open."
+          }
+        }
+      }
+    },
+    "Refresh telemetry": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telemetrie aktualisieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh telemetry"
+          }
+        }
+      }
+    },
+    "Take a new local measurement now.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jetzt eine neue lokale Messung durchführen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a new local measurement now."
+          }
+        }
+      }
+    },
+    "Load covers all logical cores. Load by core type is unavailable.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Auslastung umfasst alle logischen Kerne. Die Auslastung je Kerntyp ist nicht verfügbar."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load covers all logical cores. Load by core type is unavailable."
+          }
+        }
+      }
+    },
+    "Last updated from Jobs for the active account. Open Jobs and refresh to retrieve the current API budget.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuletzt aus Jobs für das aktive Konto aktualisiert. Zum Abrufen des aktuellen API-Budgets Jobs öffnen und neu laden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last updated from Jobs for the active account. Open Jobs and refresh to retrieve the current API budget."
+          }
+        }
+      }
+    },
+    "Unified Memory": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemeinsamer Arbeitsspeicher"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unified Memory"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

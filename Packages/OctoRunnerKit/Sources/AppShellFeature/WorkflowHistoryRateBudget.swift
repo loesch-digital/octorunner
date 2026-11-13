@@ -1,4 +1,5 @@
 import Foundation
+import GitHubAPI
 import Observation
 
 /// Shared for the application lifetime, independent of any history view.
@@ -7,9 +8,16 @@ import Observation
 public final class WorkflowHistoryRateBudget {
     private var retryDeadlines: [Int64: Date] = [:]
     private var rateFailures: [Int64: Int] = [:]
+    private var observations: [Int64: GitHubRateLimitSnapshot] = [:]
 
     public init() {}
     public func deadline(for accountID: Int64) -> Date? { retryDeadlines[accountID] }
+    public func snapshot(for accountID: Int64) -> GitHubRateLimitSnapshot? { observations[accountID] }
+
+    func observe(_ snapshot: GitHubRateLimitSnapshot?, accountID: Int64) {
+        guard let snapshot, snapshot.observedAt >= (observations[accountID]?.observedAt ?? .distantPast) else { return }
+        observations[accountID] = snapshot
+    }
 
     func recordLimit(until deadline: Date?, accountID: Int64, now: Date) {
         let failures = min((rateFailures[accountID] ?? 0) + 1, 7)
