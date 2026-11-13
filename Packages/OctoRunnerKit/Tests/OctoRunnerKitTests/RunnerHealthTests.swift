@@ -16,7 +16,7 @@ struct RunnerHealthTests {
             #expect(NSImage(systemSymbolName: health.symbolName, accessibilityDescription: nil) != nil)
             let image = RunnerMenuBarIcon.image(for: health)
             #expect(!image.isTemplate)
-            #expect(image.size == NSSize(width: 18, height: 18))
+            #expect(image.size == NSSize(width: 32, height: 18))
             let data = try #require(image.tiffRepresentation)
             let bitmap = try #require(NSBitmapImageRep(data: data))
             #expect(bitmap.hasAlpha)
@@ -34,6 +34,82 @@ struct RunnerHealthTests {
             #expect(visible)
             if health != .unknown { #expect(colored) }
             #expect(!health.localizedTitle(locale: Locale(identifier: "de")).isEmpty)
+        }
+    }
+
+    @Test("The OctoRunner mark stays visible and identical beside every status indicator in Light and Dark")
+    @MainActor
+    func menuBarLogo() throws {
+        for name in [NSAppearance.Name.aqua, .darkAqua] {
+            let appearance = try #require(NSAppearance(named: name))
+            var reference: [UInt8]?
+            for health in RunnerFleetHealth.allCases {
+                let image = RunnerMenuBarIcon.image(for: health)
+                var data: Data?
+                appearance.performAsCurrentDrawingAppearance { data = image.tiffRepresentation }
+                let imageData = try #require(data)
+                let bitmap = try #require(NSBitmapImageRep(data: imageData))
+                let scale = Double(bitmap.pixelsWide) / image.size.width
+                var logo: [UInt8] = []
+                var visiblePixels = 0
+                for y in 0..<bitmap.pixelsHigh {
+                    for x in Int(10 * scale)..<bitmap.pixelsWide {
+                        let color = try #require(bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
+                        if color.alphaComponent > 0.1 { visiblePixels += 1 }
+                        for component in [color.redComponent, color.greenComponent, color.blueComponent, color.alphaComponent] {
+                            logo.append(UInt8(clamping: Int((component * 255).rounded())))
+                        }
+                    }
+                }
+                #expect(visiblePixels > 20)
+                if let reference { #expect(logo == reference) }
+                else { reference = logo }
+            }
+        }
+    }
+
+    @Test("Differentiate Without Color gives every menu bar status a distinct badge shape")
+    @MainActor
+    func menuBarAccessibleShapes() throws {
+        var patterns = Set<[UInt8]>()
+        for health in RunnerFleetHealth.allCases {
+            let image = RunnerMenuBarIcon.image(for: health, differentiateWithoutColor: true)
+            let data = try #require(image.tiffRepresentation)
+            let bitmap = try #require(NSBitmapImageRep(data: data))
+            let width = Int(10 * Double(bitmap.pixelsWide) / image.size.width)
+            var alpha: [UInt8] = []
+            for y in 0..<bitmap.pixelsHigh {
+                for x in 0..<width {
+                    let color = try #require(bitmap.colorAt(x: x, y: y))
+                    alpha.append(UInt8(clamping: Int((color.alphaComponent * 255).rounded())))
+                }
+            }
+            patterns.insert(alpha)
+        }
+        #expect(patterns.count == RunnerFleetHealth.allCases.count)
+        if let path = ProcessInfo.processInfo.environment["OCTORUNNER_MENU_CAPTURE_DIR"] {
+            for name in [NSAppearance.Name.aqua, .darkAqua] {
+                let appearance = try #require(NSAppearance(named: name))
+                var data: Data?
+                appearance.performAsCurrentDrawingAppearance {
+                    let sheet = NSImage(size: NSSize(width: 320, height: 220), flipped: false) { bounds in
+                        NSColor.windowBackgroundColor.setFill()
+                        bounds.fill()
+                        for (index, health) in RunnerFleetHealth.allCases.enumerated() {
+                            let y = CGFloat(index * 42 + 4)
+                            RunnerMenuBarIcon.image(for: health).draw(in: NSRect(x: 8, y: y, width: 64, height: 36))
+                            RunnerMenuBarIcon.image(for: health, differentiateWithoutColor: true).draw(in: NSRect(x: 88, y: y, width: 64, height: 36))
+                            (String(describing: health) as NSString).draw(at: NSPoint(x: 172, y: y + 10), withAttributes: [.font: NSFont.systemFont(ofSize: 14), .foregroundColor: NSColor.labelColor])
+                        }
+                        return true
+                    }
+                    data = sheet.tiffRepresentation
+                }
+                let tiff = try #require(data)
+                let bitmap = try #require(NSBitmapImageRep(data: tiff))
+                let png = try #require(bitmap.representation(using: .png, properties: [:]))
+                try png.write(to: URL(fileURLWithPath: path).appending(path: "menubar-\(name == .aqua ? "light" : "dark").png"))
+            }
         }
     }
 

@@ -31,10 +31,16 @@ public actor RunnerProcessSampler: RunnerProcessSampling {
             let parts = line.trimmingCharacters(in: .whitespaces).split(maxSplits: 1, whereSeparator: \.isWhitespace)
             guard parts.count == 2, let pid = Int32(parts[0]), pid > 0 else { throw CocoaError(.fileReadCorruptFile) }
             let executable = String(parts[1]).trimmingCharacters(in: .whitespaces)
-            let listener = executable.hasSuffix("/bin/Runner.Listener")
-            let worker = executable.hasSuffix("/bin/Runner.Worker")
+            let executableURL = URL(fileURLWithPath: executable)
+            let listener = executableURL.lastPathComponent == "Runner.Listener"
+            let worker = executableURL.lastPathComponent == "Runner.Worker"
             guard executable.hasPrefix("/"), listener || worker else { continue }
-            let rootURL = URL(fileURLWithPath: executable).deletingLastPathComponent().deletingLastPathComponent()
+            let binaryDirectory = executableURL.deletingLastPathComponent()
+            // Runner self-updates can leave a Worker executing from bin.X.Y.Z
+            // while its Listener is reached through bin. Both share one root.
+            let directoryName = binaryDirectory.lastPathComponent
+            guard directoryName == "bin" || directoryName.wholeMatch(of: /bin\.[0-9]+\.[0-9]+\.[0-9]+/) != nil else { continue }
+            let rootURL = binaryDirectory.deletingLastPathComponent()
             let root = LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: rootURL)
             var presence = result[root] ?? RunnerProcessPresence()
             if listener { presence.listenerPID = pid }

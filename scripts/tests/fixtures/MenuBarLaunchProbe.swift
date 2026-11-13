@@ -17,7 +17,7 @@ public enum RunnerFleetHealth {
 }
 @MainActor
 public enum RunnerMenuBarIcon {
-    public static func image(for health: RunnerFleetHealth) -> NSImage {
+    public static func image(for health: RunnerFleetHealth, differentiateWithoutColor: Bool = false) -> NSImage {
         NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: nil)!
     }
 }
