@@ -90,7 +90,8 @@ struct CoreModelsTests {
     @Test("RunnerStatus, RunnerScopeType, AppLanguage, and SidebarSection metadata mappings")
     func enumMetadataMappings() {
         #expect(RunnerStatus.idle.badgeTitle == "IDLE")
-        #expect(RunnerStatus.busy.badgeTitle == "BUSY")
+        #expect(RunnerStatus.busy.badgeTitle == "RUNNING")
+        #expect(RunnerStatus.busy.rawValue == "busy")
         #expect(RunnerStatus.offline.badgeTitle == "OFFLINE")
         #expect(RunnerStatus.faulted.badgeTitle == "FAULTED")
 

@@ -14,7 +14,7 @@ public enum RunnerStatus: String, CaseIterable, Codable, Sendable, Identifiable 
         case .idle:
             return "IDLE"
         case .busy:
-            return "BUSY"
+            return "RUNNING"
         case .offline:
             return "OFFLINE"
         case .faulted:
