@@ -39,6 +39,17 @@ struct AuditLogDialogTests {
         #expect(try context.fetch(AuditLogFilter().descriptor(limit: 2)).count == 2)
     }
 
+    @Test("Selecting an audit runner keeps the stored name exact, including boundary whitespace")
+    func selectedRunnerNameIsExact() throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let padded = AuditLogEntity(category: .runnerLifecycle, title: "Imported", summary: "", targetRunnerName: " build-mac ")
+        container.mainContext.insert(padded)
+        container.mainContext.insert(AuditLogEntity(category: .runnerLifecycle, title: "Imported", summary: "", targetRunnerName: "build-mac"))
+        try container.mainContext.save()
+        let selected = AuditLogFilter(runnerName: " build-mac ")
+        #expect(try container.mainContext.fetch(selected.descriptor(limit: 200)).map(\.id) == [padded.id])
+    }
+
     @Test("Audit export snapshots preserve Unicode, quotes, identity and ISO timestamps without model references")
     func export() throws {
         let date = Date(timeIntervalSince1970: 1_800_000_000)
@@ -61,7 +72,7 @@ struct AuditLogDialogTests {
         for populated in [false, true] {
             let container = try OctoRunnerPersistence.makeInMemoryContainer()
             if populated {
-                container.mainContext.insert(AuditLogEntity(category: .configuration, severity: .warning, title: String(repeating: "Langer Ereignistitel ", count: 8), summary: String(repeating: "Details zur Änderung ", count: 20), targetRunnerName: "mac-runner-long-name"))
+                container.mainContext.insert(AuditLogEntity(category: .configuration, severity: .warning, title: String(repeating: "Langer Ereignistitel ", count: 8), summary: String(repeating: "Details zur Änderung ", count: 20), targetRunnerName: String(repeating: "mac-runner-", count: 20)))
                 try container.mainContext.save()
             }
             for language in ["de", "en"] {

@@ -14,6 +14,8 @@ final class AuditLogUITests: XCTestCase {
         audit.click()
         let search = app.textFields["Search event titles and details"].firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.popUpButtons["Runner"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(app.textFields["Runner name (exact)"].exists)
         search.click()
         search.typeText("no-matching-event-" + UUID().uuidString)
         XCTAssertTrue(app.staticTexts["No matching audit events"].firstMatch.waitForExistence(timeout: 5))

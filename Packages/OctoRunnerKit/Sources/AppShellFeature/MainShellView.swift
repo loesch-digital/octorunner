@@ -391,22 +391,39 @@ public struct MainShellView: View {
             }
 
             if filteredRunners.isEmpty {
-                ContentUnavailableView {
-                    Label("No Runners Registered Yet", systemImage: "server.rack")
-                } description: {
-                    Text("Click 'Sync Runners' to auto-import local runners or 'New Runner' to register a new instance.")
-                } actions: {
-                    HStack(spacing: 10) {
-                        Button("Sync Local & GitHub Runners", systemImage: "arrow.triangle.2.circlepath") {
-                            Task { await syncLocalAndRemoteRunners(manual: true) }
+                let emptyState = RunnerPoolEmptyState(registeredCount: runners.count, section: selectedSection ?? .allRunners, search: searchText)
+                if emptyState != .unregistered {
+                    ContentUnavailableView {
+                        switch emptyState {
+                        case .noFaulted:
+                            Label { Text("No failed or faulted runners", bundle: .module) } icon: { Image(systemName: "checkmark.circle") }
+                        case .noActive:
+                            Label { Text("No active runners", bundle: .module) } icon: { Image(systemName: "pause.circle") }
+                        case .noSearchMatches, .unregistered:
+                            Label { Text("No matching runners", bundle: .module) } icon: { Image(systemName: "magnifyingglass") }
                         }
-                        .buttonStyle(.borderedProminent)
-
-                        Button("Import Runner Folder…", systemImage: "folder.badge.plus", action: importRunnerFolderViaOpenPanel)
-                            .buttonStyle(.bordered)
+                    } description: {
+                        Text("Your runners are still registered. Choose All Runners or change the search to see them.", bundle: .module)
                     }
+                    .frame(maxWidth: .infinity, minHeight: 200)
+                } else {
+                    ContentUnavailableView {
+                        Label("No Runners Registered Yet", systemImage: "server.rack")
+                    } description: {
+                        Text("Click 'Sync Runners' to auto-import local runners or 'New Runner' to register a new instance.")
+                    } actions: {
+                        HStack(spacing: 10) {
+                            Button("Sync Local & GitHub Runners", systemImage: "arrow.triangle.2.circlepath") {
+                                Task { await syncLocalAndRemoteRunners(manual: true) }
+                            }
+                            .buttonStyle(.borderedProminent)
+
+                            Button("Import Runner Folder…", systemImage: "folder.badge.plus", action: importRunnerFolderViaOpenPanel)
+                                .buttonStyle(.bordered)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 200)
                 }
-                .frame(maxWidth: .infinity, minHeight: 200)
             } else {
                 ForEach(filteredRunners) { runner in
                     runnerRow(runner)

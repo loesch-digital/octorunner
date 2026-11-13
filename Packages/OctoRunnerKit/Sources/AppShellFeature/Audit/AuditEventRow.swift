@@ -22,7 +22,12 @@ struct AuditEventRow: View {
             }
             Text(event.title).font(.headline).lineLimit(2)
             Text(event.summary).font(.callout).foregroundStyle(OctoTheme.secondaryText).lineLimit(2)
-            if let name = event.targetRunnerName { Text(name).font(.caption.monospaced()) }
+            if let name = event.targetRunnerName {
+                LabeledContent { Text(verbatim: name).font(.callout.monospaced()) }
+                    label: { Text("Runner", bundle: .module) }
+            } else {
+                Text("App-wide event", bundle: .module).font(.caption).foregroundStyle(OctoTheme.secondaryText)
+            }
         }
         .padding(.vertical, 8)
     }

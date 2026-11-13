@@ -1,13 +1,20 @@
 import CoreModels
 import DesignSystem
+import SwiftData
 import SwiftUI
 
 public struct AuditLogView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var filter = AuditLogFilter()
     @State private var pageSize = 200
+    @Query private var runners: [RunnerEntity]
+    @Query private var runnerEvents: [AuditLogEntity]
 
-    public init() {}
+    public init() {
+        var names = FetchDescriptor<AuditLogEntity>(predicate: #Predicate { $0.targetRunnerName != nil })
+        names.propertiesToFetch = [\.targetRunnerName]
+        _runnerEvents = Query(names)
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -41,11 +48,14 @@ public struct AuditLogView: View {
                 .accessibilityHint(Text("Filter events by severity.", bundle: .module))
             }
             HStack {
-                TextField(text: Binding(get: { filter.runnerName ?? "" }, set: { filter.runnerName = $0 })) {
-                    Text("Runner name (exact)", bundle: .module)
-                }
-                .accessibilityLabel(Text("Runner name (exact)", bundle: .module))
-                .accessibilityHint(Text("Leave empty for all runners, including removed runners.", bundle: .module))
+                Picker(selection: $filter.runnerName) {
+                    Text("All runners", bundle: .module).tag(Optional<String>.none)
+                    ForEach(AuditRunnerOptions.names(registered: runners.map(\.name), historical: runnerEvents.map(\.targetRunnerName)), id: \.self) { name in
+                        Text(verbatim: name).tag(Optional(name))
+                    }
+                } label: { Text("Runner", bundle: .module) }
+                .accessibilityLabel(Text("Runner", bundle: .module))
+                .accessibilityHint(Text("Select a registered runner or a runner from stored history.", bundle: .module))
                 TextField(text: $filter.search) { Text("Search event titles and details", bundle: .module) }
                     .accessibilityLabel(Text("Search event titles and details", bundle: .module))
                     .accessibilityHint(Text("Search the full stored history without changing events.", bundle: .module))
