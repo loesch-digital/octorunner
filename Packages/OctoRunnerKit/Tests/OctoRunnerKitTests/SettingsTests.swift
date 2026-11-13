@@ -26,6 +26,7 @@ struct SettingsTests {
             ("general", AnyView(GeneralSettingsTab())),
             ("background", AnyView(BackgroundSettingsTab())),
             ("failover", AnyView(FailoverSettingsTab())),
+            ("storage", AnyView(StorageSettingsTab())),
             ("auth", AnyView(SecurityTokenSettingsTab(accountSession: services.accounts))),
             ("notifications", AnyView(AlertsSettingsTab()))
         ]
@@ -35,7 +36,7 @@ struct SettingsTests {
                     for scheme in [ColorScheme.light, .dark] {
                         let host = NSHostingView(rootView: view
                             .environment(services.preferences).environment(services.integration)
-                            .environment(services.notifications).modelContainer(container)
+                            .environment(services.notifications).environment(services.storageMaintenance).modelContainer(container)
                             .environment(\.locale, Locale(identifier: language)).preferredColorScheme(scheme)
                             .frame(width: width, height: 600))
                         host.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
@@ -72,7 +73,7 @@ struct SettingsTests {
         let container = try OctoRunnerPersistence.makeInMemoryContainer()
         Self.retainedContainers.append(container)
         let host = NSHostingView(rootView: MainShellView(section: .launchdSettings, accountSession: services.accounts)
-            .environment(services.preferences).environment(services.integration).environment(services.notifications)
+            .environment(services.preferences).environment(services.integration).environment(services.notifications).environment(services.storageMaintenance)
             .modelContainer(container))
         host.frame = CGRect(x: 0, y: 0, width: 960, height: 620)
         host.layoutSubtreeIfNeeded()
@@ -134,7 +135,7 @@ struct SettingsTests {
                     .modelContainer(container)
                     .environment(preferences)
                     .environment(services.integration)
-                    .environment(services.notifications)
+                    .environment(services.notifications).environment(services.storageMaintenance)
                     .environment(\.locale, language.locale)
                     .environment(\.colorScheme, scheme))
                 host.frame = NSRect(x: 0, y: 0, width: 680, height: 520)
@@ -145,7 +146,7 @@ struct SettingsTests {
                 #expect(!preferences.notificationPolicy.enabled)
                 let alerts = NSHostingView(rootView: AlertsSettingsTab()
                     .environment(preferences)
-                    .environment(services.notifications)
+                    .environment(services.notifications).environment(services.storageMaintenance)
                     .environment(\.locale, language.locale)
                     .environment(\.colorScheme, scheme))
                 alerts.frame = NSRect(x: 0, y: 0, width: 680, height: 520)

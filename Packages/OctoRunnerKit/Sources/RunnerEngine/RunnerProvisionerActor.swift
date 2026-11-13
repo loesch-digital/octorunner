@@ -114,10 +114,7 @@ public actor RunnerProvisionerActor {
                     var launchedPID: Int32?
 
                     if registerLaunchAgent {
-                        let sanitized = instanceName
-                            .lowercased()
-                            .replacingOccurrences(of: " ", with: "-")
-                        let label = "io.octorunner.agent.\(sanitized)"
+                        let label = RunnerServiceLabel.forRunner(named: instanceName)
                         let plistData = try LaunchAgentPlistGenerator.generatePlistData(
                             serviceLabel: label,
                             runnerRootDirectory: instanceRoot,
@@ -182,8 +179,7 @@ public actor RunnerProvisionerActor {
         try FileManager.default.createDirectory(at: diagDir, withIntermediateDirectories: true)
 
         if registerLaunchAgent {
-            let sanitized = runnerName.lowercased().replacingOccurrences(of: " ", with: "-")
-            let label = "io.octorunner.agent.\(sanitized)"
+            let label = RunnerServiceLabel.forRunner(named: runnerName)
             let plistData = try LaunchAgentPlistGenerator.generatePlistData(
                 serviceLabel: label,
                 runnerRootDirectory: destinationRoot,

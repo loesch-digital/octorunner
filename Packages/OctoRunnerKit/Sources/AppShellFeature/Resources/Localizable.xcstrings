@@ -4009,6 +4009,598 @@
           }
         }
       }
+    },
+    "Cache & Storage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache & Storage"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache & Speicher"
+          }
+        }
+      }
+    },
+    "Measure managed runner storage and safely remove old data.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measure managed runner storage and safely remove old data."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speicher verwalteter Runner analysieren und alte Daten sicher entfernen."
+          }
+        }
+      }
+    },
+    "Storage overview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage overview"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speicherübersicht"
+          }
+        }
+      }
+    },
+    "Analysis starts only when requested or when automatic cleanup is enabled.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis starts only when requested or when automatic cleanup is enabled."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Analyse startet auf Anforderung oder bei aktivierter automatischer Bereinigung."
+          }
+        }
+      }
+    },
+    "Available volume capacity": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available volume capacity"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verfügbare Volumenkapazität"
+          }
+        }
+      }
+    },
+    "Analyze storage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyze storage"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speicher analysieren"
+          }
+        }
+      }
+    },
+    "Measure only OctoRunner-managed runner folders.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measure only OctoRunner-managed runner folders."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur von OctoRunner verwaltete Runner-Ordner analysieren."
+          }
+        }
+      }
+    },
+    "Review cleanup…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review cleanup…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereinigung prüfen …"
+          }
+        }
+      }
+    },
+    "Preview old items before confirming deletion.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview old items before confirming deletion."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alte Einträge vor dem Bestätigen der Löschung prüfen."
+          }
+        }
+      }
+    },
+    "Analyzing or cleaning storage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyzing or cleaning storage"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speicher wird analysiert oder bereinigt"
+          }
+        }
+      }
+    },
+    "Sizes are logical file sizes. APFS sharing and snapshots can change the space actually reclaimed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sizes are logical file sizes. APFS sharing and snapshots can change the space actually reclaimed."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Angaben sind logische Dateigrößen. APFS-Freigaben und Snapshots beeinflussen den tatsächlich freigegebenen Speicher."
+          }
+        }
+      }
+    },
+    "Storage operation stopped. Analyze again before retrying; some items may already have been removed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage operation stopped. Analyze again before retrying; some items may already have been removed."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Speichervorgang wurde angehalten. Vor einem erneuten Versuch nochmals analysieren; einige Einträge wurden möglicherweise bereits entfernt."
+          }
+        }
+      }
+    },
+    "Items removed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Items removed"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernte Einträge"
+          }
+        }
+      }
+    },
+    "Items skipped": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Items skipped"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übersprungene Einträge"
+          }
+        }
+      }
+    },
+    "Cleanup policy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleanup policy"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereinigungsrichtlinie"
+          }
+        }
+      }
+    },
+    "Automatic cleanup checks every ten minutes while OctoRunner is open.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic cleanup checks every ten minutes while OctoRunner is open."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die automatische Bereinigung prüft alle zehn Minuten, solange OctoRunner geöffnet ist."
+          }
+        }
+      }
+    },
+    "Manual only": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual only"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur manuell"
+          }
+        }
+      }
+    },
+    "Remove old data automatically": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove old data automatically"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alte Daten automatisch entfernen"
+          }
+        }
+      }
+    },
+    "Only when disk space is low": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only when disk space is low"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur bei wenig freiem Speicher"
+          }
+        }
+      }
+    },
+    "Manual mode never schedules a cleanup.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual mode never schedules a cleanup."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im manuellen Modus wird keine Bereinigung geplant."
+          }
+        }
+      }
+    },
+    "Workspace age (days)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspace age (days)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspace-Alter (Tage)"
+          }
+        }
+      }
+    },
+    "Keep workspaces with files modified more recently than this limit.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep workspaces with files modified more recently than this limit."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspaces behalten, deren Dateien innerhalb dieser Frist geändert wurden."
+          }
+        }
+      }
+    },
+    "Log retention (days)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log retention (days)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log-Aufbewahrung (Tage)"
+          }
+        }
+      }
+    },
+    "Always keep the newest runner diagnostic log.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always keep the newest runner diagnostic log."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das neueste Runner-Diagnoseprotokoll immer behalten."
+          }
+        }
+      }
+    },
+    "Minimum free space (GB)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimum free space (GB)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimaler freier Speicher (GB)"
+          }
+        }
+      }
+    },
+    "Stop automatic cleanup when this much volume capacity is available.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop automatic cleanup when this much volume capacity is available."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatische Bereinigung beenden, sobald diese Volumenkapazität verfügbar ist."
+          }
+        }
+      }
+    },
+    "Cleanup requires an unloaded LaunchAgent and no listener or worker process. Imported runners, tool caches, configuration, binaries and external Xcode caches are excluded. launchd output logs are retained.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleanup requires an unloaded LaunchAgent and no listener or worker process. Imported runners, tool caches, configuration, binaries and external Xcode caches are excluded. launchd output logs are retained."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Bereinigung erfordert einen entladenen LaunchAgent und keine Listener- oder Worker-Prozesse. Importierte Runner, Tool-Caches, Konfiguration, Programmdateien und externe Xcode-Caches sind ausgeschlossen. launchd-Ausgabeprotokolle bleiben erhalten."
+          }
+        }
+      }
+    },
+    "Actions cache": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions cache"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions-Cache"
+          }
+        }
+      }
+    },
+    "Temporary files": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporary files"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporäre Dateien"
+          }
+        }
+      }
+    },
+    "Diagnostic logs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostic logs"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnoseprotokolle"
+          }
+        }
+      }
+    },
+    "Workspaces and tools": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspaces and tools"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspaces und Tools"
+          }
+        }
+      }
+    },
+    "Review cleanup": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review cleanup"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereinigung prüfen"
+          }
+        }
+      }
+    },
+    "These old items may be deleted permanently. Active, loaded or changed runners are skipped after another safety check. Runner IDs identify their managed folder.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These old items may be deleted permanently. Active, loaded or changed runners are skipped after another safety check. Runner IDs identify their managed folder."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese alten Einträge können endgültig gelöscht werden. Aktive, geladene oder geänderte Runner werden nach erneuter Prüfung übersprungen. Runner-IDs kennzeichnen den verwalteten Ordner."
+          }
+        }
+      }
+    },
+    "Close without deleting files.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close without deleting files."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schließen, ohne Dateien zu löschen."
+          }
+        }
+      }
+    },
+    "Delete eligible items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete eligible items"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geeignete Einträge löschen"
+          }
+        }
+      }
+    },
+    "Permanently delete only the reviewed items that still pass all checks.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanently delete only the reviewed items that still pass all checks."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur geprüfte Einträge endgültig löschen, die weiterhin alle Prüfungen bestehen."
+          }
+        }
+      }
+    },
+    "Cleanup was interrupted and may be partial. Analyze storage again; the attempt is recorded in the audit log.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleanup was interrupted and may be partial. Analyze storage again; the attempt is recorded in the audit log."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Bereinigung wurde unterbrochen und ist möglicherweise unvollständig. Speicher erneut analysieren; der Versuch ist im Audit-Log vermerkt."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

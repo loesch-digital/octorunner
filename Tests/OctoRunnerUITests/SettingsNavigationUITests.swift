@@ -12,7 +12,7 @@ final class SettingsNavigationUITests: XCTestCase {
         let settings = app.outlines.staticTexts["App Settings"].firstMatch
         XCTAssertTrue(settings.waitForExistence(timeout: 10), app.debugDescription)
         settings.click()
-        let categories = ["General", "Autostart & Background", "Failover", "Auth & Tokens", "Notifications"]
+        let categories = ["General", "Autostart & Background", "Failover", "Cache & Storage", "Auth & Tokens", "Notifications"]
         // Test all categories before selecting any: overflow navigation must not
         // make a hidden category count as visible merely because we selected it.
         for category in categories {
@@ -20,7 +20,7 @@ final class SettingsNavigationUITests: XCTestCase {
             XCTAssertTrue(button.waitForExistence(timeout: 5), category)
             XCTAssertTrue(button.isHittable, "Category is hidden or obstructed: \(category)")
         }
-        let content = ["Show icon in menu bar", "Launch at macOS login", "Restart policy", "Connect GitHub account…", "Enable macOS notifications"]
+        let content = ["Show icon in menu bar", "Launch at macOS login", "Restart policy", "Analyze storage", "Connect GitHub account…", "Enable macOS notifications"]
         for (category, control) in zip(categories, content) {
             app.buttons[category].firstMatch.click()
             XCTAssertTrue(app.descendants(matching: .any)[control].firstMatch.waitForExistence(timeout: 5), "Missing content for \(category)")

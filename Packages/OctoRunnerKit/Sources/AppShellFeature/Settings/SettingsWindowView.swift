@@ -75,6 +75,7 @@ public struct SettingsWindowView: View {
     case .general: GeneralSettingsTab()
     case .background: BackgroundSettingsTab()
     case .failover: FailoverSettingsTab()
+    case .storage: StorageSettingsTab()
     case .auth: SecurityTokenSettingsTab(accountSession: accountSession)
     case .notifications: AlertsSettingsTab()
     }

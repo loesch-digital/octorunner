@@ -10,6 +10,7 @@ public final class AppServices {
     public let historyRateBudget = WorkflowHistoryRateBudget()
     public let accounts = AccountSessionController()
     public let healthMonitor: RunnerHealthMonitor
+    public let storageMaintenance: StorageMaintenanceController
     public let diskMonitor: DiskSpaceMonitor
     public let jobFailureMonitor: LocalJobFailureMonitor
 
@@ -19,6 +20,7 @@ public final class AppServices {
         notificationClient: any AppNotificationClient = SystemNotificationClient()
     ) {
         self.preferences = preferences
+        storageMaintenance = StorageMaintenanceController(preferences: preferences)
         integration = AppIntegrationController(preferences: preferences, loginService: loginService)
         notifications = AppNotificationsController(preferences: preferences, client: notificationClient)
         healthMonitor = RunnerHealthMonitor(notifications: notifications, preferences: preferences)
