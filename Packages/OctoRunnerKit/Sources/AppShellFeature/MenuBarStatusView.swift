@@ -14,18 +14,20 @@ public struct MenuBarStatusView: View {
     public init(monitor: RunnerHealthMonitor? = nil) { self.monitor = monitor }
 
     public var body: some View {
+        LocalJobResultsSource { results in
         VStack(alignment: .leading, spacing: 12) {
             headerBar
 
             Divider()
 
-            workpoolRunnersSection
-
-            Divider()
-
-            systemPoliciesSection
-
-            Spacer(minLength: 4)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    if !results.unreviewedFailures.isEmpty { JobFailureNotice(results: results) }
+                    workpoolRunnersSection(results: results)
+                    Divider()
+                    systemPoliciesSection
+                }
+            }
 
             Divider()
 
@@ -34,6 +36,7 @@ public struct MenuBarStatusView: View {
         .padding(14)
         .frame(width: 350, height: 460)
         .background(OctoTheme.surfaceLowest)
+        }
     }
 
     // MARK: - Header
@@ -74,7 +77,7 @@ public struct MenuBarStatusView: View {
 
     // MARK: - Runners List
 
-    private var workpoolRunnersSection: some View {
+    private func workpoolRunnersSection(results: LocalJobResults) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("LOCAL WORKPOOL RUNNERS")
                 .font(.system(size: 10, weight: .bold, design: .monospaced))
@@ -87,9 +90,9 @@ public struct MenuBarStatusView: View {
                     .frame(maxWidth: .infinity, minHeight: 80)
                     .background(OctoTheme.surface, in: .rect(cornerRadius: 8))
             } else {
-                ScrollView {
                     VStack(spacing: 6) {
                         ForEach(runners) { runner in
+                            VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 10) {
                                 VStack(alignment: .leading, spacing: 2) {
                                     HStack(spacing: 6) {
@@ -112,15 +115,16 @@ public struct MenuBarStatusView: View {
 
                                 RunnerStatusBadge(status: runner.status)
                             }
+                            Divider()
+                            RunnerLastJobView(entry: results.latestByRunner[runner.id])
+                            }
                             .padding(8)
                             .background(OctoTheme.surface, in: .rect(cornerRadius: 7))
-                            .accessibilityElement(children: .combine)
+                            .accessibilityElement(children: .contain)
                             .accessibilityLabel("Runner \(runner.name)")
                             .accessibilityValue("\(runner.status.badgeTitle), \(runner.scopeUrlString)")
                         }
                     }
-                }
-                .frame(maxHeight: 155)
             }
         }
     }

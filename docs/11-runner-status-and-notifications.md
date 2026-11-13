@@ -102,3 +102,29 @@ geprüft. Die native Volume-Abfrage und die periodische App-Lebenszyklus-Verkabe
 sind dadurch noch nicht vollständig automatisch abgedeckt. Den Datenträger zur
 Abnahme nicht künstlich füllen; die tatsächliche Banner-Darstellung erfolgt im
 normalen Betrieb oder mit einem kontrollierten Entwicklungs-Testadapter.
+# Getrennte Runner-Zustände und Job-Ergebnisse
+
+Der Runner-Zustand beschreibt die lokale Betriebsbereitschaft: IDLE/grün wartet
+auf Arbeit, RUNNING/blau führt einen Job aus. Ein fehlgeschlagener Workflow-Job
+verändert diesen Betriebszustand nicht.
+
+Dashboard und Menü zeigen deshalb separat den **letzten abgeschlossenen Job**
+mit Ergebnis, Abschlusszeit, Namen und Link zum GitHub-Lauf samt Versuch. Während
+einer laufenden Wiederholung bleibt das vorherige abgeschlossene Ergebnis sichtbar.
+Ohne belegbaren lokalen Job steht dort „Kein abgeschlossener Job geladen“.
+
+Zusätzlich zum Statuspunkt und OctoRunner-Logo erscheint bei nicht quittierten
+Job-Fehlern ein eigenes rotes Fehlersymbol in der Menüleiste. Dashboard und Menü
+bieten „Diese Fehler quittieren“ an. Das speichert die konkreten Job-Identitäten
+(Account, Repository, Run, Versuch, Job), statt nur einen Zeitcursor vorzustellen:
+später eintreffende ältere Jobs bleiben erkennbar. Quittieren löscht weder Historie
+noch das letzte Ergebnis und ändert keinen Runner-Zustand. Ältere Versuche werden
+beim Fehlerzähler durch den neuesten bekannten Versuch ersetzt.
+
+Die Anzeigen beziehen sich auf die **geladene GitHub-Historie**, nicht sämtliche
+Läufe eines Accounts. Vorhandenes opt-in Hintergrundpolling für Job-Mitteilungen
+bleibt erhalten; ohne dieses Opt-in lässt sich die Historie in „Jobs & Workflow-Läufe“
+bewusst aktualisieren. Es werden keine zusätzlichen Rechte angefordert und keine
+Runner-Logzeilen als verbindliche Job-Ergebnisse interpretiert. Zuordnung erfolgt
+über aktiven Account, Runner-ID und exakten Repository-/Organisationsscope;
+mehrdeutige Identitäten und reine Namensübereinstimmungen werden ausgeschlossen.
