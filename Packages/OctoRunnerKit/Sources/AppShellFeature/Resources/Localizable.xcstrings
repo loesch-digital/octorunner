@@ -5689,6 +5689,108 @@
           }
         }
       }
+    },
+    "Select a registered runner or a runner from stored history.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrierten Runner oder Runner aus der gespeicherten Historie auswählen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a registered runner or a runner from stored history."
+          }
+        }
+      }
+    },
+    "App-wide event": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-weites Ereignis"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-wide event"
+          }
+        }
+      }
+    },
+    "No failed or faulted runners": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Runner im Fehlerzustand"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No failed or faulted runners"
+          }
+        }
+      }
+    },
+    "No active runners": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine aktiven Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active runners"
+          }
+        }
+      }
+    },
+    "No matching runners": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine passenden Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching runners"
+          }
+        }
+      }
+    },
+    "Your runners are still registered. Choose All Runners or change the search to see them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Runner sind weiterhin registriert. Wähle „Alle Runner“ oder ändere die Suche, um sie anzuzeigen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your runners are still registered. Choose All Runners or change the search to see them."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -11,7 +11,7 @@ struct AuditLogFilter: Equatable {
     func descriptor(limit: Int) -> FetchDescriptor<AuditLogEntity> {
         let category = category?.rawValue ?? ""
         let severity = severity?.rawValue ?? ""
-        let runner = runnerName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let runner = runnerName ?? ""
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         let predicate = #Predicate<AuditLogEntity> { event in
             (category == "" || event.categoryRaw == category) &&

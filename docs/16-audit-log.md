@@ -1,6 +1,6 @@
 # Audit-Log
 
-Der Toolbar-Eintrag **Audit Log** öffnet die lokale Ereignishistorie. Die Ansicht zeigt neue Ereignisse zuerst und bietet kombinierbare Filter für Kategorie, Schweregrad, exakten Runner-Namen und eine Suche in Titel und Beschreibung. Entfernte Runner bleiben über ihren gespeicherten Namen auffindbar.
+Der Toolbar-Eintrag **Audit Log** öffnet die lokale Ereignishistorie. Die Ansicht zeigt neue Ereignisse zuerst und bietet kombinierbare Filter für Kategorie, Schweregrad, Runner (Dropdown) und eine Suche in Titel und Beschreibung. Das Runner-Dropdown enthält registrierte Runner und Namen aus der gesamten gespeicherten Historie, unabhängig von der aktuellen Trefferseite oder anderen Filtern. Entfernte Runner bleiben damit auswählbar. Jede runnerbezogene Zeile zeigt eine eigene Runner-Zuordnung; allgemeine App-Ereignisse sind separat gekennzeichnet.
 
 Zunächst werden bis zu 200 Treffer geladen. **Weitere Ereignisse laden** erweitert die Ansicht jeweils um 200 Treffer. Die Suche berücksichtigt die gespeicherte Historie, nicht nur die bereits geladenen Einträge. Ein Klick auf ein Ereignis öffnet seine vollständigen Details einschließlich Ereignis-ID, Konto und Vorher-/Nachher-Werten, sofern vorhanden.
 

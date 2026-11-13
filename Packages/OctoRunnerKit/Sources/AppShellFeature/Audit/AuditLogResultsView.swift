@@ -35,6 +35,7 @@ struct AuditLogResultsView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(Text(entry.title))
+                        .accessibilityValue(entry.targetRunnerName.map { Text(verbatim: $0) } ?? Text("App-wide event", bundle: .module))
                         .accessibilityHint(Text("Open the full event details and before/after values.", bundle: .module))
                     }
                     if entries.count > pageSize {
