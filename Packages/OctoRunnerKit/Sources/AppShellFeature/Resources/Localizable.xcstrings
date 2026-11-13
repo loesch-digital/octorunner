@@ -5791,6 +5791,482 @@
           }
         }
       }
+    },
+    "Processes by Runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prozesse je Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Processes by Runner"
+          }
+        }
+      }
+    },
+    "Process runner filter": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Prozessfilter"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Process runner filter"
+          }
+        }
+      }
+    },
+    "Show processes belonging to the selected runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prozesse des ausgewählten Runners anzeigen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show processes belonging to the selected runner."
+          }
+        }
+      }
+    },
+    "Only identifiable runner processes and their child processes are shown. CPU: 100% equals one fully used core. Arguments and environment are excluded.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angezeigt werden eindeutig zugeordnete Runner-Prozesse und deren Kindprozesse. CPU: 100 % entspricht einem voll ausgelasteten Kern. Argumente und Umgebungsvariablen werden nicht erfasst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only identifiable runner processes and their child processes are shown. CPU: 100% equals one fully used core. Arguments and environment are excluded."
+          }
+        }
+      }
+    },
+    "Process information is unavailable. Try refreshing telemetry.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prozessinformationen sind nicht verfügbar. Aktualisiere die Telemetrie."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Process information is unavailable. Try refreshing telemetry."
+          }
+        }
+      }
+    },
+    "No matching runner processes": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine passenden Runner-Prozesse"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching runner processes"
+          }
+        }
+      }
+    },
+    "The runner may be stopped, its process information unavailable, or its folder assignment ambiguous. Choose another runner or refresh.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Runner ist möglicherweise gestoppt, seine Prozessinformationen sind nicht verfügbar oder die Ordnerzuordnung ist uneindeutig. Wähle einen anderen Runner oder aktualisiere die Ansicht."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The runner may be stopped, its process information unavailable, or its folder assignment ambiguous. Choose another runner or refresh."
+          }
+        }
+      }
+    },
+    "Resident memory": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Residenter Speicher"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resident memory"
+          }
+        }
+      }
+    },
+    "Runtime": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laufzeit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runtime"
+          }
+        }
+      }
+    },
+    "Inspect": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspect"
+          }
+        }
+      }
+    },
+    "Show the process identity, executable and latest measurements.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prozessidentität, ausführbare Datei und letzte Messwerte anzeigen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the process identity, executable and latest measurements."
+          }
+        }
+      }
+    },
+    "Terminate…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beenden …"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminate…"
+          }
+        }
+      }
+    },
+    "Review and confirm a SIGTERM request for this process.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine SIGTERM-Anfrage für diesen Prozess prüfen und bestätigen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review and confirm a SIGTERM request for this process."
+          }
+        }
+      }
+    },
+    "Process Details": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prozessdetails"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Process Details"
+          }
+        }
+      }
+    },
+    "Close the process details.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prozessdetails schließen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close the process details."
+          }
+        }
+      }
+    },
+    "Started": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestartet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Started"
+          }
+        }
+      }
+    },
+    "Measured at": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemessen um"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measured at"
+          }
+        }
+      }
+    },
+    "Parent PID": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eltern-PID"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parent PID"
+          }
+        }
+      }
+    },
+    "User ID": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benutzer-ID"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User ID"
+          }
+        }
+      }
+    },
+    "Executable": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausführbare Datei"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Executable"
+          }
+        }
+      }
+    },
+    "This is a snapshot. Arguments and environment variables are not read or displayed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dies ist eine Momentaufnahme. Argumente und Umgebungsvariablen werden nicht gelesen oder angezeigt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a snapshot. Arguments and environment variables are not read or displayed."
+          }
+        }
+      }
+    },
+    "SIGTERM sent. The process may still be running or may be restarted by its service. Refresh to check.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIGTERM wurde gesendet. Der Prozess kann noch laufen oder von seinem Dienst neu gestartet werden. Aktualisiere die Ansicht zur Prüfung."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIGTERM sent. The process may still be running or may be restarted by its service. Refresh to check."
+          }
+        }
+      }
+    },
+    "Request process termination?": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prozessbeendigung anfragen?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request process termination?"
+          }
+        }
+      }
+    },
+    "Send SIGTERM": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIGTERM senden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send SIGTERM"
+          }
+        }
+      }
+    },
+    "Recheck process identity and request termination. Active jobs may fail.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prozessidentität erneut prüfen und Beendigung anfragen. Aktive Jobs können fehlschlagen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recheck process identity and request termination. Active jobs may fail."
+          }
+        }
+      }
+    },
+    "Keep the process running.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den Prozess weiterlaufen lassen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the process running."
+          }
+        }
+      }
+    },
+    "Terminate %@ (PID %d) for %@? Active jobs may fail. The service may restart this process. This does not stop the entire runner process tree.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (PID %d) für %@ beenden? Aktive Jobs können fehlschlagen. Der Dienst kann diesen Prozess neu starten. Der gesamte Runner-Prozessbaum wird dadurch nicht gestoppt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminate %@ (PID %d) for %@? Active jobs may fail. The service may restart this process. This does not stop the entire runner process tree."
+          }
+        }
+      }
+    },
+    "The termination request could not be completed or fully recorded. The process may still be running. Refresh and check the audit log.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Beenden-Anfrage konnte nicht abgeschlossen oder vollständig protokolliert werden. Der Prozess läuft möglicherweise noch. Aktualisiere die Ansicht und prüfe das Audit-Log."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The termination request could not be completed or fully recorded. The process may still be running. Refresh and check the audit log."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
