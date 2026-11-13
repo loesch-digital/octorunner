@@ -102,7 +102,7 @@ struct CoreModelsTests {
         #expect(AppLanguage.english.displayTitle.contains("English"))
         #expect(AppLanguage.german.displayTitle.contains("Deutsch"))
 
-        #expect(SidebarSection.allCases.count == 5)
+        #expect(SidebarSection.allCases.count == 6)
         #expect(SidebarSection.launchdSettings.title == "Settings")
         for section in SidebarSection.allCases {
             #expect(!section.title.isEmpty)

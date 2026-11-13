@@ -107,6 +107,7 @@ public final class WorkflowHistoryViewModel {
                 setBackoff(until: response.rateLimit?.resetAt, accountID: selection.accountID, now: now ?? .now)
             }
             guard isCurrent(currentGeneration, selection: selection) else { return }
+            rateBudget.observe(response.rateLimit, accountID: selection.accountID)
             for details in response.runs {
                 try WorkflowHistoryStore.upsert(run: details.run, jobs: details.jobs ?? [], repository: selection.repository,
                     accountID: selection.accountID, jobsComplete: details.jobs != nil, observedAt: response.observedAt, in: context)

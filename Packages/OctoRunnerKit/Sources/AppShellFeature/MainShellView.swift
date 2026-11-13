@@ -130,11 +130,13 @@ public struct MainShellView: View {
                                 Label { Text("Jobs & Workflow Runs", bundle: .module) } icon: { Image(systemName: section.systemImage) }
                             } else if section == .launchdSettings {
                                 Label { Text("App Settings", bundle: .module) } icon: { Image(systemName: section.systemImage) }
+                            } else if section == .hostTelemetry {
+                                Label { Text("Host Telemetry", bundle: .module) } icon: { Image(systemName: section.systemImage) }
                             } else {
                                 Label(section.title, systemImage: section.systemImage)
                             }
                             Spacer()
-                            if section != .queueWorkpools && section != .launchdSettings {
+                            if section != .queueWorkpools && section != .launchdSettings && section != .hostTelemetry {
                               Text("\(count(for: section))")
                                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
                                 .foregroundStyle(.secondary)
@@ -239,6 +241,8 @@ public struct MainShellView: View {
             WorkflowJobHistoryView(rateBudget: historyRateBudget)
         } else if selectedSection == .launchdSettings {
             SettingsWindowView(accountSession: accountSession)
+        } else if selectedSection == .hostTelemetry {
+            HostTelemetryDashboardView(accountID: accounts.first(where: { $0.isActive })?.githubUserId, rateBudget: historyRateBudget)
         } else {
             runnerDashboardContent
         }
@@ -682,7 +686,7 @@ public struct MainShellView: View {
     private var filteredRunners: [RunnerEntity] {
         runners.filter { runner in
             let matchesSection: Bool = switch selectedSection ?? .allRunners {
-            case .allRunners, .queueWorkpools, .launchdSettings:
+            case .allRunners, .queueWorkpools, .launchdSettings, .hostTelemetry:
                 true
             case .activeDaemons:
                 runner.status == .idle || runner.status == .busy
@@ -698,7 +702,7 @@ public struct MainShellView: View {
 
     private func count(for section: SidebarSection) -> Int {
         switch section {
-        case .allRunners, .queueWorkpools, .launchdSettings:
+        case .allRunners, .queueWorkpools, .launchdSettings, .hostTelemetry:
             return runners.count
         case .activeDaemons:
             return runners.count(where: { $0.status == .idle || $0.status == .busy })

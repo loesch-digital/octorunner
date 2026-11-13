@@ -39,6 +39,7 @@ Das Gesamtkonzept ist nach Architektur, Infrastruktur und den einzelnen Release-
 | **[14-runner-archive-integrity.md](./14-runner-archive-integrity.md)** | Verpflichtende SHA-256-Prüfung und öffentliche Release-Digests ohne zusätzliche Token-Rechte | In Arbeit für **`v0.5.0`** |
 | **[15-cache-and-storage.md](./15-cache-and-storage.md)** | Verwaltete Runner-Speicheranalyse, sichere Bereinigung und automatische Richtlinien | In Arbeit für **`v0.5.0`** |
 | **[16-audit-log.md](./16-audit-log.md)** | Lokale Ereignishistorie, Filter, Details und JSON-Export | In Arbeit für **`v0.5.0`** |
+| **[17-host-telemetry.md](./17-host-telemetry.md)** | Host-Messkarten, Geräte-I/O und kontogetrenntes API-Budget | In Arbeit für **`v0.5.0`** |
 
 ---
 
