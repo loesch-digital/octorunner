@@ -36,8 +36,10 @@ public struct MainShellView: View {
     private let updaterActor = AppUpdaterActor()
     private let syncActor = GitHubRunnerSyncActor()
     private let provisioner = RunnerProvisionerActor()
+    private let jobResults: LocalJobResults
 
-    public init(section: SidebarSection = .allRunners, historyRateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(), accountSession: AccountSessionController = AccountSessionController()) {
+    public init(section: SidebarSection = .allRunners, historyRateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(), accountSession: AccountSessionController = AccountSessionController(), jobResults: LocalJobResults = LocalJobResults()) {
+        self.jobResults = jobResults
         _historyRateBudget = State(initialValue: historyRateBudget)
         _accountSession = State(initialValue: accountSession)
         _selectedSection = State(initialValue: section)
@@ -366,6 +368,7 @@ public struct MainShellView: View {
 
     private var runnerListCard: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if !jobResults.unreviewedFailures.isEmpty { JobFailureNotice(results: jobResults) }
             HStack {
                 Text("Registered Runner Pool")
                     .font(.system(size: 15, weight: .semibold))
@@ -407,7 +410,7 @@ public struct MainShellView: View {
     }
 
     private func runnerRow(_ runner: RunnerEntity) -> some View {
-        DashboardRunnerRow(runner: runner,
+        DashboardRunnerRow(runner: runner, lastJob: jobResults.latestByRunner[runner.id],
             openLog: { activeConsoleRunner = runner },
             openSettings: { activeConfigRunner = runner },
             migrate: { Task { await migrateImportedRunnerInline(runner) } },

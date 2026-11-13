@@ -4,14 +4,16 @@ import SwiftUI
 
 public struct DashboardRunnerRow: View {
     let runner: RunnerEntity
+    let lastJob: WorkflowHistoryEntry?
     let openLog: () -> Void
     let openSettings: () -> Void
     let migrate: () -> Void
     let remove: () -> Void
 
-    public init(runner: RunnerEntity, openLog: @escaping () -> Void, openSettings: @escaping () -> Void,
+    public init(runner: RunnerEntity, lastJob: WorkflowHistoryEntry? = nil, openLog: @escaping () -> Void, openSettings: @escaping () -> Void,
                 migrate: @escaping () -> Void, remove: @escaping () -> Void) {
         self.runner = runner
+        self.lastJob = lastJob
         self.openLog = openLog
         self.openSettings = openSettings
         self.migrate = migrate
@@ -79,6 +81,9 @@ public struct DashboardRunnerRow: View {
             }
             .font(.caption.monospaced())
             .foregroundStyle(.secondary)
+
+            Divider()
+            RunnerLastJobView(entry: lastJob)
 
             if !runner.labels.isEmpty {
                 Text(runner.labels.joined(separator: " · "))

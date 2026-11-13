@@ -19,6 +19,9 @@ public final class AppPreferencesStore {
         didSet { defaults.set(hideDockIconWhenClosed, forKey: "preferences.hideDockIconWhenClosed") }
     }
     public var updateChannel: String = "stable"
+    public var reviewedJobFailures: Set<String> {
+        didSet { persist(reviewedJobFailures, forKey: "preferences.reviewedJobFailures") }
+    }
     private var storedMaxConcurrentRunners: Int
     public var maxConcurrentRunners: Int {
         get { storedMaxConcurrentRunners }
@@ -84,6 +87,7 @@ public final class AppPreferencesStore {
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        reviewedJobFailures = Self.load(Set<String>.self, from: defaults, key: "preferences.reviewedJobFailures") ?? []
         language = AppLanguage(rawValue: defaults.string(forKey: "preferences.language") ?? "") ?? .system
         launchAtLogin = defaults.object(forKey: "preferences.launchAtLogin") as? Bool ?? false
         showInMenuBar = defaults.object(forKey: "preferences.showInMenuBar") as? Bool ?? true

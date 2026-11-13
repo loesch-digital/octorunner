@@ -3839,6 +3839,176 @@
           }
         }
       }
+    },
+    "Last completed job": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last completed job"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzter abgeschlossener Job"
+          }
+        }
+      }
+    },
+    "No completed job loaded": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No completed job loaded"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein abgeschlossener Job geladen"
+          }
+        }
+      }
+    },
+    "View job on GitHub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View job on GitHub"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job auf GitHub ansehen"
+          }
+        }
+      }
+    },
+    "Opens the workflow run and its job logs in your browser": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the workflow run and its job logs in your browser"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet den Workflow-Lauf und seine Job-Logs im Browser"
+          }
+        }
+      }
+    },
+    "Job results": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job results"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Ergebnisse"
+          }
+        }
+      }
+    },
+    "%lld unreviewed failed jobs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld unreviewed failed jobs"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld nicht quittierte Job-Fehler"
+          }
+        }
+      }
+    },
+    "From loaded GitHub history; runner availability is separate.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From loaded GitHub history; runner availability is separate."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus der geladenen GitHub-Historie; die Runner-Verfügbarkeit ist davon unabhängig."
+          }
+        }
+      }
+    },
+    "Mark these failures as reviewed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark these failures as reviewed"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Fehler quittieren"
+          }
+        }
+      }
+    },
+    "Clears this alert without changing job results or runner status": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clears this alert without changing job results or runner status"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernt den Hinweis, ohne Job-Ergebnisse oder Runner-Status zu verändern"
+          }
+        }
+      }
+    },
+    "1 unreviewed failed job": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 unreviewed failed job"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 nicht quittierter Job-Fehler"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

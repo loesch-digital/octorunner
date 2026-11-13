@@ -50,7 +50,9 @@ struct OctoRunnerApp: App {
         let modelContainer = appDelegate.modelContainer
         @Bindable var preferences = services.preferences
         Window("OctoRunner", id: "main-dashboard") {
-            MainShellView(historyRateBudget: services.historyRateBudget, accountSession: services.accounts)
+            LocalJobResultsSource { results in
+                MainShellView(historyRateBudget: services.historyRateBudget, accountSession: services.accounts, jobResults: results)
+            }
                 .environment(services.preferences)
                 .environment(services.integration)
                 .environment(services.notifications)
@@ -77,8 +79,10 @@ struct OctoRunnerApp: App {
                 .environment(\.locale, preferences.language.locale)
                 .modelContainer(modelContainer)
         } label: {
-            RunnerMenuBarLabel(monitor: services.healthMonitor)
+            RunnerMenuBarJobLabel(monitor: services.healthMonitor)
+                .environment(services.preferences)
                 .environment(\.locale, preferences.language.locale)
+                .modelContainer(modelContainer)
         }
         .menuBarExtraStyle(.window)
     }
