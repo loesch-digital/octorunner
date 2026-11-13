@@ -8,6 +8,12 @@ struct RunnerHealthTests {
     let now = Date(timeIntervalSince1970: 1_000)
     let id = UUID()
 
+    @Test("Running menu status explains that jobs are executing in both languages")
+    func runningTitle() {
+        #expect(RunnerFleetHealth.busy.localizedTitle(locale: Locale(identifier: "en")) == "Runners running jobs or restarting")
+        #expect(RunnerFleetHealth.busy.localizedTitle(locale: Locale(identifier: "de")) == "Runner führen Jobs aus oder starten neu")
+    }
+
     @Test("Menu bar health uses distinct symbols and colored non-template images")
     @MainActor
     func menuBarIcon() throws {

@@ -1140,19 +1140,19 @@
         }
       }
     },
-    "Runners busy or restarting": {
+    "Runners running jobs or restarting": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runners busy or restarting"
+            "value": "Runners running jobs or restarting"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runner beschäftigt oder im Neustart"
+            "value": "Runner führen Jobs aus oder starten neu"
           }
         }
       }
