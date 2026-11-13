@@ -22,18 +22,18 @@
 - Closing/changing screen: cancel periodic work and avoid SwiftData access after cancellation.
 
 ### Task 1: Measured host cards and navigation
-- [ ] Add failing tests for device-counter deltas (initial sample, reset, invalid elapsed time), rate-header account isolation and rendered dashboard at 680/1100 points in Light/Dark and DE/EN.
-- [ ] Add HostDiskIOSample/Snapshot, sampler protocol and SystemHostDiskIOSampler with IOKit registry ownership balanced. Actor computes rates using monotonic uptime and independent device identities.
-- [ ] Add HostTelemetryDashboardView, adaptive CPU/memory/storage/API cards, interval picker and manual refresh through .task(id:), sidebar navigation.
-- [ ] Preserve observed API headers in WorkflowHistoryRateBudget when a current history response arrives; use no extra polling requests just for telemetry.
-- [ ] Full Swift/Python tests, local build, review, PR CI, merge, main CI.
+- [x] Add failing tests for device-counter deltas (initial sample, reset, invalid elapsed time), rate-header account isolation and rendered dashboard at 680/1100 points in Light/Dark and DE/EN.
+- [x] Add HostDiskIOSample/Snapshot, sampler protocol and SystemHostDiskIOSampler with IOKit registry ownership balanced. Actor computes rates using monotonic uptime and independent device identities.
+- [x] Add HostTelemetryDashboardView, adaptive CPU/memory/storage/API cards, interval picker and manual refresh through .task(id:), sidebar navigation.
+- [x] Preserve observed API headers in WorkflowHistoryRateBudget when a current history response arrives; use no extra polling requests just for telemetry.
+- [x] Full Swift/Python tests, local build, review, PR CI, merge, main CI.
 
 ### Task 2: Runner process inspector
-- [ ] Red tests for process tree association, malformed/missing process samples, duplicate runner roots, unrelated services, PID reuse and cancellation.
-- [ ] Add libproc metadata sampler and Sendable identities, CPU deltas and runner-descendant association. No process command arguments.
-- [ ] Add runner filter, process rows and detailed read-only sheet. SIGTERM requires confirmation and fresh identity/ancestry checks; record audit outcome without arguments.
+- [x] Red tests for process tree association, malformed/missing process samples, duplicate runner roots, unrelated services, PID reuse and cancellation.
+- [x] Add libproc metadata sampler and Sendable identities, CPU deltas and runner-descendant association. No process command arguments.
+- [x] Add runner filter, process rows and detailed read-only sheet. SIGTERM requires confirmation and fresh identity/ancestry checks; record audit outcome without arguments.
 - [ ] Full tests, native UI coverage, review and both CI gates before merge.
 
 ### Task 3: Telemetry acceptance and documentation
-- [ ] Compare to screenshot 09, document factual departures (no fake per-app RAM/cache totals, no fabricated 60-Hz IPC watchdog or CoreSimulator attribution).
-- [ ] Verify public Apple API support and degradation on unsupported systems; document scope and remaining v0.5 work.
+- [x] Compare to screenshot 09, document factual departures (no fake per-app RAM/cache totals, no fabricated 60-Hz IPC watchdog or CoreSimulator attribution).
+- [x] Verify public Apple API support and degradation on unsupported systems; document scope and remaining v0.5 work.

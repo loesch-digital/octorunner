@@ -28,6 +28,10 @@ final class HostTelemetryUITests: XCTestCase {
         refresh.click()
         wait(for: [lostBaseline], timeout: 1)
         XCTAssertTrue(app.descendants(matching: .any)["Sample interval"].firstMatch.exists)
+        let processes = app.descendants(matching: .any)["Processes by Runner"].firstMatch
+        if !processes.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        XCTAssertTrue(processes.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.popUpButtons["Process runner filter"].firstMatch.exists)
         app.outlines.staticTexts["All Runners"].firstMatch.click()
         XCTAssertTrue(app.buttons["New Runner"].firstMatch.waitForExistence(timeout: 5))
     }
