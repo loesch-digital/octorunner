@@ -20,6 +20,7 @@ public struct MainShellView: View {
     @State private var selectedSection: SidebarSection?
     @State private var searchText: String = ""
     @State private var hostSnapshot: HostTelemetrySnapshot?
+    @State private var isShowingAuditLog = false
     @State private var isShowingAuthSheet: Bool = false
     @State private var isShowingAddRunnerSheet: Bool = false
     @State private var isShowingAccountPopover: Bool = false
@@ -55,6 +56,12 @@ public struct MainShellView: View {
         .navigationTitle("OctoRunner")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
+                Button { isShowingAuditLog = true } label: {
+                    Label { Text("Audit Log", bundle: .module) } icon: { Image(systemName: "clock.arrow.circlepath") }
+                }
+                .accessibilityLabel(Text("Audit Log", bundle: .module))
+                .accessibilityHint(Text("Review and export local app and runner events.", bundle: .module))
+
                 SettingsLink {
                     Label { Text("App Settings", bundle: .module) } icon: { Image(systemName: "gearshape") }
                 }
@@ -75,6 +82,7 @@ public struct MainShellView: View {
                 .tint(OctoTheme.accentBlue)
             }
         }
+        .sheet(isPresented: $isShowingAuditLog) { AuditLogView() }
         .sheet(isPresented: $isShowingAuthSheet) {
             OAuthDeviceFlowSheet()
         }
@@ -751,11 +759,18 @@ public struct MainShellView: View {
             NSWorkspace.shared.open(update.releasePageURL)
             return
         }
+        guard !Task.isCancelled else { return }
         isInstallingUpdate = true
+        try? AppAuditEvent.updateStarted.record(in: modelContext)
         do {
             try await updaterActor.downloadAndInstallUpdate(from: zipURL)
+            guard !Task.isCancelled else { return }
+            try? AppAuditEvent.updateInstalled.record(in: modelContext)
             NSApplication.shared.terminate(nil)
-        } catch {
+        } catch is CancellationError { return }
+        catch {
+            guard !Task.isCancelled else { return }
+            try? AppAuditEvent.updateFailed.record(in: modelContext)
             isInstallingUpdate = false
             updateStatusMessage = "Auto-update failed (\(error.localizedDescription)) — opening release page."
             NSWorkspace.shared.open(update.releasePageURL)
