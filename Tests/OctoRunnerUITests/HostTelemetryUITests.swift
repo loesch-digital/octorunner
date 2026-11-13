@@ -12,18 +12,18 @@ final class HostTelemetryUITests: XCTestCase {
         let telemetry = app.outlines.staticTexts["Host Telemetry"].firstMatch
         XCTAssertTrue(telemetry.waitForExistence(timeout: 10), app.debugDescription)
         telemetry.click()
-        XCTAssertTrue(app.staticTexts["CPU Load"].firstMatch.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Unified Memory"].firstMatch.exists)
-        XCTAssertTrue(app.staticTexts["Storage & Device I/O"].firstMatch.exists)
-        XCTAssertTrue(app.staticTexts["GitHub API"].firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any)["CPU Load"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["Unified Memory"].firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any)["Storage & Device I/O"].firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any)["GitHub API"].firstMatch.exists)
         let refresh = app.buttons["Refresh telemetry"].firstMatch
         XCTAssertTrue(refresh.isHittable)
         let cpu = app.staticTexts["telemetry.cpuUsage"].firstMatch
-        let measured = expectation(for: NSPredicate(format: "label CONTAINS %@", "%"), evaluatedWith: cpu)
+        let measured = expectation(for: NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "%", "%"), evaluatedWith: cpu)
         wait(for: [measured], timeout: 15)
         // MainShell has redrawn several times during the first sampling window.
         // A refresh must retain the baseline instead of replacing it with —.
-        let lostBaseline = expectation(for: NSPredicate(format: "label == %@", "—"), evaluatedWith: cpu)
+        let lostBaseline = expectation(for: NSPredicate(format: "label == %@ OR value == %@", "—", "—"), evaluatedWith: cpu)
         lostBaseline.isInverted = true
         refresh.click()
         wait(for: [lostBaseline], timeout: 1)
