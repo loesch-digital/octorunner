@@ -76,6 +76,10 @@ public final class RunnerHealthMonitor {
             let events = tracker.consume(observations, at: now, locale: preferences?.language.locale ?? .current)
             for event in events {
                 guard !Task.isCancelled, revision == generation else { return }
+                AuditLogRecorder.record(in: context, category: .runnerLifecycle,
+                    severity: event.kind == .runnerError ? .critical : event.kind == .runnerOffline ? .warning : .info,
+                    title: event.title, summary: "Local process state changed; this is not a workflow job result.",
+                    targetRunnerName: event.message)
                 await notifications.publish(event)
             }
         } catch is CancellationError {
