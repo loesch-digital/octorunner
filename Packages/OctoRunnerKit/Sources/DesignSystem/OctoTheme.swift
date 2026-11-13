@@ -65,7 +65,7 @@ public enum OctoTheme {
         case .idle:
             onlineGreen
         case .busy:
-            warningOrange
+            accentBlue
         case .offline:
             .secondary
         case .faulted:
