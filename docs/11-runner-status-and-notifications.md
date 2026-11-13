@@ -32,8 +32,8 @@ lokal. Der App-Build enthält dafür ein Privacy-Manifest mit Apples Grund `85F4
 
 Der Ereignisschalter **Wenig freier Speicherplatz** und die allgemeine Zustimmung
 zu Mitteilungen müssen eingeschaltet sein. Die Warnung erfolgt unter der
-Storage-Policy-Grenze (derzeit standardmäßig 20 dezimale GB). Der Storage-Tab zur
-Konfiguration dieser Grenze ist noch Teil der offenen v0.5.0-Arbeiten. Pro
+Storage-Policy-Grenze (derzeit standardmäßig 20 dezimale GB). Die Grenze ist im
+Tab „Cache & Storage“ konfigurierbar (siehe [Speicherbereinigung](15-cache-and-storage.md)). Pro
 Knappheitsphase erscheint eine Meldung. Erst bei mindestens 2 GB oberhalb der
 Grenze wird eine neue Phase möglich. Messfehler und veraltete Daten gelten nicht
 als Erholung; fehlgeschlagene Zustellungen können erneut versucht werden.

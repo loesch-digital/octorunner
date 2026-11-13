@@ -4,6 +4,7 @@ enum SettingsTab: String, Hashable, CaseIterable {
   case general
   case background
   case failover
+  case storage
   case auth
   case notifications
 
@@ -12,6 +13,7 @@ enum SettingsTab: String, Hashable, CaseIterable {
     case .general: "General"
     case .background: "Autostart & Background"
     case .failover: "Failover"
+    case .storage: "Cache & Storage"
     case .auth: "Auth & Tokens"
     case .notifications: "Notifications"
     }
@@ -22,6 +24,7 @@ enum SettingsTab: String, Hashable, CaseIterable {
     case .general: "gearshape"
     case .background: "power"
     case .failover: "arrow.clockwise"
+    case .storage: "externaldrive"
     case .auth: "key"
     case .notifications: "bell"
     }
@@ -56,6 +59,8 @@ extension SettingsTab {
       ]
     case .failover:
       ["Failover", "Restart policy", "Restart delay (seconds)"]
+    case .storage:
+      ["Cache & Storage", "Workspace age (days)", "Log retention (days)", "Cleanup policy"]
     case .auth:
       [
         "Auth & Tokens", "Connected GitHub accounts", "Credential security",

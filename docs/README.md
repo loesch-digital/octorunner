@@ -38,6 +38,8 @@ Das Gesamtkonzept ist nach Architektur, Infrastruktur und den einzelnen Release-
 | **[13-accounts-and-credentials.md](./13-accounts-and-credentials.md)** | Account-Identität, Credential-Lifecycle und Abbruch-/Fehlerfälle | In Arbeit für **`v0.5.0`** |
 | **[14-runner-archive-integrity.md](./14-runner-archive-integrity.md)** | Verpflichtende SHA-256-Prüfung und öffentliche Release-Digests ohne zusätzliche Token-Rechte | In Arbeit für **`v0.5.0`** |
 
+| **[15-cache-and-storage.md](./15-cache-and-storage.md)** | Verwaltete Runner-Speicheranalyse, sichere Bereinigung und automatische Richtlinien | In Arbeit für **`v0.5.0`** |
+
 ---
 
 ## 3. Release-Roadmap (Immer ausführbar & testbar)

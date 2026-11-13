@@ -15,12 +15,14 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
         UNUserNotificationCenter.current().delegate = notificationPresenter
         services.healthMonitor.start(container: modelContainer)
         services.diskMonitor.start()
+        services.storageMaintenance.start(container: modelContainer)
         services.jobFailureMonitor.start(container: modelContainer)
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
         services.healthMonitor.stop()
         services.diskMonitor.stop()
+        services.storageMaintenance.stop()
         services.jobFailureMonitor.stop()
     }
 
@@ -56,6 +58,7 @@ struct OctoRunnerApp: App {
                 .environment(services.preferences)
                 .environment(services.integration)
                 .environment(services.notifications)
+                .environment(services.storageMaintenance)
                 .environment(\.locale, preferences.language.locale)
                 .frame(minWidth: 960, minHeight: 620)
         }
@@ -67,6 +70,7 @@ struct OctoRunnerApp: App {
                 .environment(services.preferences)
                 .environment(services.integration)
                 .environment(services.notifications)
+                .environment(services.storageMaintenance)
                 .environment(\.locale, preferences.language.locale)
         }
         .modelContainer(modelContainer)
@@ -76,6 +80,7 @@ struct OctoRunnerApp: App {
                 .environment(services.preferences)
                 .environment(services.integration)
                 .environment(services.notifications)
+                .environment(services.storageMaintenance)
                 .environment(\.locale, preferences.language.locale)
                 .modelContainer(modelContainer)
         } label: {
