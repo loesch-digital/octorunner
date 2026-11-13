@@ -11,6 +11,18 @@ import Testing
 
 @Suite("AppShell UI, Layout & Preview Rendering Tests", .serialized)
 struct AppShellUITests {
+    @Test("Jobs route renders in the main application with the shared preferences")
+    @MainActor
+    func jobsRouteRenders() throws {
+        let container = try Self.makePreviewContainer()
+        let host = NSHostingView(rootView: MainShellView(section: .queueWorkpools)
+            .environment(AppPreferencesStore()).modelContainer(container))
+        host.frame = CGRect(x: 0, y: 0, width: 1120, height: 740)
+        host.layoutSubtreeIfNeeded()
+        #expect(host.bitmapImageRepForCachingDisplay(in: host.bounds) != nil)
+        host.rootView = MainShellView(section: .allRunners).environment(AppPreferencesStore()).modelContainer(container)
+    }
+
     @Test("Quit confirmation cancels safely and only explicit confirmation terminates the app")
     @MainActor
     func quitConfirmationRequiresExplicitChoice() {
@@ -237,7 +249,9 @@ struct AppShellUITests {
         try container.mainContext.save()
 
         let host = NSHostingView(
-            rootView: AddRunnerWizardSheet(viewModel: vm).modelContainer(container)
+            rootView: AddRunnerWizardSheet(viewModel: vm)
+                .environment(AppPreferencesStore())
+                .modelContainer(container)
         )
         host.frame = NSRect(x: 0, y: 0, width: 640, height: 620)
         host.layoutSubtreeIfNeeded()
@@ -260,8 +274,11 @@ struct AppShellUITests {
         #expect(consoleSheetHost.bounds.size == CGSize(width: 820, height: 600))
 
         // Step 4 Dialog 6: MenuBarStatusView
+        let menuServices = AppServices()
         let menuBarHost = NSHostingView(
             rootView: MenuBarStatusView().modelContainer(container)
+                .environment(menuServices.preferences)
+                .environment(menuServices.integration)
         )
         menuBarHost.frame = NSRect(x: 0, y: 0, width: 350, height: 460)
         menuBarHost.layoutSubtreeIfNeeded()

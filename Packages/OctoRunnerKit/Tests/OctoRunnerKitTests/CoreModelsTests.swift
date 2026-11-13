@@ -102,7 +102,7 @@ struct CoreModelsTests {
         #expect(AppLanguage.german.displayTitle.contains("Deutsch"))
 
         #expect(SidebarSection.allCases.count == 5)
-        #expect(SidebarSection.launchdSettings.title == "Autostart & Background")
+        #expect(SidebarSection.launchdSettings.title == "Settings")
         for section in SidebarSection.allCases {
             #expect(!section.title.isEmpty)
             #expect(!section.systemImage.isEmpty)
@@ -113,9 +113,9 @@ struct CoreModelsTests {
         #expect(parsedLog.message.contains("Listening for Jobs"))
     }
 
-    @Test("OctoRunnerPersistence migrates legacy v0.2.x SQLite store in-place and self-heals corrupted stores without fatalError")
+    @Test("OctoRunnerPersistence recreates a store with an invalid SQLite header without fatalError")
     @MainActor
-    func persistenceLightweightMigrationAndSelfHealing() throws {
+    func persistenceCorruptHeaderRecovery() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appending(path: "octorunner-migration-test-\(UUID().uuidString)", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)

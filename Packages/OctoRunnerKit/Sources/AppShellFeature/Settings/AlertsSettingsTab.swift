@@ -1,0 +1,130 @@
+import CoreModels
+import DesignSystem
+import SwiftUI
+
+public struct AlertsSettingsTab: View {
+  @Environment(AppPreferencesStore.self) private var preferences
+  @Environment(AppNotificationsController.self) private var notifications
+  @State private var permissionTask: Task<Void, Never>?
+
+  public init() {}
+
+  public var body: some View {
+    @Bindable var preferences = preferences
+    SettingsPage("Notifications", subtitle: "Choose which local events should notify you.") {
+      SettingsCard(
+        "Notification Center", symbol: "bell.badge",
+        subtitle: "Enable native macOS delivery and optional notification sounds."
+      ) {
+        Toggle(isOn: notificationBinding) {
+          Text("Enable macOS notifications", bundle: .module)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .disabled(notifications.isRequestingPermission)
+        .accessibilityLabel(Text("Enable macOS notifications", bundle: .module))
+        .accessibilityHint(
+          Text("Requests permission only when you enable this setting.", bundle: .module))
+        if notifications.authorization == .denied {
+          Text(
+            "Notifications are blocked. Allow them for OctoRunner in System Settings → Notifications, then enable this setting again.",
+            bundle: .module
+          )
+          .fixedSize(horizontal: false, vertical: true)
+          .foregroundStyle(OctoTheme.warningOrange)
+        }
+        if let message = notifications.errorMessage {
+          Text(message).foregroundStyle(OctoTheme.errorRed).textSelection(.enabled)
+        }
+        Toggle(isOn: $preferences.notificationPolicy.soundEnabled) {
+          Text("Play notification sounds", bundle: .module)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .disabled(!preferences.notificationPolicy.enabled)
+        .accessibilityLabel(Text("Play notification sounds", bundle: .module))
+        .accessibilityHint(Text("Uses the macOS default notification sound.", bundle: .module))
+        Text(
+          "Choose banners or alerts in macOS System Settings. OctoRunner cannot override your system presentation settings.",
+          bundle: .module
+        )
+        .fixedSize(horizontal: false, vertical: true)
+        .font(.callout).foregroundStyle(OctoTheme.secondaryText)
+      }
+      SettingsCard(
+        "Event notification triggers", symbol: "bolt",
+        subtitle: "Select the runner, workflow and storage events you want to receive."
+      ) {
+        Toggle(isOn: $preferences.notificationPolicy.runnerOnline) {
+          Text("Runner comes online", bundle: .module)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityLabel(Text("Runner comes online", bundle: .module))
+        .accessibilityHint(
+          Text(
+            "Reports a detected transition to online, excluding initial app startup.",
+            bundle: .module))
+        Toggle(isOn: $preferences.notificationPolicy.runnerOffline) {
+          Text("Runner goes offline", bundle: .module)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityLabel(Text("Runner goes offline", bundle: .module))
+        .accessibilityHint(
+          Text("Reports a detected transition from online to offline.", bundle: .module))
+        Toggle(isOn: $preferences.notificationPolicy.runnerError) {
+          Text("Runner enters an error state", bundle: .module)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityLabel(Text("Runner enters an error state", bundle: .module))
+        .accessibilityHint(
+          Text("Reports a detected transition to a runner error state.", bundle: .module)
+        )
+        .disabled(true)
+        Text(
+          "Runner error alerts require crash supervision in v0.6.0 and are not active yet.",
+          bundle: .module
+        )
+        .font(.caption)
+        .foregroundStyle(OctoTheme.secondaryText)
+        .fixedSize(horizontal: false, vertical: true)
+        Toggle(isOn: $preferences.notificationPolicy.jobFailure) {
+          Text("Local workflow job fails", bundle: .module)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityLabel(Text("Local workflow job fails", bundle: .module))
+        .accessibilityHint(Text("Reports failures assigned to a local runner.", bundle: .module))
+        Toggle(isOn: $preferences.notificationPolicy.lowDiskSpace) {
+          Text("Low disk space", bundle: .module)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityLabel(Text("Low disk space", bundle: .module))
+        .accessibilityHint(
+          Text(
+            "Warns when available space crosses the configured storage threshold.", bundle: .module)
+        )
+        Group {
+          Text(
+            "Runner events track local process availability. Monitoring continues with windows closed. Quitting OctoRunner stops monitoring and new status notifications.",
+            bundle: .module
+          )
+          .fixedSize(horizontal: false, vertical: true)
+          Text(
+            "Job alerts check recent GitHub runs while OctoRunner is running. The first check establishes a baseline. Configure organization repositories under Jobs → History sources.",
+            bundle: .module
+          )
+          .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.callout).foregroundStyle(OctoTheme.secondaryText)
+      }
+      .disabled(!preferences.notificationPolicy.enabled)
+    }
+    .onDisappear { permissionTask?.cancel() }
+  }
+
+  private var notificationBinding: Binding<Bool> {
+    Binding(get: { preferences.notificationPolicy.enabled }, set: changePermission)
+  }
+
+  private func changePermission(_ enabled: Bool) {
+    permissionTask?.cancel()
+    permissionTask = Task { await notifications.setEnabled(enabled) }
+  }
+}

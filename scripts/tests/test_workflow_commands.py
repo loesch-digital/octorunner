@@ -1,5 +1,6 @@
 """Execute workflow shell blocks with local boundary stubs; no GitHub writes."""
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -23,6 +24,14 @@ def workflow_run(workflow, step):
 
 
 class WorkflowCommandTests(unittest.TestCase):
+    def test_build_workflows_use_the_same_current_toolchain(self):
+        for workflow in ("ci.yml", "release.yml"):
+            with self.subTest(workflow=workflow):
+                source = (ROOT / ".github/workflows" / workflow).read_text()
+                self.assertEqual(re.findall(r"^    runs-on: (.+)$", source, re.MULTILINE), ["xcode-27"])
+                self.assertIn("DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer", source)
+                self.assertNotIn("matrix.", source)
+
     def run_step(self, workflow, step, command, stub, extra_env=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -54,16 +63,32 @@ class WorkflowCommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 7)
         self.assertIn("install-failed", result.stderr)
 
+    def test_release_workflow_extracts_beta_distribution_policy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "outputs"
+            result = subprocess.run(
+                ["bash", "-euo", "pipefail", "-c", workflow_run("release.yml", "Extract Release Version from Git Tag")],
+                cwd=ROOT, env={**os.environ, "GITHUB_REF_NAME": "v0.5.0-beta.1", "GITHUB_OUTPUT": str(output)},
+                capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            values = dict(line.split("=", 1) for line in output.read_text().splitlines())
+            self.assertEqual(values.get("bundle_version"), "0.5.0")
+            self.assertEqual(values.get("update_homebrew"), "false")
+
     def test_published_release_cannot_be_overwritten(self):
-        result = self.run_step("release.yml", "Publish New GitHub Release", "gh", '''
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "release.zip"
+            archive.write_bytes(b"synthetic archive")
+            result = self.run_step("release.yml", "Publish New GitHub Release", "gh", '''
 case "$2" in
   view) exit 0 ;;
   upload) echo archive-overwritten; exit 0 ;;
   create) echo release-already-exists >&2; exit 1 ;;
 esac
-''', {"TAG": "v0.4.3", "VERSION": "0.4.3", "ZIP_PATH": "release.zip"})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertNotIn("archive-overwritten", result.stdout)
+''', {"TAG": "v0.4.3", "VERSION": "0.4.3", "ZIP_PATH": str(archive)})
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("release-already-exists", result.stderr)
+            self.assertNotIn("archive-overwritten", result.stdout)
 
 
 if __name__ == "__main__":

@@ -18,17 +18,10 @@ concurrency:
 jobs:
   build-and-test:
     name: Swift 6 Strict Concurrency & macOS App Build
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: xcode-27
-            developer-dir: /Applications/Xcode_27.2.app/Contents/Developer
-          - os: macos-15
-            developer-dir: /Applications/Xcode.app/Contents/Developer
-    runs-on: ${{ matrix.os }}
+    runs-on: xcode-27
+    timeout-minutes: 20
     env:
-      DEVELOPER_DIR: ${{ matrix.developer-dir }}
+      DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
@@ -45,7 +38,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: swift-coverage-${{ matrix.os }}
+          name: swift-coverage-xcode-27
           path: Packages/OctoRunnerKit/.build/**/codecov/*.json
           include-hidden-files: true
           retention-days: 14
@@ -69,3 +62,25 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=YES \
             build
+
+      - name: Test Settings Navigation in the App
+        run: |
+          xcodebuild -project OctoRunner.xcodeproj \
+            -scheme OctoRunner \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath DerivedData/UITests \
+            -resultBundlePath DerivedData/SettingsUITests.xcresult \
+            -parallel-testing-enabled NO \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=YES \
+            test
+
+      - name: Preserve Settings UI Test Results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: settings-ui-tests-xcode-27
+          path: DerivedData/SettingsUITests.xcresult
+          retention-days: 7

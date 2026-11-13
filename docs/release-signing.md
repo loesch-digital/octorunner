@@ -46,6 +46,14 @@ The workflow uses Xcode 27.2 explicitly, runs the Python signing regressions,
 serializes publications, and refuses existing GitHub releases. Failed releases
 must use a new patch tag; the workflow never uploads assets with `--clobber`.
 
+CI jobs have an explicit 20-minute execution limit. Release jobs have a
+60-minute limit, including the notarization command's separate 30-minute wait
+limit. These limits apply after a runner starts the job; queue time is separate.
+When a watch stops updating, check the run's current status and step directly
+instead of treating an open local watch as evidence that GitHub is still busy.
+The additional `xcode-27` label is registered in `.github/actionlint.yaml` for
+local validation because actionlint's built-in label list does not include it.
+
 ## Verification
 
 ```bash
@@ -59,3 +67,19 @@ The unit tests exercise success and rejection paths with command stubs; only a
 real release using Apple credentials verifies the certificate and notarization.
 
 Reference: [Apple: Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).
+
+## Prereleases
+
+Validated tags may also use `vX.Y.Z-beta.N` or `vX.Y.Z-rc.N` (positive N).
+`scripts/release_tools.py` separates the complete release version from Apple's
+numeric `CFBundleShortVersionString` / `CFBundleVersion`. Before signing, it
+checks the built bundle identity and numeric versions, then writes the complete
+version into `OctoRunnerReleaseVersion`; the app uses this for display and SemVer
+update checks. A generic `INFOPLIST_KEY_` build setting did not preserve the custom
+key in the verified local Xcode build, so stamping is explicit.
+
+Prereleases are published with `--prerelease --latest=false`, use reviewed notes
+from `docs/releases/<tag>.md` when available, and skip the stable Homebrew tap.
+They retain the same Developer ID/notarization/Gatekeeper requirements. Direct
+ZIP installation is their acceptance path. Stable releases keep the Homebrew
+upgrade check. No archive or existing release is replaced.

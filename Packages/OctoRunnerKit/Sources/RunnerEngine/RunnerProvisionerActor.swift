@@ -65,8 +65,12 @@ public actor RunnerProvisionerActor {
         labels: [String],
         registerLaunchAgent: Bool,
         accessToken: String,
+        configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration(),
         onStatusUpdate: @MainActor @Sendable (String) -> Void
     ) async throws -> [ProvisionedRunnerSummary] {
+        for name in instanceNames {
+            try Self.validateRunnerName(name)
+        }
         await onStatusUpdate("Fetching macOS ARM64 runner binary metadata from GitHub…")
         let candidate = try await provisioningClient.fetchArm64RunnerDownload(
             scopeURL: scopeURL,
@@ -96,13 +100,14 @@ public actor RunnerProvisionerActor {
                     try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
                     try FileManager.default.createDirectory(at: diagDir, withIntermediateDirectories: true)
 
-                    try Self.extractArchive(archiveURL: archiveURL, into: instanceRoot)
-                    try Self.runConfigScript(
+                    try await Self.extractArchive(archiveURL: archiveURL, into: instanceRoot)
+                    try await Self.runConfigScript(
                         in: instanceRoot,
                         scopeURL: scopeURL,
                         registrationToken: tokenDTO.token,
                         runnerName: instanceName,
-                        labels: labels
+                        labels: labels,
+                        configuration: configuration
                     )
 
                     var launchdLabel: String?
@@ -115,7 +120,8 @@ public actor RunnerProvisionerActor {
                         let label = "io.octorunner.agent.\(sanitized)"
                         let plistData = try LaunchAgentPlistGenerator.generatePlistData(
                             serviceLabel: label,
-                            runnerRootDirectory: instanceRoot
+                            runnerRootDirectory: instanceRoot,
+                            configuration: configuration
                         )
                         let plistURL = LaunchAgentPlistGenerator.launchAgentPlistURL(for: label)
                         try FileManager.default.createDirectory(
@@ -124,9 +130,9 @@ public actor RunnerProvisionerActor {
                         )
                         try plistData.write(to: plistURL, options: .atomic)
                         launchdLabel = label
-                        launchedPID = Self.bootstrapLaunchAgent(plistURL: plistURL)
+                        launchedPID = try await Self.bootstrapLaunchAgent(plistURL: plistURL)
                     } else {
-                        launchedPID = Self.spawnDetachedRunnerProcess(in: instanceRoot)
+                        launchedPID = Self.spawnDetachedRunnerProcess(in: instanceRoot, configuration: configuration)
                     }
 
                     return ProvisionedRunnerSummary(
@@ -156,14 +162,16 @@ public actor RunnerProvisionerActor {
     public func migrateImportedRunnerDirectory(
         runnerName: String,
         sourceRootDirectory: URL,
-        registerLaunchAgent: Bool
-    ) throws -> URL {
+        registerLaunchAgent: Bool,
+        configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration()
+    ) async throws -> URL {
+        try Self.validateRunnerName(runnerName)
         try FileManager.default.createDirectory(at: baseRunnersDirectory, withIntermediateDirectories: true)
         let destinationRoot = baseRunnersDirectory.appending(path: runnerName, directoryHint: .isDirectory)
 
         if sourceRootDirectory.standardizedFileURL != destinationRoot.standardizedFileURL {
-            if FileManager.default.fileExists(atPath: destinationRoot.path()) {
-                try FileManager.default.removeItem(at: destinationRoot)
+            if FileManager.default.fileExists(atPath: destinationRoot.path(percentEncoded: false)) {
+                throw RunnerEngineError.runnerDirectoryAlreadyExists
             }
             try FileManager.default.copyItem(at: sourceRootDirectory, to: destinationRoot)
         }
@@ -178,7 +186,8 @@ public actor RunnerProvisionerActor {
             let label = "io.octorunner.agent.\(sanitized)"
             let plistData = try LaunchAgentPlistGenerator.generatePlistData(
                 serviceLabel: label,
-                runnerRootDirectory: destinationRoot
+                runnerRootDirectory: destinationRoot,
+                configuration: configuration
             )
             let plistURL = LaunchAgentPlistGenerator.launchAgentPlistURL(for: label)
             try FileManager.default.createDirectory(
@@ -186,10 +195,19 @@ public actor RunnerProvisionerActor {
                 withIntermediateDirectories: true
             )
             try plistData.write(to: plistURL, options: .atomic)
-            _ = Self.bootstrapLaunchAgent(plistURL: plistURL)
+            _ = try await Self.bootstrapLaunchAgent(plistURL: plistURL)
         }
 
         return destinationRoot
+    }
+
+    private static func validateRunnerName(_ name: String) throws {
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              name != ".", name != "..", name.utf8.count <= 200,
+              !name.contains("/"), !name.contains("\\"),
+              name.unicodeScalars.allSatisfy({ !CharacterSet.controlCharacters.contains($0) }) else {
+            throw RunnerEngineError.invalidRunnerName
+        }
     }
 
     public static func extractVersion(fromFilename filename: String) -> String? {
@@ -200,31 +218,31 @@ public actor RunnerProvisionerActor {
         return stripped.isEmpty ? nil : stripped
     }
 
-    private static func extractArchive(archiveURL: URL, into destination: URL) throws {
+    static func extractArchive(archiveURL: URL, into destination: URL) async throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
-        process.arguments = ["-xzf", archiveURL.path(), "-C", destination.path()]
-        try process.run()
-        process.waitUntilExit()
+        process.arguments = ["-xzf", archiveURL.path(percentEncoded: false), "-C", destination.path(percentEncoded: false)]
+        let status = try await ConfigurationProcessRunner.run(process)
 
-        guard process.terminationStatus == 0 else {
-            throw RunnerEngineError.extractionFailed(process.terminationStatus)
+        guard status == 0 else {
+            throw RunnerEngineError.extractionFailed(status)
         }
     }
 
-    private static func runConfigScript(
+    static func runConfigScript(
         in instanceRoot: URL,
         scopeURL: URL,
         registrationToken: String,
         runnerName: String,
-        labels: [String]
-    ) throws {
+        labels: [String],
+        configuration: RunnerLaunchConfiguration
+    ) async throws {
         let configScript = instanceRoot.appending(path: "config.sh")
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
         process.currentDirectoryURL = instanceRoot
         process.arguments = [
-            configScript.path(),
+            configScript.path(percentEncoded: false),
             "--unattended",
             "--url", scopeURL.absoluteString,
             "--token", registrationToken,
@@ -233,41 +251,46 @@ public actor RunnerProvisionerActor {
             "--work", "_work",
             "--replace"
         ]
-        let stderrPipe = Pipe()
-        let stdoutPipe = Pipe()
-        process.standardError = stderrPipe
-        process.standardOutput = stdoutPipe
-        try process.run()
-        process.waitUntilExit()
+        process.environment = ProcessInfo.processInfo.environment.merging(configuration.environment) { _, configured in configured }
+        // Unattended setup has no interactive input. Its output can contain the
+        // registration credential, so never retain it in errors or diagnostic logs.
+        // Null handles also avoid filling an undrained pipe while awaiting exit.
+        process.standardInput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        process.standardOutput = FileHandle.nullDevice
+        let status = try await ConfigurationProcessRunner.run(process)
 
-        guard process.terminationStatus == 0 else {
-            let errData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-            let outData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-            let combined = (String(data: outData, encoding: .utf8) ?? "") + "\n" + (String(data: errData, encoding: .utf8) ?? "")
+        guard status == 0 else {
             throw RunnerEngineError.configurationFailed(
-                process.terminationStatus,
-                combined.trimmingCharacters(in: .whitespacesAndNewlines)
+                status,
+                "Configuration output was omitted to protect registration credentials."
             )
         }
     }
 
-    private static func bootstrapLaunchAgent(plistURL: URL) -> Int32? {
+    static func bootstrapLaunchAgent(plistURL: URL, executableURL: URL = URL(fileURLWithPath: "/bin/launchctl")) async throws -> Int32? {
         let uid = getuid()
         let bootstrap = Process()
-        bootstrap.executableURL = URL(fileURLWithPath: "/bin/launchctl")
-        bootstrap.arguments = ["bootstrap", "gui/\(uid)", plistURL.path()]
-        try? bootstrap.run()
-        bootstrap.waitUntilExit()
+        bootstrap.executableURL = executableURL
+        bootstrap.arguments = ["bootstrap", "gui/\(uid)", plistURL.path(percentEncoded: false)]
+        bootstrap.standardInput = FileHandle.nullDevice
+        bootstrap.standardOutput = FileHandle.nullDevice
+        bootstrap.standardError = FileHandle.nullDevice
+        let status = try await ConfigurationProcessRunner.run(bootstrap)
+        guard status == 0 else {
+            throw RunnerEngineError.launchAgentRegistrationFailed(status, "The service was not registered. Registration output was omitted.")
+        }
         return nil
     }
 
-    private static func spawnDetachedRunnerProcess(in instanceRoot: URL) -> Int32? {
+    private static func spawnDetachedRunnerProcess(in instanceRoot: URL, configuration: RunnerLaunchConfiguration) -> Int32? {
         let runScript = instanceRoot.appending(path: "run.sh")
-        guard FileManager.default.fileExists(atPath: runScript.path()) else { return nil }
+        guard FileManager.default.fileExists(atPath: runScript.path(percentEncoded: false)) else { return nil }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
         process.currentDirectoryURL = instanceRoot
-        process.arguments = [runScript.path()]
+        process.arguments = [runScript.path(percentEncoded: false)]
+        process.environment = ProcessInfo.processInfo.environment.merging(configuration.environment) { _, configured in configured }
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         try? process.run()

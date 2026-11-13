@@ -55,8 +55,8 @@ public final class RunnerEntity {
         self.scopeUrlString = scopeUrl.absoluteString
         self.statusRaw = status.rawValue
         self.labels = labels
-        self.workDirectoryPath = workDirectory.path()
-        self.rootDirectoryPath = rootDirectoryPath ?? workDirectory.deletingLastPathComponent().path()
+        self.workDirectoryPath = workDirectory.path(percentEncoded: false)
+        self.rootDirectoryPath = rootDirectoryPath ?? workDirectory.deletingLastPathComponent().path(percentEncoded: false)
         self.runnerVersion = runnerVersion
         self.isImportedLocal = isImportedLocal
         self.serviceLabel = "io.octorunner.agent.\(name)"

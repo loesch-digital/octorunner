@@ -1,0 +1,3845 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "General": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allgemein"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        }
+      }
+    },
+    "Notifications": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitteilungen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
+          }
+        }
+      }
+    },
+    "Show icon in menu bar": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Symbol in der Menüleiste anzeigen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show icon in menu bar"
+          }
+        }
+      }
+    },
+    "Keeps the Dock icon available when the menu bar icon is hidden.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Dock-Symbol bleibt verfügbar, wenn das Menüleistensymbol ausgeblendet ist."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keeps the Dock icon available when the menu bar icon is hidden."
+          }
+        }
+      }
+    },
+    "Hide Dock icon when windows are closed": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dock-Symbol bei geschlossenen Fenstern ausblenden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Dock icon when windows are closed"
+          }
+        }
+      }
+    },
+    "Applies only while the menu bar icon is visible.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gilt nur, solange das Menüleistensymbol sichtbar ist."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applies only while the menu bar icon is visible."
+          }
+        }
+      }
+    },
+    "System integration": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systemintegration"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System integration"
+          }
+        }
+      }
+    },
+    "Closing a window keeps OctoRunner running. Quitting removes its menu bar icon; installed runner LaunchAgents continue running.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beim Schließen eines Fensters läuft OctoRunner weiter. Beim Beenden verschwindet das Menüleistensymbol; installierte Runner-LaunchAgents laufen weiter."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closing a window keeps OctoRunner running. Quitting removes its menu bar icon; installed runner LaunchAgents continue running."
+          }
+        }
+      }
+    },
+    "Language": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprache"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        }
+      }
+    },
+    "Changes the interface language without restarting.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ändert die Sprache der Oberfläche ohne Neustart."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes the interface language without restarting."
+          }
+        }
+      }
+    },
+    "Appearance and language": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Darstellung und Sprache"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance and language"
+          }
+        }
+      }
+    },
+    "Launch at macOS login": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bei der macOS-Anmeldung starten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch at macOS login"
+          }
+        }
+      }
+    },
+    "Registers OctoRunner as a login item for your macOS account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registriert OctoRunner als Anmeldeobjekt für deinen macOS-Account."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registers OctoRunner as a login item for your macOS account."
+          }
+        }
+      }
+    },
+    "Approve OctoRunner in System Settings → General → Login Items.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib OctoRunner unter Systemeinstellungen → Allgemein → Anmeldeobjekte frei."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approve OctoRunner in System Settings → General → Login Items."
+          }
+        }
+      }
+    },
+    "Login items are unavailable for this app installation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anmeldeobjekte sind für diese App-Installation nicht verfügbar."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Login items are unavailable for this app installation."
+          }
+        }
+      }
+    },
+    "Enable macOS notifications": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS-Mitteilungen aktivieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable macOS notifications"
+          }
+        }
+      }
+    },
+    "Requests permission only when you enable this setting.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fragt erst nach der Erlaubnis, wenn du diese Einstellung aktivierst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requests permission only when you enable this setting."
+          }
+        }
+      }
+    },
+    "Notifications are blocked. Allow them for OctoRunner in System Settings → Notifications, then enable this setting again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitteilungen sind blockiert. Erlaube sie für OctoRunner unter Systemeinstellungen → Mitteilungen und aktiviere diese Einstellung erneut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are blocked. Allow them for OctoRunner in System Settings → Notifications, then enable this setting again."
+          }
+        }
+      }
+    },
+    "Play notification sounds": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitteilungstöne abspielen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play notification sounds"
+          }
+        }
+      }
+    },
+    "Uses the macOS default notification sound.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwendet den Standard-Mitteilungston von macOS."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses the macOS default notification sound."
+          }
+        }
+      }
+    },
+    "Notification Center": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitteilungszentrale"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification Center"
+          }
+        }
+      }
+    },
+    "Choose banners or alerts in macOS System Settings. OctoRunner cannot override your system presentation settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banner oder Hinweise wählst du in den macOS-Systemeinstellungen. OctoRunner kann diese Systemvorgaben nicht überschreiben."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose banners or alerts in macOS System Settings. OctoRunner cannot override your system presentation settings."
+          }
+        }
+      }
+    },
+    "Runner goes offline": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner geht offline"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner goes offline"
+          }
+        }
+      }
+    },
+    "Reports a detected transition from online to offline.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldet einen erkannten Wechsel von online zu offline."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports a detected transition from online to offline."
+          }
+        }
+      }
+    },
+    "Local workflow job fails": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokaler Workflow-Job schlägt fehl"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local workflow job fails"
+          }
+        }
+      }
+    },
+    "Reports failures assigned to a local runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldet Fehler bei Jobs, die einem lokalen Runner zugewiesen sind."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports failures assigned to a local runner."
+          }
+        }
+      }
+    },
+    "Low disk space": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenig freier Speicherplatz"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low disk space"
+          }
+        }
+      }
+    },
+    "Warns when available space crosses the configured storage threshold.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warnt beim Unterschreiten des eingestellten freien Speicherplatzes."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warns when available space crosses the configured storage threshold."
+          }
+        }
+      }
+    },
+    "Events": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ereignisse"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Events"
+          }
+        }
+      }
+    },
+    "Settings…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einstellungen …"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings…"
+          }
+        }
+      }
+    },
+    "Open OctoRunner settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner-Einstellungen öffnen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open OctoRunner settings"
+          }
+        }
+      }
+    },
+    "Opens app preferences in a separate settings window.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet die Einstellungen in einem eigenen Fenster."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens app preferences in a separate settings window."
+          }
+        }
+      }
+    },
+    "Autostart & Background": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autostart & Hintergrund"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autostart & Background"
+          }
+        }
+      }
+    },
+    "Failover": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausfallsicherung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failover"
+          }
+        }
+      }
+    },
+    "OctoRunner app": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner-App"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner app"
+          }
+        }
+      }
+    },
+    "The app login item is independent of installed runner LaunchAgents.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Anmeldeobjekt der App ist unabhängig von installierten Runner-LaunchAgents."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app login item is independent of installed runner LaunchAgents."
+          }
+        }
+      }
+    },
+    "Runner SHELL environment": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SHELL-Umgebung der Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner SHELL environment"
+          }
+        }
+      }
+    },
+    "Sets the shell environment for newly created runners.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legt die Shell-Umgebung für neu erstellte Runner fest."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets the shell environment for newly created runners."
+          }
+        }
+      }
+    },
+    "Inherit OctoRunner's PATH": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PATH von OctoRunner übernehmen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inherit OctoRunner's PATH"
+          }
+        }
+      }
+    },
+    "Uses absolute PATH entries and adds Homebrew tools. When disabled, only system directories are used.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übernimmt absolute PATH-Einträge und ergänzt Homebrew-Werkzeuge. Wenn deaktiviert, werden nur Systemverzeichnisse verwendet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses absolute PATH entries and adds Homebrew tools. When disabled, only system directories are used."
+          }
+        }
+      }
+    },
+    "New runner environment": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umgebung neuer Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New runner environment"
+          }
+        }
+      }
+    },
+    "Applies when creating runners. GitHub's startup scripts still use Bash; each workflow defines the shell for its own steps.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gilt beim Erstellen von Runnern. GitHubs Startskripte verwenden weiterhin Bash; jeder Workflow legt die Shell für seine Schritte selbst fest."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applies when creating runners. GitHub's startup scripts still use Bash; each workflow defines the shell for its own steps."
+          }
+        }
+      }
+    },
+    "Always restart": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Immer neu starten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always restart"
+          }
+        }
+      }
+    },
+    "Restart after an error": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach einem Fehler neu starten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart after an error"
+          }
+        }
+      }
+    },
+    "No automatic restart": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein automatischer Neustart"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No automatic restart"
+          }
+        }
+      }
+    },
+    "Restart policy": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neustartregel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart policy"
+          }
+        }
+      }
+    },
+    "Controls how launchd restarts newly created runner services after they exit.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legt fest, wie launchd neu erstellte Runner-Dienste nach dem Beenden neu startet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controls how launchd restarts newly created runner services after they exit."
+          }
+        }
+      }
+    },
+    "Restart delay (seconds)": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neustartverzögerung (Sekunden)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart delay (seconds)"
+          }
+        }
+      }
+    },
+    "Limits how frequently launchd attempts to restart a runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begrenzt, wie häufig launchd den Neustart eines Runners versucht."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limits how frequently launchd attempts to restart a runner."
+          }
+        }
+      }
+    },
+    "New runner LaunchAgents": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LaunchAgents neuer Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New runner LaunchAgents"
+          }
+        }
+      }
+    },
+    "Applies to newly created LaunchAgents. Existing runners keep their installed configuration. A service without automatic restart still starts once at login.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gilt für neu erstellte LaunchAgents. Bestehende Runner behalten ihre installierte Konfiguration. Auch ohne automatischen Neustart startet ein Dienst einmal bei der Anmeldung."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applies to newly created LaunchAgents. Existing runners keep their installed configuration. A service without automatic restart still starts once at login."
+          }
+        }
+      }
+    },
+    "Installs a runner LaunchAgent that starts at login. The restart policy and PATH come from Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installs a runner LaunchAgent that starts at login. The restart policy and PATH come from Settings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installiert einen Runner-LaunchAgent für den Start bei der Anmeldung. Neustartregel und PATH werden aus den Einstellungen übernommen."
+          }
+        }
+      }
+    },
+    "Live Log": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live-Protokoll"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live Log"
+          }
+        }
+      }
+    },
+    "Opens the selected runner’s console log": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet das Konsolenprotokoll des ausgewählten Runners"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the selected runner’s console log"
+          }
+        }
+      }
+    },
+    "Runner Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Einstellungen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner Settings"
+          }
+        }
+      }
+    },
+    "Opens configuration for this runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet die Konfiguration dieses Runners"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens configuration for this runner"
+          }
+        }
+      }
+    },
+    "Migrate Runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner migrieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Migrate Runner"
+          }
+        }
+      }
+    },
+    "Moves the runner into OctoRunner’s managed folder and enables autostart": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verschiebt den Runner in den verwalteten OctoRunner-Ordner und aktiviert den Autostart"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moves the runner into OctoRunner’s managed folder and enables autostart"
+          }
+        }
+      }
+    },
+    "Remove Runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner entfernen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Runner"
+          }
+        }
+      }
+    },
+    "Removes this runner from the local list": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernt diesen Runner aus der lokalen Liste"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removes this runner from the local list"
+          }
+        }
+      }
+    },
+    "Runner Actions": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Aktionen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner Actions"
+          }
+        }
+      }
+    },
+    "Shows settings, migration and removal actions": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeigt Einstellungen, Migration und Aktionen zum Entfernen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows settings, migration and removal actions"
+          }
+        }
+      }
+    },
+    "Imported": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importiert"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported"
+          }
+        }
+      }
+    },
+    "Managed": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwaltet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Managed"
+          }
+        }
+      }
+    },
+    "App Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-Einstellungen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Settings"
+          }
+        }
+      }
+    },
+    "Opens OctoRunner’s application settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet die Anwendungseinstellungen von OctoRunner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens OctoRunner’s application settings"
+          }
+        }
+      }
+    },
+    "Runner status unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner status unknown"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Status unbekannt"
+          }
+        }
+      }
+    },
+    "Runners busy or restarting": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runners busy or restarting"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner beschäftigt oder im Neustart"
+          }
+        }
+      }
+    },
+    "Runner offline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner offline"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner offline"
+          }
+        }
+      }
+    },
+    "Runner online": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner online"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner online"
+          }
+        }
+      }
+    },
+    "Runner error": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner error"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Fehler"
+          }
+        }
+      }
+    },
+    "Runner comes online": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner comes online"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner geht online"
+          }
+        }
+      }
+    },
+    "Reports a detected transition to online, excluding initial app startup.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports a detected transition to online, excluding initial app startup."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldet einen erkannten Wechsel zu online, außer beim ersten Start der App."
+          }
+        }
+      }
+    },
+    "Runner enters an error state": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner enters an error state"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner meldet einen Fehler"
+          }
+        }
+      }
+    },
+    "Reports a detected transition to a runner error state.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports a detected transition to a runner error state."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldet einen erkannten Wechsel in einen Fehlerzustand."
+          }
+        }
+      }
+    },
+    "Local runner status": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local runner status"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokaler Runner-Status"
+          }
+        }
+      }
+    },
+    "All local runners active": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All local runners active"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle lokalen Runner aktiv"
+          }
+        }
+      }
+    },
+    "Runner process stopped": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner process stopped"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Prozess beendet"
+          }
+        }
+      }
+    },
+    "Runner process started": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner process started"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Prozess gestartet"
+          }
+        }
+      }
+    },
+    "Runner events track local process availability. Monitoring continues with windows closed. Quitting OctoRunner stops monitoring and new status notifications.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner events track local process availability. Monitoring continues with windows closed. Quitting OctoRunner stops monitoring and new status notifications."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Ereignisse beziehen sich auf lokale Prozesse. Die Überwachung läuft auch bei geschlossenen Fenstern weiter. Das Beenden von OctoRunner stoppt die Überwachung und neue Statusmitteilungen."
+          }
+        }
+      }
+    },
+    "Runner error alerts require crash supervision in v0.6.0 and are not active yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner error alerts require crash supervision in v0.6.0 and are not active yet."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Fehlermeldungen benötigen die Crash-Überwachung aus v0.6.0 und sind noch nicht aktiv."
+          }
+        }
+      }
+    },
+    "Stale": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veraltet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stale"
+          }
+        }
+      }
+    },
+    "Succeeded": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erfolgreich"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Succeeded"
+          }
+        }
+      }
+    },
+    "Cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abgebrochen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelled"
+          }
+        }
+      }
+    },
+    "Failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fehlgeschlagen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
+          }
+        }
+      }
+    },
+    "Completed": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abgeschlossen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed"
+          }
+        }
+      }
+    },
+    "Running": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Läuft"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running"
+          }
+        }
+      }
+    },
+    "Queued": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wartend"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queued"
+          }
+        }
+      }
+    },
+    "Unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unbekannt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown"
+          }
+        }
+      }
+    },
+    "Open on GitHub": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auf GitHub öffnen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open on GitHub"
+          }
+        }
+      }
+    },
+    "Opens this workflow run and its logs in your browser": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet diesen Workflow-Lauf und seine Logs im Browser"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens this workflow run and its logs in your browser"
+          }
+        }
+      }
+    },
+    "Duration": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dauer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration"
+          }
+        }
+      }
+    },
+    "Observed": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beobachtet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Observed"
+          }
+        }
+      }
+    },
+    "No job details loaded": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Job-Details geladen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No job details loaded"
+          }
+        }
+      }
+    },
+    "Jobs": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jobs"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jobs"
+          }
+        }
+      }
+    },
+    "Shows job status, assigned runner and measured duration": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeigt Job-Status, zugewiesenen Runner und gemessene Dauer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows job status, assigned runner and measured duration"
+          }
+        }
+      }
+    },
+    "Jobs & Workflow Runs": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jobs & Workflow-Läufe"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jobs & Workflow Runs"
+          }
+        }
+      }
+    },
+    "Metrics describe the loaded history window": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kennzahlen beziehen sich auf die geladene Historie"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metrics describe the loaded history window"
+          }
+        }
+      }
+    },
+    "Refresh": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktualisieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        }
+      }
+    },
+    "Refresh workflow history": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow-Historie aktualisieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh workflow history"
+          }
+        }
+      }
+    },
+    "Loads recent runs from the selected repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lädt aktuelle Läufe aus den ausgewählten Repositories"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loads recent runs from the selected repositories"
+          }
+        }
+      }
+    },
+    "Loading history": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Historie wird geladen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading history"
+          }
+        }
+      }
+    },
+    "Running / queued": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laufend / wartend"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running / queued"
+          }
+        }
+      }
+    },
+    "Completed today": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute abgeschlossen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed today"
+          }
+        }
+      }
+    },
+    "Success rate": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erfolgsquote"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Success rate"
+          }
+        }
+      }
+    },
+    "Average duration": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durchschnittliche Dauer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Average duration"
+          }
+        }
+      }
+    },
+    "Within duration target": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Innerhalb des Dauerziels"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Within duration target"
+          }
+        }
+      }
+    },
+    "Stale pending runs": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veraltete offene Läufe"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stale pending runs"
+          }
+        }
+      }
+    },
+    "Last response": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte Antwort"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last response"
+          }
+        }
+      }
+    },
+    "No matching workflow runs": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine passenden Workflow-Läufe"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching workflow runs"
+          }
+        }
+      }
+    },
+    "Add a repository, refresh or adjust the filters": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repository hinzufügen, aktualisieren oder Filter anpassen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a repository, refresh or adjust the filters"
+          }
+        }
+      }
+    },
+    "Load older runs": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ältere Läufe laden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load older runs"
+          }
+        }
+      }
+    },
+    "Select one repository to load its next history page": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Repository auswählen, um dessen nächste Seite zu laden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select one repository to load its next history page"
+          }
+        }
+      }
+    },
+    "Status": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        }
+      }
+    },
+    "Workflow status": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow-Status"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow status"
+          }
+        }
+      }
+    },
+    "Filters the latest attempt of each workflow run": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtert den neuesten Versuch jedes Workflow-Laufs"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filters the latest attempt of each workflow run"
+          }
+        }
+      }
+    },
+    "All repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Repositories"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All repositories"
+          }
+        }
+      }
+    },
+    "Repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repository"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repository"
+          }
+        }
+      }
+    },
+    "Chooses which repository to display and refresh": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wählt das anzuzeigende und zu aktualisierende Repository"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chooses which repository to display and refresh"
+          }
+        }
+      }
+    },
+    "All runners": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All runners"
+          }
+        }
+      }
+    },
+    "Runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner"
+          }
+        }
+      }
+    },
+    "Assigned runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugewiesener Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assigned runner"
+          }
+        }
+      }
+    },
+    "Filters runs containing a job assigned to this runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtert Läufe mit einem Job auf diesem Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filters runs containing a job assigned to this runner"
+          }
+        }
+      }
+    },
+    "Workflow, branch or commit": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow, Branch oder Commit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow, branch or commit"
+          }
+        }
+      }
+    },
+    "Search workflow history": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow-Historie durchsuchen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search workflow history"
+          }
+        }
+      }
+    },
+    "Filters loaded workflow names, repositories, branches and commits": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtert geladene Workflow-Namen, Repositories, Branches und Commits"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filters loaded workflow names, repositories, branches and commits"
+          }
+        }
+      }
+    },
+    "Not configured": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht konfiguriert"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not configured"
+          }
+        }
+      }
+    },
+    "Duration target": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dauerziel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration target"
+          }
+        }
+      }
+    },
+    "Workflow duration target": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow-Dauerziel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow duration target"
+          }
+        }
+      }
+    },
+    "Optional target for the measured workflow duration metric": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optionales Ziel für die gemessene Workflow-Dauer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional target for the measured workflow duration metric"
+          }
+        }
+      }
+    },
+    "All statuses": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Status"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All statuses"
+          }
+        }
+      }
+    },
+    "History sources": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Historienquellen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History sources"
+          }
+        }
+      }
+    },
+    "Recent runs refresh while this view is active. Add repositories for organization runners explicitly.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktuelle Läufe werden bei geöffneter Ansicht aktualisiert. Repositories für Organisations-Runner ausdrücklich hinzufügen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent runs refresh while this view is active. Add repositories for organization runners explicitly."
+          }
+        }
+      }
+    },
+    "owner/repository or GitHub URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "owner/repository oder GitHub-URL"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "owner/repository or GitHub URL"
+          }
+        }
+      }
+    },
+    "Additional history repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zusätzliches Repository für die Historie"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Additional history repository"
+          }
+        }
+      }
+    },
+    "Enter a repository belonging to the active GitHub account": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Repository für den aktiven GitHub-Account eingeben"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a repository belonging to the active GitHub account"
+          }
+        }
+      }
+    },
+    "Add": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinzufügen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        }
+      }
+    },
+    "Add history repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repository zur Historie hinzufügen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add history repository"
+          }
+        }
+      }
+    },
+    "Saves this repository for the active account and loads recent runs": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speichert das Repository für den aktiven Account und lädt aktuelle Läufe"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saves this repository for the active account and loads recent runs"
+          }
+        }
+      }
+    },
+    "Enter a valid GitHub owner/repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein gültiges GitHub-Repository als owner/repository eingeben"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid GitHub owner/repository"
+          }
+        }
+      }
+    },
+    "Remove additional repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zusätzliches Repository entfernen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove additional repository"
+          }
+        }
+      }
+    },
+    "Stops including this source in automatic refresh; saved history remains": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernt diese Quelle aus dem automatischen Abgleich; gespeicherte Historie bleibt erhalten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stops including this source in automatic refresh; saved history remains"
+          }
+        }
+      }
+    },
+    "Manage additional repository sources for the active account": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zusätzliche Repository-Quellen für den aktiven Account verwalten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage additional repository sources for the active account"
+          }
+        }
+      }
+    },
+    "Connect a GitHub account to load workflow history": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Account verbinden, um Workflow-Historie zu laden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect a GitHub account to load workflow history"
+          }
+        }
+      }
+    },
+    "Reconnect this GitHub account to load history": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diesen GitHub-Account erneut verbinden, um Historie zu laden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnect this GitHub account to load history"
+          }
+        }
+      }
+    },
+    "This token cannot read Actions for the selected repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Token darf Actions für das ausgewählte Repository nicht lesen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This token cannot read Actions for the selected repository"
+          }
+        }
+      }
+    },
+    "GitHub rate limit reached; refresh is paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-API-Limit erreicht; Aktualisierung pausiert"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub rate limit reached; refresh is paused"
+          }
+        }
+      }
+    },
+    "Job details exceeded the safe pagination limit": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Details überschreiten das sichere Seitenlimit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job details exceeded the safe pagination limit"
+          }
+        }
+      }
+    },
+    "History could not be loaded; saved observations remain available": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Historie konnte nicht geladen werden; gespeicherte Beobachtungen bleiben verfügbar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History could not be loaded; saved observations remain available"
+          }
+        }
+      }
+    },
+    "Some repositories could not be refreshed": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einige Repositories konnten nicht aktualisiert werden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some repositories could not be refreshed"
+          }
+        }
+      }
+    },
+    "This account is no longer connected.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account is no longer connected."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Account ist nicht mehr verbunden."
+          }
+        }
+      }
+    },
+    "This account changed during sign-out. Review it and try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account changed during sign-out. Review it and try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Account wurde während der Abmeldung geändert. Prüfe ihn und versuche es erneut."
+          }
+        }
+      }
+    },
+    "The Keychain credential could not be removed. The account is still connected; please try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Keychain credential could not be removed. The account is still connected; please try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Zugangsdaten konnten nicht aus dem Schlüsselbund entfernt werden. Der Account bleibt verbunden; bitte versuche es erneut."
+          }
+        }
+      }
+    },
+    "Account changes could not be saved. Please try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account changes could not be saved. Please try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Account-Änderungen konnten nicht gespeichert werden. Bitte versuche es erneut."
+          }
+        }
+      }
+    },
+    "Auth & Tokens": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auth & Tokens"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auth & Tokens"
+          }
+        }
+      }
+    },
+    "Reauthentication required": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reauthentication required"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erneute Anmeldung erforderlich"
+          }
+        }
+      }
+    },
+    "Selected account": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected account"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausgewählter Account"
+          }
+        }
+      }
+    },
+    "Personal access token": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal access token"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persönlicher Zugriffstoken"
+          }
+        }
+      }
+    },
+    "GitHub device flow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub device flow"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Geräteanmeldung"
+          }
+        }
+      }
+    },
+    "Unknown authentication method": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown authentication method"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unbekannte Anmeldemethode"
+          }
+        }
+      }
+    },
+    "Authentication method": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authentication method"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anmeldemethode"
+          }
+        }
+      }
+    },
+    "Last authenticated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last authenticated"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuletzt angemeldet"
+          }
+        }
+      }
+    },
+    "Last reported OAuth scopes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last reported OAuth scopes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuletzt gemeldete OAuth-Rechte"
+          }
+        }
+      }
+    },
+    "GitHub did not report OAuth scopes. Fine-grained token permissions are checked by each API operation.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub did not report OAuth scopes. Fine-grained token permissions are checked by each API operation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub hat keine OAuth-Rechte gemeldet. Rechte fein abgestufter Tokens werden bei der jeweiligen API-Aktion geprüft."
+          }
+        }
+      }
+    },
+    "Use account": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use account"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account verwenden"
+          }
+        }
+      }
+    },
+    "Selects this account for GitHub API requests without stopping runners.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selects this account for GitHub API requests without stopping runners."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wählt diesen Account für GitHub-API-Anfragen aus, ohne Runner zu stoppen."
+          }
+        }
+      }
+    },
+    "Re-authenticate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-authenticate"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erneut anmelden"
+          }
+        }
+      }
+    },
+    "Sign in with the same GitHub identity to replace its credentials.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with the same GitHub identity to replace its credentials."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich mit derselben GitHub-Identität an, um ihre Zugangsdaten zu ersetzen."
+          }
+        }
+      }
+    },
+    "Disconnect account…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect account…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account trennen …"
+          }
+        }
+      }
+    },
+    "Asks before removing this account and its local credentials. Runner services keep running.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks before removing this account and its local credentials. Runner services keep running."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fragt vor dem Entfernen dieses Accounts und seiner lokalen Zugangsdaten nach. Runner-Dienste laufen weiter."
+          }
+        }
+      }
+    },
+    "Connect GitHub account…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect GitHub account…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Account verbinden …"
+          }
+        }
+      }
+    },
+    "Opens GitHub device login or personal access token validation.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens GitHub device login or personal access token validation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet die GitHub-Geräteanmeldung oder die Prüfung eines persönlichen Zugriffstokens."
+          }
+        }
+      }
+    },
+    "No GitHub accounts connected. Connect an account to manage runners and load workflow history.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No GitHub accounts connected. Connect an account to manage runners and load workflow history."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine GitHub-Accounts verbunden. Verbinde einen Account, um Runner zu verwalten und den Workflow-Verlauf zu laden."
+          }
+        }
+      }
+    },
+    "Removing local credentials…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removing local credentials…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Zugangsdaten werden entfernt …"
+          }
+        }
+      }
+    },
+    "Connected GitHub accounts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected GitHub accounts"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbundene GitHub-Accounts"
+          }
+        }
+      }
+    },
+    "The selected account is used for GitHub requests. Its token is checked when used; selection alone does not confirm current permissions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The selected account is used for GitHub requests. Its token is checked when used; selection alone does not confirm current permissions."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der ausgewählte Account wird für GitHub-Anfragen verwendet. Sein Token wird bei Verwendung geprüft; die Auswahl allein bestätigt keine aktuellen Berechtigungen."
+          }
+        }
+      }
+    },
+    "Credentials are stored only in macOS Keychain.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credentials are stored only in macOS Keychain."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugangsdaten werden ausschließlich im macOS-Schlüsselbund gespeichert."
+          }
+        }
+      }
+    },
+    "Sign in with the same GitHub identity to replace credentials. A different identity is added as a separate account.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with the same GitHub identity to replace credentials. A different identity is added as a separate account."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich mit derselben GitHub-Identität an, um Zugangsdaten zu ersetzen. Eine andere Identität wird als eigener Account hinzugefügt."
+          }
+        }
+      }
+    },
+    "Token contents and expiration dates are not exposed here. Fine-grained PAT permissions depend on the resources you selected on GitHub.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token contents and expiration dates are not exposed here. Fine-grained PAT permissions depend on the resources you selected on GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token-Inhalte und Ablaufdaten werden hier nicht angezeigt. Die Rechte fein abgestufter PATs hängen von den auf GitHub ausgewählten Ressourcen ab."
+          }
+        }
+      }
+    },
+    "Credential security": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credential security"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sicherheit der Zugangsdaten"
+          }
+        }
+      }
+    },
+    "Disconnect removes local credentials only. Revoke a token or OAuth authorization separately in GitHub Settings. Installed runner services keep running.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect removes local credentials only. Revoke a token or OAuth authorization separately in GitHub Settings. Installed runner services keep running."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Trennen entfernt nur lokale Zugangsdaten. Widerrufe Tokens oder OAuth-Freigaben separat in den GitHub-Einstellungen. Installierte Runner-Dienste laufen weiter."
+          }
+        }
+      }
+    },
+    "Disconnect GitHub account?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect GitHub account?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Account trennen?"
+          }
+        }
+      }
+    },
+    "Remove local credentials": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove local credentials"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Zugangsdaten entfernen"
+          }
+        }
+      }
+    },
+    "Removes the confirmed account and its local credentials. It does not revoke access on GitHub.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removes the confirmed account and its local credentials. It does not revoke access on GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernt den bestätigten Account und seine lokalen Zugangsdaten. Der Zugriff auf GitHub wird nicht widerrufen."
+          }
+        }
+      }
+    },
+    "Local credentials for @%@ will be removed. Runner services keep running; GitHub authorization is not revoked.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local credentials for @%@ will be removed. Runner services keep running; GitHub authorization is not revoked."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die lokalen Zugangsdaten für @%@ werden entfernt. Runner-Dienste laufen weiter; die GitHub-Freigabe wird nicht widerrufen."
+          }
+        }
+      }
+    },
+    "macOS Keychain Updated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS Keychain Updated"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS-Schlüsselbund aktualisiert"
+          }
+        }
+      }
+    },
+    "Credentials saved in macOS Keychain on this Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credentials saved in macOS Keychain on this Mac."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugangsdaten im macOS-Schlüsselbund auf diesem Mac gespeichert."
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig"
+          }
+        }
+      }
+    },
+    "Closes authentication and returns to the previous view.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closes authentication and returns to the previous view."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schließt die Anmeldung und kehrt zur vorherigen Ansicht zurück."
+          }
+        }
+      }
+    },
+    "%@ GB available on the home volume (warning threshold: %@ GB).": {
+      "extractionState": "manual",
+      "comment": "Local-only disk warning. First placeholder: available decimal GB; second: configured warning threshold in GB.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ GB available on the home volume (warning threshold: %@ GB)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ GB auf dem Home-Volume verfügbar (Warngrenze: %@ GB)."
+          }
+        }
+      }
+    },
+    "Local workflow job failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local workflow job failed"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokaler Workflow-Job fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "A workflow job failed on %@ in %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A workflow job failed on %@ in %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Workflow-Job auf %@ in %@ ist fehlgeschlagen."
+          }
+        }
+      },
+      "comment": "First placeholder: local runner name. Second: canonical owner/repository. No workflow output or credentials."
+    },
+    "Job alerts check recent GitHub runs while OctoRunner is running. The first check establishes a baseline. Configure organization repositories under Jobs → History sources.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job alerts check recent GitHub runs while OctoRunner is running. The first check establishes a baseline. Configure organization repositories under Jobs → History sources."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jobmeldungen prüfen aktuelle GitHub-Läufe, während OctoRunner läuft. Die erste Prüfung erfasst die Ausgangslage. Repositories für Organisationsrunner lassen sich unter Jobs → Historienquellen hinzufügen."
+          }
+        }
+      }
+    },
+    "Workspace variables & build paths": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspace variables & build paths"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspace-Variablen & Build-Pfade"
+          }
+        }
+      }
+    },
+    "The pipeline directory inside this runner's _work folder. Use it for build folders outside the checkout, such as DerivedData, SourcePackages and TestResults.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The pipeline directory inside this runner's _work folder. Use it for build folders outside the checkout, such as DerivedData, SourcePackages and TestResults."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Pipeline-Verzeichnis im _work-Ordner dieses Runners. Nutze es für Build-Ordner außerhalb des Checkouts, etwa DerivedData, SourcePackages und TestResults."
+          }
+        }
+      }
+    },
+    "The checkout and default working directory for workflow steps. With the default checkout layout it sits inside RUNNER_WORKSPACE; custom checkout paths can change the layout.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The checkout and default working directory for workflow steps. With the default checkout layout it sits inside RUNNER_WORKSPACE; custom checkout paths can change the layout."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Checkout und das Standard-Arbeitsverzeichnis für Workflow-Schritte. Beim Standard-Checkout liegt es innerhalb von RUNNER_WORKSPACE; eigene Checkout-Pfade können den Aufbau ändern."
+          }
+        }
+      }
+    },
+    "Temporary job files. GitHub cleans this directory at the beginning and end of each job, subject to file permissions.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporary job files. GitHub cleans this directory at the beginning and end of each job, subject to file permissions."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporäre Job-Dateien. GitHub bereinigt dieses Verzeichnis am Anfang und Ende jedes Jobs, soweit die Dateirechte das erlauben."
+          }
+        }
+      }
+    },
+    "The registered runner name, for example itemflux-1 or itemflux-2. It identifies the runner; it does not configure build paths or simulator isolation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The registered runner name, for example itemflux-1 or itemflux-2. It identifies the runner; it does not configure build paths or simulator isolation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der registrierte Runner-Name, zum Beispiel itemflux-1 oder itemflux-2. Er identifiziert den Runner; Build-Pfade und getrennte Simulatoren werden dadurch nicht konfiguriert."
+          }
+        }
+      }
+    },
+    "Fastfile example": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fastfile example"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fastfile-Beispiel"
+          }
+        }
+      }
+    },
+    "Each runner instance has its own _work folder. Later jobs on the same runner can reuse these paths. For separate results per attempt, add GITHUB_RUN_ID and GITHUB_RUN_ATTEMPT to the results path.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each runner instance has its own _work folder. Later jobs on the same runner can reuse these paths. For separate results per attempt, add GITHUB_RUN_ID and GITHUB_RUN_ATTEMPT to the results path."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jede Runner-Instanz hat ihren eigenen _work-Ordner. Spätere Jobs auf demselben Runner können diese Pfade wiederverwenden. Für getrennte Ergebnisse pro Versuch ergänze GITHUB_RUN_ID und GITHUB_RUN_ATTEMPT im Ergebnispfad."
+          }
+        }
+      }
+    },
+    "Clean only your own build subfolders after all consumers finish. Do not delete _work or RUNNER_WORKSPACE while the job or its post-steps are running. Deleting SourcePackages also removes its cache benefit. Simulators and global Xcode caches require separate configuration.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean only your own build subfolders after all consumers finish. Do not delete _work or RUNNER_WORKSPACE while the job or its post-steps are running. Deleting SourcePackages also removes its cache benefit. Simulators and global Xcode caches require separate configuration."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereinige nur deine eigenen Build-Unterordner, nachdem alle Nutzer der Dateien fertig sind. Lösche weder _work noch RUNNER_WORKSPACE, solange der Job oder seine Post-Schritte laufen. Beim Löschen von SourcePackages entfällt der Cache-Vorteil. Simulatoren und globale Xcode-Caches müssen separat konfiguriert werden."
+          }
+        }
+      }
+    },
+    "RUNNER_WORKSPACE is set by the GitHub runner implementation but is currently absent from GitHub's variables reference. This example requires it and stops if it is missing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RUNNER_WORKSPACE is set by the GitHub runner implementation but is currently absent from GitHub's variables reference. This example requires it and stops if it is missing."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RUNNER_WORKSPACE wird vom GitHub-Runner gesetzt, ist aber derzeit nicht in GitHubs Variablenreferenz aufgeführt. Dieses Beispiel setzt die Variable voraus und bricht ab, falls sie fehlt."
+          }
+        }
+      }
+    },
+    "GitHub Actions variable reference": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Actions variable reference"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Actions-Variablenreferenz"
+          }
+        }
+      }
+    },
+    "Opens the official documentation in your browser": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the official documentation in your browser"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet die offizielle Dokumentation im Browser"
+          }
+        }
+      }
+    },
+    "Expand for variable explanations, a selectable Fastfile example and cleanup guidance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expand for variable explanations, a selectable Fastfile example and cleanup guidance"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufklappen für Variablen-Erklärungen, ein kopierbares Fastfile-Beispiel und Hinweise zur Bereinigung"
+          }
+        }
+      }
+    },
+    "Open this settings category": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open this settings category"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diesen Einstellungsbereich öffnen"
+          }
+        }
+      }
+    },
+    "Control app visibility and interface language.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control app visibility and interface language."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege die Sichtbarkeit der App und die Sprache der Oberfläche fest."
+          }
+        }
+      }
+    },
+    "Choose where OctoRunner appears while it is running.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose where OctoRunner appears while it is running."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege fest, wo OctoRunner während des Betriebs sichtbar ist."
+          }
+        }
+      }
+    },
+    "Choose the language used throughout OctoRunner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the language used throughout OctoRunner."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle die Sprache für die gesamte Oberfläche."
+          }
+        }
+      }
+    },
+    "Keep app startup separate from your independent runner services.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep app startup separate from your independent runner services."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-Start und unabhängig laufende Runner-Dienste werden getrennt verwaltet."
+          }
+        }
+      }
+    },
+    "System startup & login persistence": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System startup & login persistence"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systemstart & Anmeldung"
+          }
+        }
+      }
+    },
+    "Choose whether the OctoRunner app opens when you sign in.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose whether the OctoRunner app opens when you sign in."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege fest, ob die OctoRunner-App bei deiner Anmeldung startet."
+          }
+        }
+      }
+    },
+    "Set the shell environment and tool paths for newly created runners.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set the shell environment and tool paths for newly created runners."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konfiguriere Shell-Umgebung und Werkzeugpfade für neu angelegte Runner."
+          }
+        }
+      }
+    },
+    "Configure recovery for newly installed runner services.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure recovery for newly installed runner services."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konfiguriere den Wiederanlauf neu installierter Runner-Dienste."
+          }
+        }
+      }
+    },
+    "Choose how launchd restarts a runner after its process exits.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose how launchd restarts a runner after its process exits."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege fest, wie launchd einen beendeten Runner-Prozess neu startet."
+          }
+        }
+      }
+    },
+    "Choose which local events should notify you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose which local events should notify you."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle die lokalen Ereignisse aus, über die du informiert werden möchtest."
+          }
+        }
+      }
+    },
+    "Enable native macOS delivery and optional notification sounds.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable native macOS delivery and optional notification sounds."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktiviere native macOS-Mitteilungen und bei Bedarf einen Hinweiston."
+          }
+        }
+      }
+    },
+    "Event notification triggers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Event notification triggers"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ereignisse für Mitteilungen"
+          }
+        }
+      }
+    },
+    "Select the runner, workflow and storage events you want to receive.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select the runner, workflow and storage events you want to receive."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle die gewünschten Runner-, Workflow- und Speicherereignisse aus."
+          }
+        }
+      }
+    },
+    "Manage GitHub identities and review local credential security.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage GitHub identities and review local credential security."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwalte GitHub-Konten und prüfe den lokalen Schutz der Zugangsdaten."
+          }
+        }
+      }
+    },
+    "Connect an identity and choose which account OctoRunner uses.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect an identity and choose which account OctoRunner uses."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinde ein Konto und wähle aus, welches OctoRunner verwendet."
+          }
+        }
+      }
+    },
+    "GitHub account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub account"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Konto"
+          }
+        }
+      }
+    },
+    "Review authentication and permissions reported by GitHub.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review authentication and permissions reported by GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüfe Anmeldung und die von GitHub gemeldeten Berechtigungen."
+          }
+        }
+      }
+    },
+    "Credentials stay in macOS Keychain; token contents are never displayed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credentials stay in macOS Keychain; token contents are never displayed."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugangsdaten bleiben im macOS-Schlüsselbund; Token-Inhalte werden nicht angezeigt."
+          }
+        }
+      }
+    },
+    "Changes are saved automatically": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes are saved automatically"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Änderungen werden automatisch gespeichert"
+          }
+        }
+      }
+    },
+    "Search settings…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search settings…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einstellungen durchsuchen …"
+          }
+        }
+      }
+    },
+    "Matching settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matching settings"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passende Einstellungen"
+          }
+        }
+      }
+    },
+    "Choose a category to open its matching options.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a category to open its matching options."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle einen Bereich aus, um die passenden Optionen zu öffnen."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

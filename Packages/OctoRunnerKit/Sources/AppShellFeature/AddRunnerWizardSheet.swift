@@ -1,14 +1,17 @@
 import CoreModels
 import DesignSystem
+import RunnerEngine
 import SwiftData
 import SwiftUI
 
 public struct AddRunnerWizardSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppPreferencesStore.self) private var preferences
     @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
 
     @State private var viewModel: AddRunnerWizardViewModel
+    @State private var provisioningTask: Task<Void, Never>?
 
     public init(viewModel: AddRunnerWizardViewModel = AddRunnerWizardViewModel()) {
         _viewModel = State(initialValue: viewModel)
@@ -28,32 +31,11 @@ public struct AddRunnerWizardSheet: View {
                     targetSelectionSection(bindableVM: bindableVM)
                     instanceCountAndNamingSection(bindableVM: bindableVM)
                     labelsSection(bindableVM: bindableVM)
+                    RunnerWorkspaceHelp()
                     launchAgentSection(bindableVM: bindableVM)
+                    RunnerProvisioningFeedback(progress: viewModel.provisioningProgressMessage, errorMessage: viewModel.errorMessage)
                 }
                 .padding(.vertical, 2)
-            }
-
-            if let progress = viewModel.provisioningProgressMessage {
-                HStack(spacing: 10) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text(progress)
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(OctoTheme.accentBlue)
-                }
-                .padding(10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(OctoTheme.surfaceHigh, in: .rect(cornerRadius: 8))
-            }
-
-            if let errorMessage = viewModel.errorMessage {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(OctoTheme.errorRed)
-                    Text(errorMessage)
-                        .font(.system(size: 12))
-                        .foregroundStyle(OctoTheme.errorRed)
-                }
             }
 
             Divider()
@@ -61,11 +43,13 @@ public struct AddRunnerWizardSheet: View {
             footerActions
         }
         .padding(22)
-        .frame(width: 640, height: 640)
+        .frame(minWidth: 560, idealWidth: 680, minHeight: 420, idealHeight: 680)
         .background(OctoTheme.surfaceLowest)
         .task {
-            await viewModel.loadGitHubTargets(forAccountLogin: accounts.first?.login)
+            let key = accounts.first(where: { $0.isActive })?.keychainAccountKey
+            await viewModel.loadGitHubTargets(forAccountKey: key)
         }
+        .onDisappear { provisioningTask?.cancel() }
     }
 
     private var headerSection: some View {
@@ -115,8 +99,9 @@ public struct AddRunnerWizardSheet: View {
                 Text("Personal Account (Multi-Repo)").tag(RunnerScopeType.personalMultiRepo)
                 Text("Organization Pool").tag(RunnerScopeType.organization)
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+            .pickerStyle(.menu)
+            .accessibilityLabel("Runner registration scope")
+            .accessibilityHint("Select one repository, multiple personal repositories, or an organization pool")
 
             infoCallout(vm.scopeExplanationText)
         }
@@ -164,7 +149,7 @@ public struct AddRunnerWizardSheet: View {
             case .personalMultiRepo:
                 if !vm.repositories.isEmpty {
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 4) {
+                        LazyVStack(alignment: .leading, spacing: 4) {
                             ForEach(vm.repositories) { repo in
                                 let isChecked = vm.selectedRepositoryFullNames.contains(repo.fullName)
                                 Button {
@@ -176,6 +161,9 @@ public struct AddRunnerWizardSheet: View {
                                         Text(repo.fullName)
                                             .font(.system(size: 12, design: .monospaced))
                                             .foregroundStyle(.primary)
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+                                            .help(repo.fullName)
                                         if repo.isPrivate {
                                             Text("PRIVATE")
                                                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
@@ -191,6 +179,9 @@ public struct AddRunnerWizardSheet: View {
                                     .contentShape(.rect)
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel("Repository \(repo.fullName)")
+                                .accessibilityValue(isChecked ? "Selected" : "Not selected")
+                                .accessibilityHint("Toggles this repository in the runner setup")
                             }
                         }
                     }
@@ -344,7 +335,7 @@ public struct AddRunnerWizardSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Automatic Background Start (Run on macOS Login)")
                     .font(.system(size: 12, weight: .semibold))
-                Text("Starts the runner automatically in the background when you log in and restarts it if it ever crashes (includes /opt/homebrew/bin in PATH).")
+                Text("Installs a runner LaunchAgent that starts at login. The restart policy and PATH come from Settings.", bundle: .module)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -364,12 +355,18 @@ public struct AddRunnerWizardSheet: View {
             Spacer()
 
             Button {
-                Task {
+                let configuration = RunnerLaunchConfiguration(runtimePolicy: preferences.runtimePolicy, inheritHostPath: preferences.inheritHostPath)
+                let account = accounts.first(where: { $0.isActive })
+                let login = account?.login
+                let key = account?.keychainAccountKey
+                provisioningTask = Task {
                     let ok = await viewModel.provisionAndPersistRunners(
-                        accountLogin: accounts.first?.login,
-                        modelContext: modelContext
+                        accountLogin: login,
+                        keychainAccountKey: key,
+                        modelContext: modelContext,
+                        configuration: configuration
                     )
-                    if ok {
+                    if ok && !Task.isCancelled {
                         dismiss()
                     }
                 }
@@ -380,18 +377,21 @@ public struct AddRunnerWizardSheet: View {
                         Text("Provisioning…")
                     } else {
                         Image(systemName: "bolt.fill")
-                        Text("Create & Start \(viewModel.instanceCount) Runner\(viewModel.instanceCount > 1 ? "s" : "")")
+                        Text("Create & Start \(viewModel.plannedRunnerCount) Runner\(viewModel.plannedRunnerCount == 1 ? "" : "s")")
                     }
                 }
             }
             .buttonStyle(.borderedProminent)
             .tint(OctoTheme.accentBlue)
-            .disabled(viewModel.isProvisioning)
+            .disabled(viewModel.isProvisioning || viewModel.plannedRunnerCount == 0)
+            .accessibilityLabel("Create and start \(viewModel.plannedRunnerCount) runners")
+            .accessibilityHint("Creates the selected number of instances for every selected target")
         }
     }
 }
 
 #Preview("AddRunnerWizardSheet — Step 3 Setup Wizard") {
     AddRunnerWizardSheet()
+        .environment(AppPreferencesStore())
         .preferredColorScheme(.dark)
 }

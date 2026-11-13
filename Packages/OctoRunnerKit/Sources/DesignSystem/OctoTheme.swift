@@ -30,6 +30,11 @@ public enum OctoTheme {
     )
 
     // Semantic Colors (Adaptive High Contrast for Light & Dark Mode)
+    public static let secondaryText = adaptiveColor(
+        light: (0.340, 0.370, 0.410),
+        dark: (0.720, 0.750, 0.800)
+    )
+
     public static let accentBlue = adaptiveColor(
         light: (0.0, 0.380, 0.820),   // #0061D1 (WCAG AA >= 4.5:1 on light surface)
         dark: (0.251, 0.612, 1.0)     // #409CFF (WCAG AA >= 4.5:1 on dark surface)
@@ -39,7 +44,7 @@ public enum OctoTheme {
         dark: (0.204, 0.780, 0.349)   // #34C759
     )
     public static let warningOrange = adaptiveColor(
-        light: (0.706, 0.365, 0.0),   // #B45D00
+        light: (0.660, 0.330, 0.0),   // #A85400; text contrast >= 4.5:1 on light surface
         dark: (1.0, 0.624, 0.039)     // #FF9F0A
     )
     public static let errorRed = adaptiveColor(

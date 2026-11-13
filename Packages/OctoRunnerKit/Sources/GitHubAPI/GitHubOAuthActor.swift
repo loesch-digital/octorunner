@@ -2,23 +2,28 @@ import CoreModels
 import Foundation
 import SecurityKit
 
-public actor GitHubOAuthActor {
-    private let session: URLSession
+public actor GitHubOAuthActor: GitHubAuthenticating {
+    private let transport: any GitHubActionsTransport
     private let keychain: KeychainVaultActor
+    private let tokenWriter: any SecretWriting
     private let clientID: String
 
     public init(
-        session: URLSession = .shared,
+        session: URLSession = URLSession(configuration: .ephemeral),
         keychain: KeychainVaultActor = KeychainVaultActor(),
-        clientID: String = GitHubOAuthConfig.defaultClientID
+        clientID: String = GitHubOAuthConfig.defaultClientID,
+        transport: (any GitHubActionsTransport)? = nil,
+        tokenWriter: (any SecretWriting)? = nil
     ) {
-        self.session = session
+        self.transport = transport ?? GitHubActionsURLSessionTransport(session: session)
         self.keychain = keychain
+        self.tokenWriter = tokenWriter ?? keychain
         self.clientID = clientID
     }
 
     /// Step 1 of RFC 8628 Device Flow: Request temporary `device_code` and `user_code`.
     public func requestDeviceCode(scopes: [String] = GitHubOAuthConfig.defaultScopes) async throws -> GitHubDeviceCodeResponse {
+        try Task.checkCancellation()
         var request = URLRequest(url: GitHubOAuthConfig.deviceCodeEndpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -28,14 +33,12 @@ public actor GitHubOAuthActor {
         let bodyString = "client_id=\(clientID)&scope=\(scopeParam)"
         request.httpBody = bodyString.data(using: .utf8)
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw GitHubAuthError.unexpectedResponse("Missing HTTP response")
+        let response = try await transport.send(request)
+        try Task.checkCancellation()
+        guard (200..<300).contains(response.statusCode) else {
+            throw GitHubAuthError.invalidHTTPStatus(response.statusCode)
         }
-        guard (200..<300).contains(http.statusCode) else {
-            throw GitHubAuthError.invalidHTTPStatus(http.statusCode)
-        }
-        return try JSONDecoder().decode(GitHubDeviceCodeResponse.self, from: data)
+        return try JSONDecoder().decode(GitHubDeviceCodeResponse.self, from: response.data)
     }
 
     /// Step 2 of RFC 8628 Device Flow: Poll GitHub until the user authorizes in browser or cancels.
@@ -76,6 +79,7 @@ public actor GitHubOAuthActor {
 
     /// Personal Access Token (PAT) validation & Keychain storage.
     public func authenticateWithPersonalAccessToken(_ pat: String) async throws -> AuthenticatedGitHubSession {
+        try Task.checkCancellation()
         let trimmed = pat.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             throw GitHubAuthError.invalidTokenOrUnauthorized
@@ -85,39 +89,46 @@ public actor GitHubOAuthActor {
 
     /// Validate token against `GET https://api.github.com/user`, verify scopes, and store in macOS Keychain.
     public func validateAndStoreToken(_ token: String, authMethod: String) async throws -> AuthenticatedGitHubSession {
+        try Task.checkCancellation()
+        guard !token.isEmpty, token.utf8.allSatisfy({ (33...126).contains($0) }) else {
+            throw GitHubAuthError.invalidTokenOrUnauthorized
+        }
         var request = URLRequest(url: GitHubOAuthConfig.userProfileEndpoint)
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        request.setValue("2026-03-10", forHTTPHeaderField: "X-GitHub-Api-Version")
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw GitHubAuthError.unexpectedResponse("Invalid HTTP response")
-        }
-        if http.statusCode == 401 || http.statusCode == 403 {
+        let response = try await transport.send(request)
+        try Task.checkCancellation()
+        if response.statusCode == 401 || response.statusCode == 403 {
             throw GitHubAuthError.invalidTokenOrUnauthorized
         }
-        guard (200..<300).contains(http.statusCode) else {
-            throw GitHubAuthError.invalidHTTPStatus(http.statusCode)
+        guard (200..<300).contains(response.statusCode) else {
+            throw GitHubAuthError.invalidHTTPStatus(response.statusCode)
         }
 
-        let userProfile = try JSONDecoder().decode(GitHubUserProfileDTO.self, from: data)
-        let scopesHeader = http.value(forHTTPHeaderField: "X-OAuth-Scopes") ?? ""
+        let userProfile = try JSONDecoder().decode(GitHubUserProfileDTO.self, from: response.data)
+        let scopesHeader = response.headers["x-oauth-scopes"] ?? ""
         let parsedScopes = Self.parseScopes(from: scopesHeader)
 
         // Save token in macOS Keychain (never in SwiftData or UserDefaults)
-        try await keychain.saveSecret(token, account: userProfile.login, category: "github-oauth")
+        guard userProfile.id > 0 else { throw GitHubAuthError.invalidTokenOrUnauthorized }
+        let authenticated = AuthenticatedGitHubSession(user: userProfile, scopes: parsedScopes, authMethod: authMethod)
+        try await tokenWriter.saveSecret(token, account: authenticated.keychainAccountKey, category: "github-oauth")
+        do {
+            try Task.checkCancellation()
+        } catch {
+            // Remove only this staged version. Cleanup intentionally survives cancellation.
+            try await keychain.deleteSecret(account: authenticated.keychainAccountKey, category: "github-oauth")
+            throw error
+        }
 
-        return AuthenticatedGitHubSession(
-            user: userProfile,
-            scopes: parsedScopes,
-            authMethod: authMethod
-        )
+        return authenticated
     }
 
-    public func signOut(login: String) async throws {
-        try await keychain.deleteSecret(account: login, category: "github-oauth")
+    public func discardSessionCredential(_ session: AuthenticatedGitHubSession) async throws {
+        try await keychain.deleteSecret(account: session.keychainAccountKey, category: "github-oauth")
     }
 
     public static func parseScopes(from headerValue: String) -> [String] {
@@ -128,6 +139,7 @@ public actor GitHubOAuthActor {
     }
 
     private func requestAccessTokenOnce(deviceCode: String) async throws -> GitHubOAuthTokenResponse {
+        try Task.checkCancellation()
         var request = URLRequest(url: GitHubOAuthConfig.accessTokenEndpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -136,11 +148,11 @@ public actor GitHubOAuthActor {
         let bodyString = "client_id=\(clientID)&device_code=\(deviceCode)&grant_type=urn:ietf:params:oauth:grant-type:device_code"
         request.httpBody = bodyString.data(using: .utf8)
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
-            throw GitHubAuthError.invalidHTTPStatus(status)
+        let response = try await transport.send(request)
+        try Task.checkCancellation()
+        guard (200..<300).contains(response.statusCode) else {
+            throw GitHubAuthError.invalidHTTPStatus(response.statusCode)
         }
-        return try JSONDecoder().decode(GitHubOAuthTokenResponse.self, from: data)
+        return try JSONDecoder().decode(GitHubOAuthTokenResponse.self, from: response.data)
     }
 }

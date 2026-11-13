@@ -33,6 +33,10 @@ Das Gesamtkonzept ist nach Architektur, Infrastruktur und den einzelnen Release-
 | **[08-sync-kit-and-local-runner-import.md](./08-sync-kit-and-local-runner-import.md)** | **`SyncKit`:** Discovery verwalteter Runner, bewusster Import externer Ordner, Live-PID-Erkennung und GitHub-Abgleich | **`v0.2.4` / `v0.3.0`** |
 | **[09-pipeline-privacy-and-test-audit.md](./09-pipeline-privacy-and-test-audit.md)** | Pipeline-Prüfung, bedarfsgesteuerter Ordnerzugriff, minimale GitHub-Rechte und offene Testlücken | **`v0.4.4`** |
 | **[10-development-and-acceptance.md](./10-development-and-acceptance.md)** | Entwicklungsstand aus Xcode abnehmen; Release-ZIP ohne Homebrew installieren | Abnahme |
+| **[11-runner-status-and-notifications.md](./11-runner-status-and-notifications.md)** | Lokaler Menüleistenstatus, bedarfsgesteuerte macOS-Mitteilungen und Abnahmeschritte | In Arbeit für **`v0.5.0`** |
+| **[12-jobs-history-and-metrics.md](./12-jobs-history-and-metrics.md)** | Jobs-API, Persistenzmigration und Definition der Kennzahlen | In Arbeit für **`v0.5.0`** |
+| **[13-accounts-and-credentials.md](./13-accounts-and-credentials.md)** | Account-Identität, Credential-Lifecycle und Abbruch-/Fehlerfälle | In Arbeit für **`v0.5.0`** |
+| **[14-runner-archive-integrity.md](./14-runner-archive-integrity.md)** | Verpflichtende SHA-256-Prüfung und öffentliche Release-Digests ohne zusätzliche Token-Rechte | In Arbeit für **`v0.5.0`** |
 
 ---
 
@@ -43,8 +47,12 @@ flowchart LR
     v01["v0.1.0: App Shell + Fastlane + release-it + Homebrew Cask"] --> v02["v0.2.0: GitHub Device Flow + PAT + Keychain"]
     v02 --> v03["v0.3.0: Add Runner Wizard + Binary Auto-Download + launchd"]
     v03 --> v04["v0.4.0: Main Dashboard + Live Logs + Config + MenuBar"]
-    v04 --> v05["v0.5.0: Settings (5 Tabs) + Jobs History + Host Telemetry"]
+    v04 --> v05["v0.5.0: Settings (6 Tabs) + Jobs History + Host Telemetry"]
+    v05 --> v06["v0.6.0: Supervisor + Migration + SyncKit"]
+    v06 --> v07["v0.7.0: Lokalisierung + Accessibility + Release-Politur"]
 ```
+
+Nach v0.7.0 endet der freigegebene Versionsplan. v1.0.0 erfordert eine ausdrückliche Absprache.
 
 ### Wie wir vorgehen (Workflow pro Meilenstein):
 1. **Umsetzung nach Plan-Dokument** (z.B. Start mit Step 1: `03-step-01-infrastructure-homebrew-release.md`).

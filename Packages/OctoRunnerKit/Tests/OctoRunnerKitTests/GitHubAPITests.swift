@@ -5,6 +5,18 @@ import Testing
 
 @Suite("GitHubAPI, RFC 8628 Device Flow & AppUpdater Tests")
 struct GitHubAPITests {
+    @Test("Cancellation takes precedence before PAT validation and any network or credential work")
+    func cancelledAuthentication() async {
+        let actor = GitHubOAuthActor()
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            await #expect(throws: CancellationError.self) {
+                try await actor.authenticateWithPersonalAccessToken("   ")
+            }
+        }
+        await task.value
+    }
+
     @Test("GitHubRunnerDownloadDTO decodes snake_case GitHub REST API JSON")
     func runnerDownloadDTODecoding() throws {
         let json = """

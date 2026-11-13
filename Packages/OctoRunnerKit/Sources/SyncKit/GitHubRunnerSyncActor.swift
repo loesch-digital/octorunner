@@ -18,15 +18,15 @@ public actor GitHubRunnerSyncActor {
     }
 
     public func discoverAndReconcileRunners(
-        accountLogin: String?,
+        accountKey: String?,
         additionalDirectories: [URL] = []
     ) async -> [DiscoveredLocalRunner] {
         let localRunners = await discoveryActor.discoverAllLocalRunners(additionalDirectories: additionalDirectories)
         guard !localRunners.isEmpty else { return [] }
 
         let token: String?
-        if let accountLogin {
-            token = try? await keychain.readSecret(account: accountLogin)
+        if let accountKey, !accountKey.isEmpty {
+            token = try? await keychain.readSecret(account: accountKey)
         } else {
             token = nil
         }

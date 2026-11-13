@@ -319,9 +319,9 @@ public struct OAuthDeviceFlowSheet: View {
                     .font(.system(size: 22))
                     .foregroundStyle(OctoTheme.onlineGreen)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("macOS Keychain Updated")
+                    Text("macOS Keychain Updated", bundle: .module)
                         .font(.system(size: 12, weight: .semibold))
-                    Text("OAuth token stored with kSecAttrAccessibleWhenUnlockedThisDeviceOnly.")
+                    Text("Credentials saved in macOS Keychain on this Mac.", bundle: .module)
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
@@ -338,15 +338,14 @@ public struct OAuthDeviceFlowSheet: View {
             Button {
                 dismiss()
             } label: {
-                HStack(spacing: 6) {
-                    Text("Open Runner Pool Dashboard")
-                    Image(systemName: "arrow.right")
-                }
+                Text("Done", bundle: .module)
                 .font(.system(size: 13, weight: .semibold))
                 .frame(minWidth: 240, minHeight: 34)
             }
             .buttonStyle(.borderedProminent)
             .tint(OctoTheme.accentBlue)
+            .accessibilityLabel(Text("Done", bundle: .module))
+            .accessibilityHint(Text("Closes authentication and returns to the previous view.", bundle: .module))
         }
         .padding(24)
     }

@@ -13,6 +13,8 @@ public final class GitHubAccountEntity {
     public var scopes: [String] = []
     public var authMethodRaw: String = "oauth_device"
     public var keychainAccountKey: String = ""
+    // Non-secret lookup aliases retained so a renamed account can remove old credentials on disconnect.
+    public var retiredKeychainAccountKeys: [String] = []
     public var connectedAt: Date = Date.now
     public var isActive: Bool = true
 
@@ -22,7 +24,7 @@ public final class GitHubAccountEntity {
         login: String,
         displayName: String? = nil,
         avatarUrlString: String? = nil,
-        scopes: [String] = ["repo", "workflow", "admin:org"],
+        scopes: [String] = [],
         authMethodRaw: String = "oauth_device",
         keychainAccountKey: String,
         connectedAt: Date = .now,

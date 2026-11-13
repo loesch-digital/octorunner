@@ -3,24 +3,29 @@ import Foundation
 public enum LaunchAgentPlistGenerator {
     public static func generatePlistData(
         serviceLabel: String,
-        runnerRootDirectory: URL
+        runnerRootDirectory: URL,
+        configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration()
     ) throws -> Data {
-        let rootPath = runnerRootDirectory.path()
-        let runScriptPath = runnerRootDirectory.appending(path: "run.sh").path()
+        let rootPath = runnerRootDirectory.path(percentEncoded: false)
+        let runScriptPath = runnerRootDirectory.appending(path: "run.sh").path(percentEncoded: false)
         let diagDir = runnerRootDirectory.appending(path: "_diag")
 
+        let keepAlive: Any
+        switch configuration.runtimePolicy.restartPolicy {
+        case .always: keepAlive = true
+        case .onNonZeroExit: keepAlive = ["SuccessfulExit": false]
+        case .manual: keepAlive = false
+        }
         let plistDict: [String: Any] = [
             "Label": serviceLabel,
             "ProgramArguments": ["/bin/bash", runScriptPath],
             "WorkingDirectory": rootPath,
             "RunAtLoad": true,
-            "KeepAlive": true,
-            "EnvironmentVariables": [
-                "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
-                "LANG": "en_US.UTF-8"
-            ],
-            "StandardOutPath": diagDir.appending(path: "launchd.stdout.log").path(),
-            "StandardErrorPath": diagDir.appending(path: "launchd.stderr.log").path()
+            "KeepAlive": keepAlive,
+            "ThrottleInterval": configuration.runtimePolicy.restartDelaySeconds,
+            "EnvironmentVariables": configuration.environment,
+            "StandardOutPath": diagDir.appending(path: "launchd.stdout.log").path(percentEncoded: false),
+            "StandardErrorPath": diagDir.appending(path: "launchd.stderr.log").path(percentEncoded: false)
         ]
 
         return try PropertyListSerialization.data(

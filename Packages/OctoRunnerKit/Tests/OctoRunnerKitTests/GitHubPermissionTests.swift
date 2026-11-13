@@ -70,8 +70,9 @@ struct GitHubPermissionTests {
         let vault = KeychainVaultActor(servicePrefix: "io.octorunner.permission-test.\(UUID().uuidString)")
         let actor = GitHubOAuthActor(session: session, keychain: vault)
         let result = try await actor.authenticateWithPersonalAccessToken("fixture-token")
-        let stored = try await vault.readSecret(account: "permission-fixture")
-        try await vault.deleteSecret(account: "permission-fixture")
+        let stored = try await vault.readSecret(account: result.keychainAccountKey)
+        #expect(try await vault.readSecret(account: "permission-fixture") == nil)
+        try await vault.deleteSecret(account: result.keychainAccountKey)
         #expect(result.scopes.isEmpty)
         #expect(stored == "fixture-token")
     }
@@ -83,7 +84,7 @@ struct GitHubPermissionTests {
         let vault = KeychainVaultActor(servicePrefix: "io.octorunner.permission-test.\(UUID().uuidString)")
         let actor = GitHubOAuthActor(session: session, keychain: vault)
         let result = try await actor.authenticateWithPersonalAccessToken("fixture-token")
-        try await vault.deleteSecret(account: "permission-fixture")
+        try await vault.deleteSecret(account: result.keychainAccountKey)
         #expect(result.scopes == ["repo", "read:org"])
     }
 }

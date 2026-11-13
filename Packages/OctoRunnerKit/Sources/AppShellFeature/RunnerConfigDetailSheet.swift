@@ -394,10 +394,10 @@ public struct RunnerConfigDetailSheet: View {
         let updatedLabels = editableLabels.joined(separator: ",")
         runner.labels = editableLabels
 
-        if let login = accounts.first?.login,
+        if let key = accounts.first(where: { $0.isActive })?.keychainAccountKey, !key.isEmpty,
            let runnerId = runner.githubRunnerId,
            let scopeURL = URL(string: runner.scopeUrlString),
-           let token = try? await provisioningClient.readToken(for: login) {
+           let token = try? await provisioningClient.readToken(for: key) {
             _ = try? await provisioningClient.replaceRunnerLabels(
                 scopeURL: scopeURL,
                 runnerId: runnerId,

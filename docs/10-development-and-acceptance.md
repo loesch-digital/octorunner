@@ -68,9 +68,9 @@ Die lokale Abnahme des Feature-Branches erfolgt vor Merge und Release-Tag. Commi
 Für den aktuellen Patch prüfen:
 
 - Start ohne vorsorglichen Dokumente-Zugriff; externe Runner erst über **Import Folder…** auswählen, externe Logs erst bewusst öffnen oder aktualisieren.
-- **Open Dashboard** mehrfach verwenden, auch bei minimiertem oder geschlossenem Fenster: genau ein Dashboard.
+- **Dashboard** oben rechts im Menüleistenfenster mehrfach verwenden, auch bei minimiertem oder geschlossenem Fenster: genau ein Dashboard.
 - Fenster schließen: Menüleisteneintrag bleibt. **Quit** abbrechen: App bleibt. **Quit** bestätigen: App und Menüleisteneintrag verschwinden.
 - Runner mit installiertem LaunchAgent laufen weiter. Für nicht migrierte importierte Runner erklärt der Quit-Dialog die Einschränkung.
 - GitHub-Login und Runner-Verwaltung mit den benötigten Rechten; fehlende Token-Scope-Header dürfen keine erfundenen Freigaben anzeigen.
 
-Prüfstand am 2026-11-11: Der Debug-Build über den obigen CLI-Befehl war erfolgreich. Für v0.4.4 waren 37 Swift-Tests, 9 Python-Tests, PR-/main-CI, Release mit Notarisierung, Homebrew-Upgrade und Gatekeeper erfolgreich. Die interaktive Abnahme ist offen: Die Computersteuerung meldet `cgWindowNotFound`; der Xcode-Connector wartet auf eine Freigabe über sein Menüleistensymbol. Der Nutzer führt die Live-Prüfung später durch. Ein erfolgreicher Build wird nicht als erfolgreicher interaktiver Start ausgegeben.
+Prüfstand am 2026-11-11: Der Debug-Build über den obigen CLI-Befehl war erfolgreich. Für v0.4.4 waren 37 Swift-Tests, 9 Python-Tests, PR-/main-CI, Release mit Notarisierung, Homebrew-Upgrade und Gatekeeper erfolgreich. Der Nutzer hat anschließend genau ein Dashboard trotz fünfmaligem Öffnen, Schließen/Wiederöffnen, Quit, normalen Neustart ohne Dokumente-Abfrage und die deaktivierten Vorschau-Schalter bestätigt. Der neue externe Ordnerimport und das Weiterlaufen konkreter Runner sind damit noch nicht separat belegt. Die Computersteuerung meldet weiterhin `cgWindowNotFound`; der Xcode-Connector wartet auf eine Freigabe über sein Menüleistensymbol. Ein erfolgreicher Build wird nicht als erfolgreicher interaktiver Start ausgegeben.

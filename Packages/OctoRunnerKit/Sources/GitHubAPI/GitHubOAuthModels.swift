@@ -83,11 +83,15 @@ public struct AuthenticatedGitHubSession: Sendable, Equatable {
     public let user: GitHubUserProfileDTO
     public let scopes: [String]
     public let authMethod: String
+    /// Each validated login stages a separate credential bound to the immutable user ID.
+    /// An overlapping disconnect can only remove the versions it captured beforehand.
+    public let keychainAccountKey: String
 
     public init(user: GitHubUserProfileDTO, scopes: [String], authMethod: String) {
         self.user = user
         self.scopes = scopes
         self.authMethod = authMethod
+        self.keychainAccountKey = "github-user:\(user.id):\(UUID().uuidString)"
     }
 }
 

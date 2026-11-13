@@ -16,6 +16,7 @@ jobs:
   release:
     name: Build & Publish OctoRunner Release
     runs-on: xcode-27
+    timeout-minutes: 60
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
     steps:
@@ -30,11 +31,7 @@ jobs:
       - name: Extract Release Version from Git Tag
         id: version
         run: |
-          RAW_TAG="${GITHUB_REF_NAME}"
-          VERSION="${RAW_TAG#v}"
-          echo "tag=${RAW_TAG}" >> "$GITHUB_OUTPUT"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Building OctoRunner version ${VERSION} (tag ${RAW_TAG})"
+          python3 scripts/release_tools.py metadata "${GITHUB_REF_NAME}"
 
       - name: Run OctoRunnerKit Unit Tests (TDD Suite)
         run: swift test --package-path Packages/OctoRunnerKit --no-parallel
@@ -54,6 +51,7 @@ jobs:
       - name: Build & Package OctoRunner.app Archive
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          BUNDLE_VERSION: ${{ steps.version.outputs.bundle_version }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL || vars.MATCH_GIT_URL }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
@@ -71,8 +69,8 @@ jobs:
             -scheme OctoRunner \
             -configuration Release \
             -derivedDataPath DerivedData \
-            MARKETING_VERSION="${VERSION}" \
-            CURRENT_PROJECT_VERSION="${VERSION}" \
+            MARKETING_VERSION="${BUNDLE_VERSION}" \
+            CURRENT_PROJECT_VERSION="${BUNDLE_VERSION}" \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=YES \
@@ -80,6 +78,7 @@ jobs:
 
           APP_PATH="DerivedData/Build/Products/Release/OctoRunner.app"
           ZIP_PATH="dist/OctoRunner-${VERSION}-arm64.zip"
+          python3 scripts/release_tools.py stamp "v${VERSION}" "$APP_PATH"
           bash scripts/sign-and-notarize.sh "${APP_PATH}" "${ZIP_PATH}"
 
           SHA256=$(shasum -a 256 "${ZIP_PATH}" | awk '{print $1}')
@@ -95,12 +94,15 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           ZIP_PATH: ${{ steps.package.outputs.zip_path }}
         run: |
-          gh release create "${TAG}" "${ZIP_PATH}" \
-            --verify-tag \
-            --title "OctoRunner ${TAG}" \
-            --generate-notes
+          NOTES_PATH="docs/releases/${TAG}.md"
+          if [[ -f "$NOTES_PATH" ]]; then
+            python3 scripts/release_tools.py publish "$TAG" "$ZIP_PATH" --notes-file "$NOTES_PATH"
+          else
+            python3 scripts/release_tools.py publish "$TAG" "$ZIP_PATH"
+          fi
 
       - name: Update Homebrew Tap (loesch-digital/homebrew-octorunner)
+        if: steps.version.outputs.update_homebrew == 'true'
         env:
           HOMEBREW_TAP_DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
           VERSION: ${{ steps.version.outputs.version }}

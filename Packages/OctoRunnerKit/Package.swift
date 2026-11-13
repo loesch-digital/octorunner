@@ -63,6 +63,7 @@ let package = Package(
                 "SyncKit",
                 "TelemetryKit"
             ],
+            resources: [.process("Resources")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(
@@ -77,6 +78,7 @@ let package = Package(
                 "TelemetryKit",
                 "AppShellFeature"
             ],
+            resources: [.copy("Fixtures")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         )
     ]
