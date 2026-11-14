@@ -48,10 +48,25 @@ struct HostTelemetryDashboardTests {
         #expect(budget.snapshot(for: 8) == nil)
     }
 
+    @Test("Pressure and thermal labels describe independent conditions and unavailable values in DE/EN")
+    func conditionLabels() {
+        let de = Locale(identifier: "de")
+        let en = Locale(identifier: "en")
+        #expect(HostTelemetryStatusText.memoryPressure(.normal, locale: en) == "Normal")
+        #expect(HostTelemetryStatusText.memoryPressure(.warning, locale: en) == "Elevated")
+        #expect(HostTelemetryStatusText.memoryPressure(.critical, locale: de) == "Kritisch")
+        #expect(HostTelemetryStatusText.memoryPressure(nil, locale: de) == "Nicht verfügbar")
+        #expect(HostTelemetryStatusText.thermalState(.nominal, locale: de) == "Normal")
+        #expect(HostTelemetryStatusText.thermalState(.fair, locale: de) == "Leicht erhöht")
+        #expect(HostTelemetryStatusText.thermalState(.serious, locale: en) == "High")
+        #expect(HostTelemetryStatusText.thermalState(.critical, locale: en) == "Critical")
+        #expect(HostTelemetryStatusText.thermalState(nil, locale: en) == "Unavailable")
+    }
+
     @Test("Host cards render missing and real measurements at narrow/wide widths in DE/EN and Light/Dark")
     func rendering() async throws {
         for populated in [false, true] {
-            let hostSnapshot: HostTelemetrySnapshot? = populated ? HostTelemetrySnapshot(cpuSummary: "Apple Silicon Test Host", totalCoreCount: 12, physicalMemoryGB: 32, usedMemoryGB: 12, osVersionString: "macOS", cpuUsagePercent: 45, performanceCoreCount: 8, efficiencyCoreCount: 4) : nil
+            let hostSnapshot: HostTelemetrySnapshot? = populated ? HostTelemetrySnapshot(cpuSummary: "Apple Silicon Test Host", totalCoreCount: 12, physicalMemoryGB: 32, usedMemoryGB: 12, osVersionString: "macOS", cpuUsagePercent: 45, performanceCoreCount: 8, efficiencyCoreCount: 4, memoryPressure: .warning, thermalState: .serious) : nil
             for language in ["de", "en"] {
                 for width in [680.0, 1100.0] {
                     for scheme in [ColorScheme.light, .dark] {

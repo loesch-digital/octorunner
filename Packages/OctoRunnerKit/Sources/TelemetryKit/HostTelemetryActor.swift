@@ -18,7 +18,7 @@ public actor HostTelemetryActor {
             usedMemoryGB: memory.map { Double($0.usedBytes) / 1_073_741_824 }, osVersionString: sample.osVersionString,
             cpuUsagePercent: usage, memory: memory,
             performanceCoreCount: sample.performanceCoreCount, efficiencyCoreCount: sample.efficiencyCoreCount,
-            coreClusters: sample.coreClusters)
+            coreClusters: sample.coreClusters, memoryPressure: sample.memoryPressure, thermalState: sample.thermalState)
     }
 
     private static func cpuUsage(previous: HostCPUTicks?, current: HostCPUTicks?) -> Double? {

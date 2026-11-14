@@ -61,6 +61,29 @@ struct TelemetryKitTests {
         }
     }
 
+    @Test("Host pressure uses dispatch flags, remains independent of thermals and clears unavailable readings")
+    func pressureAndThermals() async {
+        // Kernel sysctl exports dispatch flags, not the kernel's internal 0/1/3 levels.
+        let cases: [(Int32?, Int?, HostMemoryPressure?, HostThermalState?)] = [
+            (1, 3, .normal, .critical), (2, 0, .warning, .nominal),
+            (4, 1, .critical, .fair), (nil, 2, nil, .serious),
+            (0, nil, nil, nil), (3, 99, nil, nil), (8, -1, nil, nil),
+            (-1, nil, nil, nil)
+        ]
+        let provider = FixtureHostSampler(samples: cases.map { pressure, thermal, _, _ in
+            HostTelemetrySample(cpuSummary: "Fixture", totalCoreCount: 4,
+                physicalMemoryBytes: 8_589_934_592, osVersionString: "Fixture", cpuTicks: nil, vmStatistics: nil,
+                memoryPressure: pressure.flatMap(HostMemoryPressure.init(rawValue:)),
+                thermalState: thermal.flatMap(HostThermalState.init(rawValue:)))
+        })
+        let monitor = HostTelemetryActor(sampler: provider)
+        for (_, _, pressure, thermal) in cases {
+            let snapshot = await monitor.currentSnapshot()
+            #expect(snapshot.memoryPressure == pressure)
+            #expect(snapshot.thermalState == thermal)
+        }
+    }
+
     private func sample(ticks: HostCPUTicks?, vm: HostVMStatistics? = nil) -> HostTelemetrySample {
         HostTelemetrySample(cpuSummary: "Fixture CPU", totalCoreCount: 10, physicalMemoryBytes: 16 * 1_073_741_824, osVersionString: "Fixture OS", cpuTicks: ticks, vmStatistics: vm, performanceCoreCount: 6, efficiencyCoreCount: 4)
     }
