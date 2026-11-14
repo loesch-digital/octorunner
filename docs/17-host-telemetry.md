@@ -9,7 +9,7 @@
 
 Die Abfragen lesen Systemzähler, Geräte-Metadaten und Volume-Kapazität. Sie durchsuchen weder den Dokumente-Ordner noch Runner-Arbeitsverzeichnisse. Fehlende Messmöglichkeiten werden nicht durch Beispieldaten ersetzt.
 
-Die Karten übernehmen die Hauptbereiche von [Screenshot 09](./assets/screens/09_host_telemetry.png), passen sich aber der Fensterbreite an. Der Prozessinspektor je Runner und die weitere Telemetrie-Vervollständigung folgen als nächste Teilaufgabe; dieser Stand ist noch nicht die vollständige v0.5.0.
+Die Karten übernehmen die Hauptbereiche von [Screenshot 09](./assets/screens/09_host_telemetry.png), passen sich aber der Fensterbreite an. Der Prozessinspektor je Runner ist enthalten; dieser Stand ist noch nicht die vollständige v0.5.0.
 
 ## Verifikation
 
@@ -31,7 +31,7 @@ Ein Audit-Intent wird vor der Anfrage explizit gespeichert. Danach folgt entwede
 
 Die Hauptfunktionen der Prozessliste sind vorhanden, mit umbruchfähigen nativen Zeilen statt einer breiten, fest dimensionierten Tabelle. Ein `CoreSimulatorService` wird nur dann gezeigt, wenn seine wirkliche Elternkette die Zuordnung belegt; Namensähnlichkeit reicht nicht. Wieder unter `launchd` eingeordnete Dienste lassen sich dadurch gegebenenfalls nicht zuordnen. Einen erfundenen 60-Hz-IPC-Watchdog, simulierte P-/E-Lastwerte oder angebliche RAM-Kategorien für Dateicaches zeigt die App nicht. Prozessmetadaten und Signale verwenden die öffentlichen libproc-/Darwin-Schnittstellen und benötigen keine zusätzlichen GitHub-Rechte.
 
-Noch offen für v0.5: weitere belastbare Hardwarewerte wie Memory Pressure/Thermalzustand sowie die tatsächlich durchgesetzte globale Runner-Concurrency. Die vollständige Prozessaufsicht mit Start/Stop/Restart und Crash-/KeepAlive-Policies bleibt v0.6 vorbehalten.
+Noch offen für v0.5: die tatsächlich durchgesetzte globale Runner-Concurrency. Die vollständige Prozessaufsicht mit Start/Stop/Restart und Crash-/KeepAlive-Policies bleibt v0.6 vorbehalten.
 
 ### Technische Quellen und Prüfung
 
@@ -40,3 +40,13 @@ Noch offen für v0.5: weitere belastbare Hardwarewerte wie Memory Pressure/Therm
 - Unit-Tests: eindeutige Zuordnung, fremde/unabhängige Prozesse, doppelte Wurzeln/PIDs, zyklische Elternketten, Startzeitprüfung, CPU-Deltas/Reset, geänderte Identität/Zuordnung vor SIGTERM und Cancellation.
 - Native libproc-/SIGTERM-Prüfung ausschließlich mit einem isolierten, im Test erzeugten Prozess; keine bestehenden Runner werden beendet.
 - NSHostingView: leere/gefüllte Liste und Detailansicht, 680/1100 Punkte, DE/EN, Hell/Dunkel; zusätzliche native UI-Prüfung für Navigation und Runner-Dropdown in CI.
+
+## Speicherdruck und thermischer Zustand
+
+Die RAM-Karte zeigt den aktuellen **Speicherdruck** (Normal / Erhöht / Kritisch); die CPU-Karte den getrennten **thermischen Zustand** (Normal / Leicht erhöht / Hoch / Kritisch). Beide werden im gewählten Intervall und bei manueller Aktualisierung neu gemessen. Eine fehlende oder unbekannte Messung ersetzt den vorherigen Wert durch **Nicht verfügbar**. Der Speicherdruck wird weder aus der RAM-Auslastung noch aus der Temperatur abgeleitet.
+
+Der lesende sysctl `kern.memorystatus_vm_pressure_level` liefert Dispatch-Flags **1/2/4**, nicht die internen Kernel-Stufen. Der Aufruf ist best-effort: fehlende, verweigerte, falsch dimensionierte oder zukünftige Werte bleiben unbekannt. Der thermische Zustand stammt aus `ProcessInfo.thermalState`; er ist eine systemweite Belastungsstufe, keine Temperatur in Grad. Es werden keine privaten Sensor-/SMC-Schnittstellen genutzt, keine Systemwerte geändert und keine zusätzlichen Zugriffsrechte angefordert.
+
+Quellen: [Apple XNU: sysctl-Ausgabe und Dispatch-Umwandlung](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_memorystatus_notify.c), [Apple: ProcessInfo.ThermalState](https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum).
+
+Tests sichern die Stufenabbildung, voneinander unabhängige Werte, unbekannte/fehlende Folgemessungen und lokalisierte Statusbezeichnungen ab. Die Karten werden mit erhöhten Zuständen sowie ohne Messwerte bei 680/1100 Punkten, DE/EN und Hell/Dunkel per NSHostingView gerendert. Die native CI prüft beide Statuszeilen. Es wird kein echter Speicher-/Temperaturstress für Tests erzeugt.

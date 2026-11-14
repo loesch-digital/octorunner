@@ -9,9 +9,11 @@ public struct HostTelemetrySnapshot: Sendable, Equatable {
     public let performanceCoreCount: Int?
     public let efficiencyCoreCount: Int?
     public let coreClusters: [HostCPUCluster]
+    public let memoryPressure: HostMemoryPressure?
+    public let thermalState: HostThermalState?
 
     public init(cpuSummary: String, totalCoreCount: Int, physicalMemoryGB: Double, usedMemoryGB: Double?, osVersionString: String,
-                cpuUsagePercent: Double? = nil, memory: HostMemorySnapshot? = nil, performanceCoreCount: Int? = nil, efficiencyCoreCount: Int? = nil, coreClusters: [HostCPUCluster] = []) {
+                cpuUsagePercent: Double? = nil, memory: HostMemorySnapshot? = nil, performanceCoreCount: Int? = nil, efficiencyCoreCount: Int? = nil, coreClusters: [HostCPUCluster] = [], memoryPressure: HostMemoryPressure? = nil, thermalState: HostThermalState? = nil) {
         self.cpuSummary = cpuSummary
         self.totalCoreCount = totalCoreCount
         self.physicalMemoryGB = physicalMemoryGB
@@ -22,5 +24,7 @@ public struct HostTelemetrySnapshot: Sendable, Equatable {
         self.performanceCoreCount = performanceCoreCount
         self.efficiencyCoreCount = efficiencyCoreCount
         self.coreClusters = coreClusters
+        self.memoryPressure = memoryPressure
+        self.thermalState = thermalState
     }
 }

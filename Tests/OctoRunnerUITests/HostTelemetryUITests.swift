@@ -16,6 +16,8 @@ final class HostTelemetryUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["Unified Memory"].firstMatch.exists)
         XCTAssertTrue(app.descendants(matching: .any)["Storage & Device I/O"].firstMatch.exists)
         XCTAssertTrue(app.descendants(matching: .any)["GitHub API"].firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any)["Memory pressure"].firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any)["Thermal state"].firstMatch.exists)
         let refresh = app.buttons["Refresh telemetry"].firstMatch
         XCTAssertTrue(refresh.isHittable)
         let cpu = app.staticTexts["telemetry.cpuUsage"].firstMatch

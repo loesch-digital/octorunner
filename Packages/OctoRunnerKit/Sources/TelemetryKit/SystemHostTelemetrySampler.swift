@@ -50,7 +50,16 @@ public struct SystemHostTelemetrySampler: HostTelemetrySampling {
         return HostTelemetrySample(cpuSummary: Self.readString("machdep.cpu.brand_string") ?? "Unknown processor",
             totalCoreCount: info.processorCount, physicalMemoryBytes: info.physicalMemory,
             osVersionString: info.operatingSystemVersionString, cpuTicks: ticks, vmStatistics: memory,
-            performanceCoreCount: performance, efficiencyCoreCount: efficiency, coreClusters: clusters)
+            performanceCoreCount: performance, efficiencyCoreCount: efficiency, coreClusters: clusters, memoryPressure: Self.readMemoryPressure(),
+            thermalState: HostThermalState(rawValue: info.thermalState.rawValue))
+    }
+
+    private static func readMemoryPressure() -> HostMemoryPressure? {
+        var value: Int32 = 0
+        var size = MemoryLayout<Int32>.size
+        guard sysctlbyname("kern.memorystatus_vm_pressure_level", &value, &size, nil, 0) == 0,
+              size == MemoryLayout<Int32>.size else { return nil }
+        return HostMemoryPressure(rawValue: value)
     }
 
     private static func readInt(_ key: String) -> Int? {

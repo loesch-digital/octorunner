@@ -18,6 +18,7 @@ struct HostTelemetryCards: View {
                     .accessibilityIdentifier("telemetry.cpuUsage")
                 Text(host?.cpuSummary ?? "—").font(.headline)
                 if let usage = host?.cpuUsagePercent { ProgressView(value: min(max(usage, 0), 100), total: 100).accessibilityLabel(Text("Total CPU load", bundle: .module)) }
+                metric("Thermal state", value: HostTelemetryStatusText.thermalState(host?.thermalState, locale: locale))
                 metric("Performance cores", value: host?.performanceCoreCount.map { $0.formatted(.number.locale(locale)) } ?? "—")
                 metric("Efficiency cores", value: host?.efficiencyCoreCount.map { $0.formatted(.number.locale(locale)) } ?? "—")
                 Text("Load covers all logical cores. Load by core type is unavailable.", bundle: .module).font(.caption).foregroundStyle(OctoTheme.secondaryText)
@@ -28,6 +29,7 @@ struct HostTelemetryCards: View {
                 if let used = host?.usedMemoryGB, let total = host?.physicalMemoryGB, total > 0 {
                     ProgressView(value: min(max(used, 0), total), total: total).accessibilityLabel(Text("Used physical memory", bundle: .module))
                 }
+                metric("Memory pressure", value: HostTelemetryStatusText.memoryPressure(host?.memoryPressure, locale: locale))
                 metric("App memory", value: memory(host?.memory?.appBytes))
                 metric("Wired memory", value: memory(host?.memory?.wiredBytes))
                 metric("Compressed memory", value: memory(host?.memory?.compressedBytes))
