@@ -43,6 +43,11 @@ def diagnose(process, directory):
                 members.append((int(fields[0]), fields[2]))
         members.sort(key=lambda item: ("testing" not in item[1].lower(), item[0]))
         for pid, _ in members[:8]:
+            try:
+                if os.getpgid(pid) != process.pid:
+                    continue
+            except ProcessLookupError:
+                continue
             path = directory / f"sample-{pid}.txt"
             try:
                 sampled = subprocess.run(["sample", str(pid), "1", "-file", str(path)],
@@ -102,7 +107,12 @@ def main():
                     sys.stdout.buffer.flush()
                     log.write(message.encode())
                     log.flush()
-                    diagnose(process, options.diagnostics)
+                    try:
+                        diagnose(process, options.diagnostics)
+                    except OSError:
+                        # Evidence is best-effort, including the fallback report.
+                        # Unavailable storage must never mask a timed-out test.
+                        pass
                     return 124
                 ready = selector.select(timeout=0.1)
                 if ready:
@@ -113,8 +123,9 @@ def main():
                         log.write(chunk)
                         log.flush()
                         last_output = time.monotonic()
-                        recent = (recent + chunk)[-4096:]
-                        tests_started = tests_started or b"Test run started" in recent or b"Test Suite 'All tests' started" in recent
+                        output = recent + chunk
+                        tests_started = tests_started or b"Test run started" in output or b"Test Suite 'All tests' started" in output
+                        recent = output[-4096:]
                         continue
                     if process.poll() is not None:
                         return process.returncode if process.returncode >= 0 else 128 - process.returncode

@@ -2,6 +2,7 @@
 import os
 import select
 import signal
+import textwrap
 from pathlib import Path
 import subprocess
 import sys
@@ -14,6 +15,67 @@ SCRIPT = ROOT / "scripts/run-swift-tests.py"
 
 
 class SwiftTestWatchdogTests(unittest.TestCase):
+    def test_start_marker_in_large_output_still_arms_idle_deadline(self):
+        with tempfile.TemporaryDirectory() as name:
+            directory = Path(name)
+            (directory / "sample").write_text('#!/bin/sh\necho fixture > "$4"\n')
+            (directory / "sample").chmod(0o755)
+            source = "import os, time; os.write(1, b'Test run started.' + b'x' * 6000); time.sleep(1)"
+            result = self.invoke(source, directory, idle="0.2")
+            self.assertEqual(result.returncode, 124, result.stderr)
+            self.assertIn("no test output", result.stdout)
+
+    def test_unwritable_diagnostic_fallback_preserves_timeout_status(self):
+        with tempfile.TemporaryDirectory() as name:
+            directory = Path(name)
+            ps = directory / "ps"
+            ps.write_text(f"#!{sys.executable}\nfrom pathlib import Path\nPath({str(directory / 'diagnostics')!r}).rename({str(directory / 'moved')!r})\nraise SystemExit(1)\n")
+            ps.chmod(0o755)
+            result = self.invoke("import time; time.sleep(10)", directory, total="0.3")
+            self.assertEqual(result.returncode, 124, result.stdout + result.stderr)
+            self.assertTrue((directory / "moved/swift-tests.log").exists())
+
+    def test_process_that_moves_groups_is_not_sampled_from_stale_listing(self):
+        with tempfile.TemporaryDirectory() as name:
+            directory = Path(name)
+            child_pid_file = directory / "child-pid"
+            move = directory / "move"
+            moved = directory / "moved"
+            calls = directory / "calls"
+            child_source = textwrap.dedent(f"""
+                import os, time
+                from pathlib import Path
+                Path({str(child_pid_file)!r}).write_text(str(os.getpid()))
+                while not Path({str(move)!r}).exists(): time.sleep(0.01)
+                os.setpgid(0, 0)
+                Path({str(moved)!r}).touch()
+                time.sleep(10)
+            """)
+            sample = directory / "sample"
+            sample.write_text(f"#!{sys.executable}\n" + textwrap.dedent(f"""
+                import sys, time
+                from pathlib import Path
+                with Path({str(calls)!r}).open('a') as log: log.write(sys.argv[1] + '\\n')
+                Path({str(move)!r}).touch()
+                until = time.monotonic() + 2
+                while not Path({str(moved)!r}).exists() and time.monotonic() < until: time.sleep(0.01)
+                Path(sys.argv[4]).write_text('fixture')
+            """))
+            sample.chmod(0o755)
+            source = f"import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', {child_source!r}]); print('Test run started.', flush=True); time.sleep(10)"
+            try:
+                result = self.invoke(source, directory)
+                self.assertEqual(result.returncode, 124, result.stdout + result.stderr)
+                child_pid = int(child_pid_file.read_text())
+                self.assertTrue(moved.exists())
+                self.assertNotIn(str(child_pid), calls.read_text().splitlines())
+            finally:
+                if child_pid_file.exists():
+                    try:
+                        os.kill(int(child_pid_file.read_text()), signal.SIGTERM)
+                    except ProcessLookupError:
+                        pass
+
     def invoke(self, source, directory, idle="0.4", total="5"):
         return subprocess.run(
             [sys.executable, str(SCRIPT), "--diagnostics", str(directory / "diagnostics"),
