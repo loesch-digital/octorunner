@@ -48,6 +48,7 @@ public struct GeneralSettingsTab: View {
         .accessibilityHint(
           Text("Changes the interface language without restarting.", bundle: .module))
       }
+      SettingsUpdateCard()
     }
     .background(OctoTheme.surface)
   }

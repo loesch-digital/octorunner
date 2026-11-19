@@ -51,6 +51,8 @@ extension SettingsTab {
       [
         "General", "System integration", "Show icon in menu bar",
         "Hide Dock icon when windows are closed", "Language",
+        "Versions and updates", "Check for updates", "Recorded runner engine versions",
+        "App version", "Update channel",
       ]
     case .background:
       [

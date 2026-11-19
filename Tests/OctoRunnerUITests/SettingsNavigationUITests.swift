@@ -12,6 +12,7 @@ final class SettingsNavigationUITests: XCTestCase {
         let settings = app.outlines.staticTexts["App Settings"].firstMatch
         XCTAssertTrue(settings.waitForExistence(timeout: 10), app.debugDescription)
         settings.click()
+        XCTAssertTrue(app.buttons["Check for updates"].firstMatch.waitForExistence(timeout: 5), "General settings must expose manual updates")
         let categories = ["General", "Autostart & Background", "Failover", "Cache & Storage", "Auth & Tokens", "Notifications"]
         // Test all categories before selecting any: overflow navigation must not
         // make a hidden category count as visible merely because we selected it.
