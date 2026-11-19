@@ -60,7 +60,7 @@ extension SettingsTab {
         "Inherit OctoRunner's PATH", "Runner LaunchAgents", "View launchd plist",
       ]
     case .failover:
-      ["Failover", "Restart policy", "Restart delay (seconds)"]
+      ["Failover", "Restart policy", "Restart delay (seconds)", "Failures before quarantine", "Low Power Mode"]
     case .storage:
       ["Cache & Storage", "Workspace age (days)", "Log retention (days)", "Cleanup policy"]
     case .auth:

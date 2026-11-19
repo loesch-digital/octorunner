@@ -15,6 +15,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     public func applicationDidFinishLaunching(_ notification: Notification) {
         try? AppAuditEvent.started.record(in: modelContainer.mainContext)
         UNUserNotificationCenter.current().delegate = notificationPresenter
+        services.startRecoveryMonitoring(container: modelContainer)
         services.healthMonitor.start(container: modelContainer)
         services.diskMonitor.start()
         services.storageMaintenance.start(container: modelContainer)
@@ -22,6 +23,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
+        services.stopRecoveryMonitoring()
         services.healthMonitor.stop()
         services.diskMonitor.stop()
         services.storageMaintenance.stop()

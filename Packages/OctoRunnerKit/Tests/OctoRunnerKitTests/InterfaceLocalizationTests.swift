@@ -8,6 +8,16 @@ import RunnerEngine
 import Testing
 
 struct InterfaceLocalizationTests {
+    @Test("Recovery controls and their search terms are localized")
+    func recoveryLocalization() {
+        let locale = Locale(identifier: "de")
+        #expect(AppLocalization.string("Quarantined after repeated process failures.", locale: locale)
+            == "Nach wiederholten Prozessfehlern in Quarantäne.")
+        #expect(AppLocalization.string("Start is deferred until Low Power Mode ends.", locale: locale)
+            == "Der Start wartet, bis der Stromsparmodus endet.")
+        #expect(SettingsTab.matching("Stromsparmodus", locale: locale) == [.failover])
+    }
+
     @Test("Legacy interface strings resolve from the package in German and English", arguments: [
         ("New Runner", "Neuer Runner"),
         ("Sync Runners", "Runner abgleichen"),

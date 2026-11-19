@@ -1,6 +1,346 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Cancel pending start": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausstehenden Start abbrechen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel pending start"
+          }
+        }
+      }
+    },
+    "Release and start runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner freigeben und starten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release and start runner"
+          }
+        }
+      }
+    },
+    "Keeps the runner stopped.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belässt den Runner im gestoppten Zustand."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keeps the runner stopped."
+          }
+        }
+      }
+    },
+    "Clears the failure count and starts the runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Setzt den Fehlerzähler zurück und startet den Runner."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clears the failure count and starts the runner."
+          }
+        }
+      }
+    },
+    "An automatic restart is scheduled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein automatischer Neustart ist geplant."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An automatic restart is scheduled."
+          }
+        }
+      }
+    },
+    "Start is deferred until Low Power Mode ends.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Start wartet, bis der Stromsparmodus endet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start is deferred until Low Power Mode ends."
+          }
+        }
+      }
+    },
+    "Quarantined after repeated process failures.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach wiederholten Prozessfehlern in Quarantäne."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quarantined after repeated process failures."
+          }
+        }
+      }
+    },
+    "Runner quarantined": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner in Quarantäne"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner quarantined"
+          }
+        }
+      }
+    },
+    "Control how OctoRunner restarts its directly managed runners.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege fest, wie OctoRunner direkt verwaltete Runner neu startet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control how OctoRunner restarts its directly managed runners."
+          }
+        }
+      }
+    },
+    "Process recovery": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiederherstellung von Runnern"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Process recovery"
+          }
+        }
+      }
+    },
+    "These settings apply while OctoRunner is running.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Einstellungen gelten, solange OctoRunner läuft."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These settings apply while OctoRunner is running."
+          }
+        }
+      }
+    },
+    "Controls when a directly managed runner restarts after a process exit.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legt fest, wann ein direkt verwalteter Runner nach Prozessende neu startet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controls when a directly managed runner restarts after a process exit."
+          }
+        }
+      }
+    },
+    "Sets the wait before each automatic restart.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legt die Wartezeit vor jedem automatischen Neustart fest."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets the wait before each automatic restart."
+          }
+        }
+      }
+    },
+    "Failures before quarantine": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fehlversuche bis zur Quarantäne"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failures before quarantine"
+          }
+        }
+      }
+    },
+    "Stops automatic recovery after this many consecutive failures.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beendet die automatische Wiederherstellung nach dieser Anzahl aufeinanderfolgender Fehlversuche."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stops automatic recovery after this many consecutive failures."
+          }
+        }
+      }
+    },
+    "New LaunchAgents use the selected restart rule and delay. Existing LaunchAgents keep their installed configuration.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue LaunchAgents verwenden die gewählte Neustartregel und Wartezeit. Bestehende LaunchAgents behalten ihre installierte Konfiguration."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New LaunchAgents use the selected restart rule and delay. Existing LaunchAgents keep their installed configuration."
+          }
+        }
+      }
+    },
+    "Low Power Mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stromsparmodus"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low Power Mode"
+          }
+        }
+      }
+    },
+    "Defer new starts while macOS is saving energy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verschiebe neue Starts, solange macOS Energie spart."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defer new starts while macOS is saving energy."
+          }
+        }
+      }
+    },
+    "Defer runner starts in Low Power Mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Starts im Stromsparmodus verschieben"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defer runner starts in Low Power Mode"
+          }
+        }
+      }
+    },
+    "Running jobs continue. Pending starts resume when macOS leaves Low Power Mode.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laufende Jobs gehen weiter. Ausstehende Starts werden nach dem Ende des Stromsparmodus fortgesetzt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running jobs continue. Pending starts resume when macOS leaves Low Power Mode."
+          }
+        }
+      }
+    },
     "Service PID": {
       "extractionState": "manual",
       "localizations": {

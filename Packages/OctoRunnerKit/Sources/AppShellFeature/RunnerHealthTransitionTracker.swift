@@ -6,7 +6,8 @@ public struct RunnerHealthTransitionTracker: Sendable {
 
     public init() {}
 
-    public mutating func consume(_ observations: [RunnerHealthObservation], at now: Date, locale: Locale = .current) -> [AppNotificationEvent] {
+    public mutating func consume(_ observations: [RunnerHealthObservation], at now: Date, locale: Locale = .current,
+                                suppressErrorIDs: Set<UUID> = []) -> [AppNotificationEvent] {
         var current: [UUID: RunnerStatus] = [:]
         var events: [AppNotificationEvent] = []
         for observation in observations where observation.isFresh(at: now) {
@@ -18,6 +19,7 @@ public struct RunnerHealthTransitionTracker: Sendable {
             let kind: AppNotificationKind
             let title: String
             if status == .faulted {
+                guard !suppressErrorIDs.contains(observation.id) else { continue }
                 kind = .runnerError
                 title = AppLocalization.string("Runner error", locale: locale)
             } else if status == .offline && wasOnline {

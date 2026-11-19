@@ -5,7 +5,7 @@ import SwiftData
 import SwiftUI
 
 enum RunnerProcessControlAction: String, Identifiable {
-    case start, drain, restart, forceStop
+    case start, drain, restart, forceStop, cancelRestart, releaseQuarantine
 
     var id: Self { self }
 
@@ -14,6 +14,8 @@ enum RunnerProcessControlAction: String, Identifiable {
         case .stopped, .faulted: [.start]
         case .running: activity == .idle ? [.drain, .restart] : [.drain]
         case .drainTimedOut: [.drain, .forceStop]
+        case .waitingToRestart, .waitingForPower: [.cancelRestart]
+        case .quarantined: [.releaseQuarantine]
         case .starting, .stopping, .draining: []
         }
     }
@@ -24,6 +26,8 @@ enum RunnerProcessControlAction: String, Identifiable {
         case .drain: "Stop after current job"
         case .restart: "Restart runner"
         case .forceStop: "Force stop"
+        case .cancelRestart: "Cancel pending start"
+        case .releaseQuarantine: "Release and start runner"
         }
     }
 
@@ -33,6 +37,8 @@ enum RunnerProcessControlAction: String, Identifiable {
         case .drain: "Stops the runner after a recent check confirms it is idle."
         case .restart: "Restarts an idle runner."
         case .forceStop: "May cancel a running job. Requires confirmation."
+        case .cancelRestart: "Keeps the runner stopped."
+        case .releaseQuarantine: "Clears the failure count and starts the runner."
         }
     }
 }
@@ -44,6 +50,7 @@ struct RunnerProcessControls: View {
     @State private var operation: Task<Void, Never>?
     @State private var message: String.LocalizationValue?
     @State private var confirmForce = false
+    @State private var forceGeneration: UUID?
 
     let configuration: ManagedRunnerConfiguration
     let supervisor: RunnerSupervisorActor
@@ -67,6 +74,15 @@ struct RunnerProcessControls: View {
             } else if snapshot?.phase == .drainTimedOut {
                 Text(AppLocalization.string("The wait ended. The runner is still active.", locale: locale))
                     .foregroundStyle(OctoTheme.warningOrange)
+            } else if snapshot?.phase == .waitingToRestart {
+                Text(AppLocalization.string("An automatic restart is scheduled.", locale: locale))
+                    .foregroundStyle(OctoTheme.warningOrange)
+            } else if snapshot?.phase == .waitingForPower {
+                Text(AppLocalization.string("Start is deferred until Low Power Mode ends.", locale: locale))
+                    .foregroundStyle(OctoTheme.warningOrange)
+            } else if snapshot?.phase == .quarantined {
+                Text(AppLocalization.string("Quarantined after repeated process failures.", locale: locale))
+                    .foregroundStyle(OctoTheme.warningOrange)
             } else if snapshot?.phase == .faulted {
                 Text(AppLocalization.string(snapshot?.lastExitStatus.map {
                     "Runner exit status: \(String($0))"
@@ -79,7 +95,10 @@ struct RunnerProcessControls: View {
                     activity: snapshot?.activity ?? .unknown)) { action in
                     let title = AppLocalization.string(action.title, locale: locale)
                     Button(title, role: action == .forceStop ? .destructive : nil) {
-                        if action == .forceStop { confirmForce = true }
+                        if action == .forceStop {
+                            forceGeneration = snapshot?.generation
+                            confirmForce = forceGeneration != nil
+                        }
                         else { perform(action) }
                     }
                     .accessibilityLabel(title)
@@ -119,12 +138,14 @@ struct RunnerProcessControls: View {
     private func perform(_ action: RunnerProcessControlAction) {
         guard operation == nil else { return }
         let id = configuration.runnerID
+        let expectedGeneration = forceGeneration
+        let pendingGeneration = snapshot?.generation
         message = nil
         operation = Task {
             defer { if !Task.isCancelled { operation = nil } }
             do {
                 switch action {
-                case .start:
+                case .start, .releaseQuarantine:
                     try await supervisor.configure(configuration)
                     try await supervisor.start(runnerID: id)
                 case .drain:
@@ -132,7 +153,11 @@ struct RunnerProcessControls: View {
                 case .restart:
                     try await supervisor.restart(runnerID: id)
                 case .forceStop:
-                    try await supervisor.forceStop(runnerID: id)
+                    guard let expectedGeneration else { return }
+                    try await supervisor.forceStop(runnerID: id, expectedGeneration: expectedGeneration)
+                case .cancelRestart:
+                    guard let pendingGeneration else { return }
+                    try await supervisor.cancelPendingStart(runnerID: id, expectedGeneration: pendingGeneration)
                 }
                 let next = await supervisor.snapshot(runnerID: id)
                 guard !Task.isCancelled else { return }

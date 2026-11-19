@@ -1,7 +1,10 @@
 import CoreModels
 import Foundation
 
-public enum RunnerRuntimePhase: String, Sendable { case stopped, starting, running, draining, drainTimedOut, stopping, faulted }
+public enum RunnerRuntimePhase: String, Sendable {
+    case stopped, starting, running, draining, drainTimedOut, stopping, faulted
+    case waitingToRestart, waitingForPower, quarantined
+}
 public enum RunnerActivity: String, Sendable { case unknown, idle, busy }
 
 public struct RunnerRuntimeSnapshot: Sendable, Equatable {

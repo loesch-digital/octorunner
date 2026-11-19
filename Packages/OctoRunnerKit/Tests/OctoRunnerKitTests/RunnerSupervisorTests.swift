@@ -1,9 +1,212 @@
 import CoreModels
 import Foundation
 @testable import RunnerEngine
+import Synchronization
 import Testing
 
 struct RunnerSupervisorTests {
+    @Test("An exit during voluntary stop preflight does not queue an automatic restart", .timeLimit(.minutes(1)))
+    func exitDuringStopPreflight() async throws {
+        let backend = SupervisorProcessFixture()
+        let gate = RecoveryGate()
+        let supervisor = RunnerSupervisorActor(processes: backend, activitySample: { _ in
+            await gate.block()
+            return (listenerPID: await backend.starts.first?.pid, workerPID: nil)
+        }, recoveryPolicy: RunnerRuntimePolicy())
+        let config = configuration()
+        try await supervisor.configure(config)
+        try await supervisor.start(runnerID: config.runnerID)
+        let handle = try #require(await backend.starts.first)
+        let stop = Task { try await supervisor.stop(runnerID: config.runnerID) }
+        await gate.waitUntilBlocked()
+        await supervisor.processExited(.init(handle: handle, status: 1))
+        await gate.release()
+        try await stop.value
+        #expect(await supervisor.snapshot(runnerID: config.runnerID)?.phase == .faulted)
+        #expect(await backend.starts.count == 1)
+    }
+
+    @Test("An old stop probe cannot suppress a replacement generation's recovery", .timeLimit(.minutes(1)))
+    func replacementExitsWhileOldStopIsProbing() async throws {
+        let backend = SupervisorProcessFixture()
+        let gate = RecoveryGate()
+        let supervisor = RunnerSupervisorActor(processes: backend, activitySample: { _ in
+            await gate.block()
+            return (listenerPID: await backend.starts.first?.pid, workerPID: nil)
+        }, recoveryPolicy: RunnerRuntimePolicy())
+        let config = configuration()
+        try await supervisor.configure(config)
+        try await supervisor.start(runnerID: config.runnerID)
+        let first = try #require(await backend.starts.first)
+        let stop = Task { try await supervisor.stop(runnerID: config.runnerID) }
+        await gate.waitUntilBlocked()
+        await supervisor.processExited(.init(handle: first, status: 1))
+        try await supervisor.start(runnerID: config.runnerID)
+        let second = try #require(await backend.starts.last)
+        await supervisor.processExited(.init(handle: second, status: 1))
+        await gate.release()
+        try await stop.value
+        #expect(await supervisor.snapshot(runnerID: config.runnerID)?.phase == .waitingToRestart)
+        #expect(await backend.stops.isEmpty)
+    }
+
+    @Test("A failed preflight on a cancelled start cannot queue recovery", .timeLimit(.minutes(1)))
+    func cancelledFailedStart() async throws {
+        let backend = SupervisorProcessFixture()
+        let gate = RecoveryGate()
+        let supervisor = RunnerSupervisorActor(processes: backend, startCheck: { _ in
+            await gate.block()
+            throw POSIXError(.EIO)
+        }, recoveryPolicy: RunnerRuntimePolicy())
+        let config = configuration()
+        try await supervisor.configure(config)
+        let start = Task { try await supervisor.start(runnerID: config.runnerID) }
+        await gate.waitUntilBlocked()
+        start.cancel()
+        await gate.release()
+        await #expect(throws: CancellationError.self) { try await start.value }
+        #expect(await supervisor.snapshot(runnerID: config.runnerID)?.phase == .stopped)
+        #expect(await backend.starts.isEmpty)
+    }
+
+    @Test("A policy observer cancellation does not revoke a manual start released by the policy", .timeLimit(.minutes(1)))
+    func resumedStartOutlivesPolicyObserver() async throws {
+        let backend = SupervisorProcessFixture()
+        let gate = RecoveryGate()
+        var energySaving = RunnerRuntimePolicy()
+        energySaving.batterySaverEnabled = true
+        let supervisor = RunnerSupervisorActor(processes: backend, startCheck: { _ in await gate.block() },
+            recoveryPolicy: energySaving, lowPowerMode: { true })
+        let config = configuration()
+        try await supervisor.configure(config)
+        try await supervisor.start(runnerID: config.runnerID)
+        let update = Task { await supervisor.updateRecoveryPolicy(RunnerRuntimePolicy()) }
+        await gate.waitUntilBlocked()
+        update.cancel()
+        var changed = RunnerRuntimePolicy()
+        changed.restartDelaySeconds = 30
+        await supervisor.updateRecoveryPolicy(changed)
+        await gate.release()
+        await update.value
+        #expect(await supervisor.snapshot(runnerID: config.runnerID)?.phase == .running)
+        #expect(await backend.starts.count == 1)
+    }
+
+    @Test("Low Power Mode defers new starts and leaves an existing child running")
+    func lowPowerMode() async throws {
+        let backend = SupervisorProcessFixture()
+        let lowPower = Mutex(false)
+        var policy = RunnerRuntimePolicy()
+        policy.batterySaverEnabled = true
+        let supervisor = RunnerSupervisorActor(processes: backend, recoveryPolicy: policy,
+            lowPowerMode: { lowPower.withLock { $0 } })
+        let active = configuration()
+        let deferred = configuration()
+        try await supervisor.configure(active)
+        try await supervisor.configure(deferred)
+        try await supervisor.start(runnerID: active.runnerID)
+        lowPower.withLock { $0 = true }
+        await supervisor.powerStateChanged()
+        try await supervisor.start(runnerID: deferred.runnerID)
+        #expect(await supervisor.snapshot(runnerID: deferred.runnerID)?.phase == .waitingForPower)
+        #expect(await supervisor.snapshot(runnerID: active.runnerID)?.phase == .running)
+        #expect(await backend.stops.isEmpty)
+        #expect(await backend.starts.count == 1)
+        lowPower.withLock { $0 = false }
+        await supervisor.powerStateChanged()
+        #expect(await supervisor.snapshot(runnerID: deferred.runnerID)?.phase == .running)
+        #expect(await backend.starts.count == 2)
+    }
+
+    @Test("A deferred start is reconsidered when a storage reservation ends")
+    func resumeAfterStorageReservation() async throws {
+        let backend = SupervisorProcessFixture()
+        let lowPower = Mutex(true)
+        var policy = RunnerRuntimePolicy()
+        policy.batterySaverEnabled = true
+        let supervisor = RunnerSupervisorActor(processes: backend, recoveryPolicy: policy,
+            lowPowerMode: { lowPower.withLock { $0 } })
+        let config = configuration()
+        try await supervisor.configure(config)
+        try await supervisor.start(runnerID: config.runnerID)
+        let lease = await supervisor.reserveIdleDirectories(roots: [config.rootDirectory])
+        lowPower.withLock { $0 = false }
+        await supervisor.powerStateChanged()
+        #expect(await supervisor.snapshot(runnerID: config.runnerID)?.phase == .waitingForPower)
+        await supervisor.releaseDirectories(paths: lease)
+        #expect(await supervisor.snapshot(runnerID: config.runnerID)?.phase == .running)
+    }
+
+    @Test("Cancelling a pending start is bound to the displayed generation")
+    func cancelPendingStart() async throws {
+        let backend = SupervisorProcessFixture()
+        let lowPower = Mutex(true)
+        var policy = RunnerRuntimePolicy()
+        policy.batterySaverEnabled = true
+        let supervisor = RunnerSupervisorActor(processes: backend, recoveryPolicy: policy,
+            lowPowerMode: { lowPower.withLock { $0 } })
+        let config = configuration()
+        try await supervisor.configure(config)
+        try await supervisor.start(runnerID: config.runnerID)
+        let pending = try #require(await supervisor.snapshot(runnerID: config.runnerID)?.generation)
+        try await supervisor.cancelPendingStart(runnerID: config.runnerID, expectedGeneration: pending)
+        #expect(await supervisor.snapshot(runnerID: config.runnerID)?.phase == .stopped)
+        lowPower.withLock { $0 = false }
+        await supervisor.powerStateChanged()
+        #expect(await backend.starts.isEmpty)
+        try await supervisor.start(runnerID: config.runnerID)
+        await #expect(throws: RunnerSupervisionError.operationInProgress) {
+            try await supervisor.cancelPendingStart(runnerID: config.runnerID, expectedGeneration: pending)
+        }
+        #expect(await backend.stops.isEmpty)
+    }
+
+    @Test("Automatic recovery restarts one generation and quarantines the next failure at the threshold",
+          .timeLimit(.minutes(1)))
+    func automaticRecovery() async throws {
+        let backend = SupervisorProcessFixture()
+        let clock = RestartClockFixture()
+        var policy = RunnerRuntimePolicy()
+        policy.quarantineThreshold = 2
+        let supervisor = RunnerSupervisorActor(processes: backend, recoveryPolicy: policy,
+            recoverySleep: { try await clock.sleep(for: $0) })
+        var events = await supervisor.recoveryEvents().makeAsyncIterator()
+        let config = configuration()
+        try await supervisor.configure(config)
+        try await supervisor.start(runnerID: config.runnerID)
+        let first = try #require(await backend.starts.first)
+        await supervisor.processExited(.init(handle: first, status: 1))
+        #expect(await events.next()?.kind == .crash)
+        #expect(await supervisor.snapshot(runnerID: config.runnerID)?.phase == .waitingToRestart)
+        #expect(await backend.starts.count == 1)
+        #expect(await clock.advance() == .seconds(10))
+        let second = try #require(await backend.nextStart(after: first))
+        try await supervisor.start(runnerID: config.runnerID)
+        await supervisor.processExited(.init(handle: second, status: 1))
+        #expect(await events.next()?.kind == .quarantine)
+        #expect(await supervisor.snapshot(runnerID: config.runnerID)?.phase == .quarantined)
+        try await supervisor.configure(config)
+        #expect(await supervisor.snapshot(runnerID: config.runnerID)?.phase == .quarantined)
+        try await supervisor.start(runnerID: config.runnerID)
+        #expect(await backend.starts.count == 3)
+    }
+
+    @Test("A delayed confirmation cannot force-stop a replacement generation")
+    func forceStopGeneration() async throws {
+        let backend = SupervisorProcessFixture()
+        let supervisor = RunnerSupervisorActor(processes: backend)
+        let config = configuration()
+        try await supervisor.configure(config)
+        try await supervisor.start(runnerID: config.runnerID)
+        let first = try #require(await backend.starts.first)
+        try await supervisor.forceStop(runnerID: config.runnerID)
+        try await supervisor.start(runnerID: config.runnerID)
+        await #expect(throws: RunnerSupervisionError.operationInProgress) {
+            try await supervisor.forceStop(runnerID: config.runnerID, expectedGeneration: first.generation)
+        }
+        #expect(await backend.stops.count == 1)
+    }
+
     @Test("Storage cleanup reserves a stopped directory and cannot reserve a pending start")
     func storageReservation() async throws {
         let backend = SupervisorProcessFixture(gated: true)
@@ -391,6 +594,7 @@ private actor SupervisorProcessFixture: RunnerProcessControlling {
     private let failingGracefulStop: Bool
     private let failingFirstForcedStop: Bool
     private let started = AsyncStream<Void>.makeStream()
+    private let launches = AsyncStream<RunnerProcessHandle>.makeStream(bufferingPolicy: .bufferingNewest(1))
     private let stopping = AsyncStream<Void>.makeStream()
     private var pending: CheckedContinuation<Void, Never>?
     private var pendingStop: CheckedContinuation<Void, Never>?
@@ -405,6 +609,7 @@ private actor SupervisorProcessFixture: RunnerProcessControlling {
         let handle = RunnerProcessHandle(runnerID: configuration.runnerID, generation: generation,
             pid: Int32(starts.count + 100), startedAt: .now)
         starts.append(handle)
+        launches.continuation.yield(handle)
         if gated && starts.count == 1 {
             await withCheckedContinuation { pending = $0; started.continuation.yield(()); started.continuation.finish() }
         }
@@ -428,7 +633,53 @@ private actor SupervisorProcessFixture: RunnerProcessControlling {
         return listenerPID == handle.pid ? .idle : .unknown
     }
     func waitForStart() async { for await _ in started.stream { return } }
+    func nextStart(after previous: RunnerProcessHandle) async -> RunnerProcessHandle? {
+        for await launch in launches.stream where launch != previous { return launch }
+        return nil
+    }
     func release() { pending?.resume(); pending = nil }
     func waitForStop() async { for await _ in stopping.stream { return } }
     func releaseStop() { pendingStop?.resume(); pendingStop = nil }
+}
+
+private actor RestartClockFixture {
+    private let waiters = AsyncStream<Duration>.makeStream()
+    private var sleeper: CheckedContinuation<Void, Never>?
+
+    func sleep(for delay: Duration) async throws {
+        await withCheckedContinuation { continuation in
+            sleeper = continuation
+            waiters.continuation.yield(delay)
+        }
+        try Task.checkCancellation()
+    }
+
+    func advance() async -> Duration? {
+        for await delay in waiters.stream {
+            sleeper?.resume()
+            sleeper = nil
+            return delay
+        }
+        return nil
+    }
+}
+
+private actor RecoveryGate {
+    private let entered = AsyncStream<Void>.makeStream()
+    private var blocked: CheckedContinuation<Void, Never>?
+
+    func block() async {
+        await withCheckedContinuation { continuation in
+            blocked = continuation
+            entered.continuation.yield(())
+            entered.continuation.finish()
+        }
+    }
+
+    func waitUntilBlocked() async { for await _ in entered.stream { return } }
+
+    func release() {
+        blocked?.resume()
+        blocked = nil
+    }
 }
