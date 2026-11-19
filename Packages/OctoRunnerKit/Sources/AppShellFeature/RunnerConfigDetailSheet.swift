@@ -7,6 +7,7 @@ import SwiftData
 import SwiftUI
 
 public struct RunnerConfigDetailSheet: View {
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
@@ -34,10 +35,10 @@ public struct RunnerConfigDetailSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             headerBar
 
-            Picker("Config Section", selection: $selectedTab) {
-                Text("General & Labels").tag("general")
-                Text("Working Directory").tag("workspace")
-                Text("Autostart & Migration").tag("autostart")
+            Picker(AppLocalization.string("Config Section", locale: locale), selection: $selectedTab) {
+                Text(AppLocalization.string("General & Labels", locale: locale)).tag("general")
+                Text(AppLocalization.string("Working Directory", locale: locale)).tag("workspace")
+                Text(AppLocalization.string("Autostart & Migration", locale: locale)).tag("autostart")
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -98,11 +99,11 @@ public struct RunnerConfigDetailSheet: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 8) {
-                    Text("Runner Settings — \(runner.name)")
+                    Text(AppLocalization.string("Runner Settings — \(runner.name)", locale: locale))
                         .font(.system(size: 16, weight: .bold))
                     RunnerStatusBadge(status: runner.status)
                     if runner.isImportedLocal {
-                        Text("IMPORTED")
+                        Text(AppLocalization.string("Imported", locale: locale))
                             .font(.system(size: 9, weight: .bold, design: .monospaced))
                             .foregroundStyle(OctoTheme.accentBlue)
                             .padding(.horizontal, 5)
@@ -110,7 +111,7 @@ public struct RunnerConfigDetailSheet: View {
                             .background(OctoTheme.surfaceHighest, in: .rect(cornerRadius: 4))
                     }
                 }
-                Text("GitHub Runner ID: \(runner.githubRunnerId.map(String.init) ?? "Local") • Scope: \(runner.scopeUrlString)")
+                Text(AppLocalization.string("GitHub Runner ID: \(runner.githubRunnerId.map(String.init) ?? AppLocalization.string("Local", locale: locale)) • Scope: \(runner.scopeUrlString)", locale: locale))
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.secondary)
             }
@@ -120,12 +121,12 @@ public struct RunnerConfigDetailSheet: View {
 
     private var metadataAndLabelsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Runner Metadata & Assigned Capability Labels")
+            Text(AppLocalization.string("Runner Metadata & Assigned Capability Labels", locale: locale))
                 .font(.system(size: 13, weight: .semibold))
 
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Runner Name")
+                    Text(AppLocalization.string("Runner Name", locale: locale))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                     Text(runner.name)
@@ -136,10 +137,10 @@ public struct RunnerConfigDetailSheet: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Process / Background Status")
+                    Text(AppLocalization.string("Process / Background Status", locale: locale))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
-                    Text(runner.pid.map { "Active (PID \(String($0)))" } ?? "Standby / Offline")
+                    Text(runner.pid.map { AppLocalization.string("Active (PID \(String($0)))", locale: locale) } ?? AppLocalization.string("Standby / Offline", locale: locale))
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundStyle(runner.pid != nil ? OctoTheme.onlineGreen : .secondary)
                         .padding(8)
@@ -150,7 +151,7 @@ public struct RunnerConfigDetailSheet: View {
 
             Divider()
 
-            Text("Assigned Labels (Matched by Workflow 'runs-on:')")
+            Text(AppLocalization.string("Assigned Labels (Matched by Workflow 'runs-on:')", locale: locale))
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.secondary)
 
@@ -180,12 +181,12 @@ public struct RunnerConfigDetailSheet: View {
             .scrollIndicators(.hidden)
 
             HStack(spacing: 8) {
-                TextField("Add capability label (e.g. fastlane, ios-18, xcode-27)…", text: $newLabelInput)
+                TextField(AppLocalization.string("Add capability label (e.g. fastlane, ios-18, xcode-27)…", locale: locale), text: $newLabelInput)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 12, design: .monospaced))
                     .onSubmit(addCustomLabel)
 
-                Button("Add Label", systemImage: "plus", action: addCustomLabel)
+                Button(AppLocalization.string("Add Label", locale: locale), systemImage: "plus", action: addCustomLabel)
                     .buttonStyle(.bordered)
                     .disabled(newLabelInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
@@ -196,11 +197,11 @@ public struct RunnerConfigDetailSheet: View {
 
     private var workspaceAndFileSystemCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Workspace & APFS File System")
+            Text(AppLocalization.string("Workspace & APFS File System", locale: locale))
                 .font(.system(size: 13, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Runner Root Directory (.runner & bin/)")
+                Text(AppLocalization.string("Runner Root Directory (.runner & bin/)", locale: locale))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 HStack {
@@ -208,7 +209,7 @@ public struct RunnerConfigDetailSheet: View {
                         .font(.system(size: 11, design: .monospaced))
                         .lineLimit(1)
                     Spacer()
-                    Button("Open in Finder", systemImage: "folder", action: openRootInFinder)
+                    Button(AppLocalization.string("Open in Finder", locale: locale), systemImage: "folder", action: openRootInFinder)
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                 }
@@ -217,7 +218,7 @@ public struct RunnerConfigDetailSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Job Working Directory (_work)")
+                Text(AppLocalization.string("Job Working Directory (_work)", locale: locale))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 HStack {
@@ -225,7 +226,7 @@ public struct RunnerConfigDetailSheet: View {
                         .font(.system(size: 11, design: .monospaced))
                         .lineLimit(1)
                     Spacer()
-                    Button("Open _work", systemImage: "folder.badge.gearshape", action: openWorkInFinder)
+                    Button(AppLocalization.string("Open _work", locale: locale), systemImage: "folder.badge.gearshape", action: openWorkInFinder)
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                 }
@@ -244,12 +245,12 @@ public struct RunnerConfigDetailSheet: View {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.right.doc.on.clipboard")
                             .foregroundStyle(OctoTheme.accentBlue)
-                        Text("Migrate Imported Runner into OctoRunner Managed Pool")
+                        Text(AppLocalization.string("Migrate Imported Runner into OctoRunner Managed Pool", locale: locale))
                             .font(.system(size: 13, weight: .bold))
                     }
 
-                    Text(
-                        "This runner is currently located at its original folder (\(runner.rootDirectoryPath ?? "external path")). Clicking 'Migrate into OctoRunner' copies the runner configuration into OctoRunner's managed Application Support directory, sets up automatic background start on macOS login, and switches management to OctoRunner."
+                    Text(AppLocalization.string(
+                        "This runner is currently located at its original folder (\(runner.rootDirectoryPath ?? AppLocalization.string("external path", locale: locale))). Clicking 'Migrate into OctoRunner' copies the runner configuration into OctoRunner's managed Application Support directory, sets up automatic background start on macOS login, and switches management to OctoRunner.", locale: locale)
                     )
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
@@ -260,10 +261,10 @@ public struct RunnerConfigDetailSheet: View {
                         HStack(spacing: 6) {
                             if isMigrating {
                                 ProgressView().controlSize(.small)
-                                Text("Migrating Runner…")
+                                Text(AppLocalization.string("Migrating Runner…", locale: locale))
                             } else {
                                 Image(systemName: "bolt.horizontal.circle.fill")
-                                Text("Migrate into OctoRunner & Enable Autostart")
+                                Text(AppLocalization.string("Migrate into OctoRunner & Enable Autostart", locale: locale))
                             }
                         }
                     }
@@ -281,9 +282,9 @@ public struct RunnerConfigDetailSheet: View {
 
             Toggle(isOn: $registerBackgroundService) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Automatic Background Start on macOS Login")
+                    Text(AppLocalization.string("Automatic Background Start on macOS Login", locale: locale))
                         .font(.system(size: 12, weight: .semibold))
-                    Text("Service ID: \(runner.serviceLabel)")
+                    Text(AppLocalization.string("Service ID: \(runner.serviceLabel)", locale: locale))
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(.secondary)
                 }
@@ -296,12 +297,12 @@ public struct RunnerConfigDetailSheet: View {
 
     private var footerBar: some View {
         HStack {
-            Button("Reset Labels", action: resetLabels)
+            Button(AppLocalization.string("Reset Labels", locale: locale), action: resetLabels)
                 .buttonStyle(.borderless)
 
             Spacer()
 
-            Button("Cancel") {
+            Button(AppLocalization.string("Cancel", locale: locale)) {
                 dismiss()
             }
 
@@ -314,7 +315,7 @@ public struct RunnerConfigDetailSheet: View {
                     } else {
                         Image(systemName: "bolt.fill")
                     }
-                    Text("Save & Sync Labels")
+                    Text(AppLocalization.string("Save & Sync Labels", locale: locale))
                 }
             }
             .buttonStyle(.borderedProminent)
@@ -379,7 +380,7 @@ public struct RunnerConfigDetailSheet: View {
                 newValue: migratedRoot.path()
             )
             try? modelContext.save()
-            statusBannerMessage = "Successfully migrated '\(runner.name)' into OctoRunner!"
+            statusBannerMessage = AppLocalization.string("Successfully migrated '\(runner.name)' into OctoRunner!", locale: locale)
         } catch {
             errorMessage = error.localizedDescription
         }

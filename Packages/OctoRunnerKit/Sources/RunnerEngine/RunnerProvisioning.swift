@@ -10,7 +10,7 @@ public protocol RunnerProvisioning: Sendable {
         registerLaunchAgent: Bool,
         accessToken: String,
         configuration: RunnerLaunchConfiguration,
-        onStatusUpdate: @MainActor @Sendable (String) -> Void
+        onStatusUpdate: @MainActor @Sendable (RunnerProvisioningProgress) -> Void
     ) async throws -> [ProvisionedRunnerSummary]
 }
 

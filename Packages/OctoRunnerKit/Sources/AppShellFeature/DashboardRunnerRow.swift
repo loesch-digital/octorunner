@@ -3,6 +3,7 @@ import DesignSystem
 import SwiftUI
 
 public struct DashboardRunnerRow: View {
+    @Environment(\.locale) private var locale
     let runner: RunnerEntity
     let lastJob: WorkflowHistoryEntry?
     let openLog: () -> Void
@@ -72,7 +73,7 @@ public struct DashboardRunnerRow: View {
             HStack(spacing: 8) {
                 RunnerStatusBadge(status: runner.status)
                     .fixedSize()
-                Text(runner.isImportedLocal ? String(localized: "Imported", bundle: .module) : String(localized: "Managed", bundle: .module))
+                Text(Self.ownershipLabel(imported: runner.isImportedLocal, locale: locale))
                     .lineLimit(1)
                 if let version = runner.runnerVersion {
                     Text("v\(version)").lineLimit(1).truncationMode(.middle)
@@ -92,7 +93,7 @@ public struct DashboardRunnerRow: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .help(runner.labels.joined(separator: ", "))
-                    .accessibilityLabel("Labels: \(runner.labels.joined(separator: ", "))")
+                    .accessibilityLabel(AppLocalization.string("Labels: \(runner.labels.joined(separator: ", "))", locale: locale))
             }
         }
         .padding(10)
@@ -101,4 +102,8 @@ public struct DashboardRunnerRow: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Runner \(runner.name)")
     }
+    static func ownershipLabel(imported: Bool, locale: Locale) -> String {
+        AppLocalization.string(imported ? "Imported" : "Managed", locale: locale)
+    }
+
 }

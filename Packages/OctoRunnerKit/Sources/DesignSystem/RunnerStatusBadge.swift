@@ -2,6 +2,7 @@ import CoreModels
 import SwiftUI
 
 public struct RunnerStatusBadge: View {
+    @Environment(\.locale) private var locale
     private let status: RunnerStatus
 
     public init(status: RunnerStatus) {
@@ -15,7 +16,7 @@ public struct RunnerStatusBadge: View {
                 .frame(width: 7, height: 7)
                 .accessibilityHidden(true)
 
-            Text(status.badgeTitle)
+            Text(status.localizedBadgeTitle(locale: locale))
                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                 .foregroundStyle(OctoTheme.statusColor(for: status))
         }
@@ -26,7 +27,7 @@ public struct RunnerStatusBadge: View {
             in: .capsule
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Runner Status")
-        .accessibilityValue(status.badgeTitle)
+        .accessibilityLabel(Text("Runner Status", bundle: .module))
+        .accessibilityValue(status.localizedBadgeTitle(locale: locale))
     }
 }

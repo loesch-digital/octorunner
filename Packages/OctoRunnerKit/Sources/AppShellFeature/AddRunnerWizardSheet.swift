@@ -5,6 +5,7 @@ import SwiftData
 import SwiftUI
 
 public struct AddRunnerWizardSheet: View {
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(AppPreferencesStore.self) private var preferences
@@ -61,9 +62,9 @@ public struct AddRunnerWizardSheet: View {
                 .background(OctoTheme.surfaceHigh, in: .rect(cornerRadius: 10))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Add Self-Hosted Runner Setup Wizard")
+                Text(AppLocalization.string("Add Self-Hosted Runner Setup Wizard", locale: locale))
                     .font(.system(size: 17, weight: .bold))
-                Text("Configure target scope, parallel runner instances, labels & automatic background start.")
+                Text(AppLocalization.string("Configure target scope, parallel runner instances, labels & automatic background start.", locale: locale))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -90,20 +91,20 @@ public struct AddRunnerWizardSheet: View {
     private func scopePickerSection(bindableVM: AddRunnerWizardViewModel) -> some View {
         @Bindable var vm = bindableVM
         return VStack(alignment: .leading, spacing: 8) {
-            Text("1. Runner Registration Scope")
+            Text(AppLocalization.string("1. Runner Registration Scope", locale: locale))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
 
-            Picker("Scope", selection: $vm.selectedScope) {
-                Text("Single Repository").tag(RunnerScopeType.repository)
-                Text("Personal Account (Multi-Repo)").tag(RunnerScopeType.personalMultiRepo)
-                Text("Organization Pool").tag(RunnerScopeType.organization)
+            Picker(AppLocalization.string("Scope", locale: locale), selection: $vm.selectedScope) {
+                Text(AppLocalization.string("Single Repository", locale: locale)).tag(RunnerScopeType.repository)
+                Text(AppLocalization.string("Personal Account (Multi-Repo)", locale: locale)).tag(RunnerScopeType.personalMultiRepo)
+                Text(AppLocalization.string("Organization Pool", locale: locale)).tag(RunnerScopeType.organization)
             }
             .pickerStyle(.menu)
-            .accessibilityLabel("Runner registration scope")
-            .accessibilityHint("Select one repository, multiple personal repositories, or an organization pool")
+            .accessibilityLabel(AppLocalization.string("Runner registration scope", locale: locale))
+            .accessibilityHint(AppLocalization.string("Select one repository, multiple personal repositories, or an organization pool", locale: locale))
 
-            infoCallout(vm.scopeExplanationText)
+            infoCallout(AppLocalization.string(String.LocalizationValue(stringLiteral: vm.scopeExplanationText), locale: locale))
         }
         .padding(12)
         .background(OctoTheme.surface, in: .rect(cornerRadius: 8))
@@ -121,10 +122,10 @@ public struct AddRunnerWizardSheet: View {
                     ProgressView().controlSize(.small)
                 } else if vm.selectedScope == .personalMultiRepo && !vm.repositories.isEmpty {
                     HStack(spacing: 8) {
-                        Button("Select All", action: vm.selectAllRepositories)
+                        Button(AppLocalization.string("Select All", locale: locale), action: vm.selectAllRepositories)
                             .buttonStyle(.borderless)
                             .font(.system(size: 11))
-                        Button("Clear", action: vm.deselectAllRepositories)
+                        Button(AppLocalization.string("Clear", locale: locale), action: vm.deselectAllRepositories)
                             .buttonStyle(.borderless)
                             .font(.system(size: 11))
                     }
@@ -134,15 +135,15 @@ public struct AddRunnerWizardSheet: View {
             switch vm.selectedScope {
             case .repository:
                 if !vm.repositories.isEmpty {
-                    Picker("Repository", selection: $vm.selectedRepositoryFullName) {
+                    Picker(AppLocalization.string("Repository", locale: locale), selection: $vm.selectedRepositoryFullName) {
                         ForEach(vm.repositories) { repo in
-                            Text("\(repo.fullName)\(repo.isPrivate ? " (Private)" : "")")
+                            Text(repo.fullName + (repo.isPrivate ? AppLocalization.string("Private repository suffix", locale: locale) : ""))
                                 .tag(repo.fullName)
                         }
                     }
                     .labelsHidden()
                 }
-                TextField("Or enter owner/repo manually (e.g. loesch-digital/itemflux-ios-app)", text: $vm.manualTargetInput)
+                TextField(AppLocalization.string("Or enter owner/repo manually (e.g. loesch-digital/itemflux-ios-app)", locale: locale), text: $vm.manualTargetInput)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 12, design: .monospaced))
 
@@ -165,7 +166,7 @@ public struct AddRunnerWizardSheet: View {
                                             .truncationMode(.middle)
                                             .help(repo.fullName)
                                         if repo.isPrivate {
-                                            Text("PRIVATE")
+                                            Text(AppLocalization.string("PRIVATE", locale: locale))
                                                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
                                                 .foregroundStyle(.secondary)
                                                 .padding(.horizontal, 4)
@@ -180,29 +181,29 @@ public struct AddRunnerWizardSheet: View {
                                 }
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Repository \(repo.fullName)")
-                                .accessibilityValue(isChecked ? "Selected" : "Not selected")
-                                .accessibilityHint("Toggles this repository in the runner setup")
+                                .accessibilityValue(isChecked ? AppLocalization.string("Selected", locale: locale) : AppLocalization.string("Not selected", locale: locale))
+                                .accessibilityHint(AppLocalization.string("Toggles this repository in the runner setup", locale: locale))
                             }
                         }
                     }
                     .frame(maxHeight: 115)
                     .background(OctoTheme.surfaceLowest, in: .rect(cornerRadius: 6))
                 } else {
-                    TextField("Enter owner/repo (e.g. loesch-digital/itemflux-ios-app)", text: $vm.manualTargetInput)
+                    TextField(AppLocalization.string("Enter owner/repo (e.g. loesch-digital/itemflux-ios-app)", locale: locale), text: $vm.manualTargetInput)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 12, design: .monospaced))
                 }
 
             case .organization:
                 if !vm.organizations.isEmpty {
-                    Picker("Organization", selection: $vm.selectedOrganizationLogin) {
+                    Picker(AppLocalization.string("Organization", locale: locale), selection: $vm.selectedOrganizationLogin) {
                         ForEach(vm.organizations) { org in
                             Text(org.login).tag(org.login)
                         }
                     }
                     .labelsHidden()
                 }
-                TextField("Or enter organization slug (e.g. loesch-digital)", text: $vm.manualTargetInput)
+                TextField(AppLocalization.string("Or enter organization slug (e.g. loesch-digital)", locale: locale), text: $vm.manualTargetInput)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 12, design: .monospaced))
             }
@@ -214,28 +215,28 @@ public struct AddRunnerWizardSheet: View {
     private func targetSectionTitle(for scope: RunnerScopeType) -> String {
         switch scope {
         case .repository:
-            return "2. Target GitHub Repository (Single Selection)"
+            return AppLocalization.string("2. Target GitHub Repository (Single Selection)", locale: locale)
         case .personalMultiRepo:
-            return "2. Select Repositories (\(viewModel.selectedRepositoryFullNames.count) selected)"
+            return AppLocalization.string("2. Select Repositories (\(viewModel.selectedRepositoryFullNames.count) selected)", locale: locale)
         case .organization:
-            return "2. Target GitHub Organization"
+            return AppLocalization.string("2. Target GitHub Organization", locale: locale)
         }
     }
 
     private func instanceCountAndNamingSection(bindableVM: AddRunnerWizardViewModel) -> some View {
         @Bindable var vm = bindableVM
         return VStack(alignment: .leading, spacing: 8) {
-            Text("3. Base Runner Prefix & Parallel Instance Count")
+            Text(AppLocalization.string("3. Base Runner Prefix & Parallel Instance Count", locale: locale))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             infoCallout(
-                "GitHub requires a unique name for each runner. The Base Prefix (e.g. 'mac-runner') is combined with the instance number ('mac-runner-1', 'mac-runner-2'). Each instance gets its own isolated '_work' folder so multiple CI jobs can run in parallel."
+                AppLocalization.string("GitHub requires a unique name for each runner. The Base Prefix (e.g. 'mac-runner') is combined with the instance number ('mac-runner-1', 'mac-runner-2'). Each instance gets its own isolated '_work' folder so multiple CI jobs can run in parallel.", locale: locale)
             )
 
             HStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Base Runner Prefix")
+                    Text(AppLocalization.string("Base Runner Prefix", locale: locale))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                     TextField("mac-runner", text: $vm.baseNamePrefix)
@@ -248,9 +249,9 @@ public struct AddRunnerWizardSheet: View {
 
                 Stepper(value: $vm.instanceCount, in: 1...8) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("\(vm.instanceCount) Instance\(vm.instanceCount > 1 ? "s" : "")")
+                        Text(AppLocalization.string("Instances: \(vm.instanceCount)", locale: locale))
                             .font(.system(size: 13, weight: .bold, design: .monospaced))
-                        Text("Parallel _work folders")
+                        Text(AppLocalization.string("Parallel _work folders", locale: locale))
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                     }
@@ -278,12 +279,12 @@ public struct AddRunnerWizardSheet: View {
     private func labelsSection(bindableVM: AddRunnerWizardViewModel) -> some View {
         @Bindable var vm = bindableVM
         return VStack(alignment: .leading, spacing: 8) {
-            Text("4. Runner Labels (Workflow 'runs-on' Matching)")
+            Text(AppLocalization.string("4. Runner Labels (Workflow 'runs-on' Matching)", locale: locale))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             infoCallout(
-                "GitHub Actions workflows use 'runs-on: [self-hosted, macos, arm64]' to route jobs to matching runners. Click any label below to toggle it or add custom capability tags (like 'fastlane')."
+                AppLocalization.string("GitHub Actions workflows use 'runs-on: [self-hosted, macos, arm64]' to route jobs to matching runners. Click any label below to toggle it or add custom capability tags (like 'fastlane').", locale: locale)
             )
 
             ScrollView(.horizontal) {
@@ -314,13 +315,13 @@ public struct AddRunnerWizardSheet: View {
             .scrollIndicators(.hidden)
 
             HStack(spacing: 8) {
-                TextField("Add custom label (e.g. fastlane, testflight)…", text: $vm.customLabelInput)
+                TextField(AppLocalization.string("Add custom label (e.g. fastlane, testflight)…", locale: locale), text: $vm.customLabelInput)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 12, design: .monospaced))
                     .onSubmit {
                         vm.addCustomLabel()
                     }
-                Button("Add Label", systemImage: "plus", action: vm.addCustomLabel)
+                Button(AppLocalization.string("Add Label", locale: locale), systemImage: "plus", action: vm.addCustomLabel)
                     .buttonStyle(.bordered)
                     .disabled(vm.customLabelInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
@@ -333,7 +334,7 @@ public struct AddRunnerWizardSheet: View {
         @Bindable var vm = bindableVM
         return Toggle(isOn: $vm.registerLaunchAgent) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Automatic Background Start (Run on macOS Login)")
+                Text(AppLocalization.string("Automatic Background Start (Run on macOS Login)", locale: locale))
                     .font(.system(size: 12, weight: .semibold))
                 Text("Installs a runner LaunchAgent that starts at login. The restart policy and PATH come from Settings.", bundle: .module)
                     .font(.system(size: 11))
@@ -347,7 +348,7 @@ public struct AddRunnerWizardSheet: View {
 
     private var footerActions: some View {
         HStack {
-            Button("Cancel") {
+            Button(AppLocalization.string("Cancel", locale: locale)) {
                 dismiss()
             }
             .disabled(viewModel.isProvisioning)
@@ -374,18 +375,18 @@ public struct AddRunnerWizardSheet: View {
                 HStack(spacing: 6) {
                     if viewModel.isProvisioning {
                         ProgressView().controlSize(.small)
-                        Text("Provisioning…")
+                        Text(AppLocalization.string("Provisioning…", locale: locale))
                     } else {
                         Image(systemName: "bolt.fill")
-                        Text("Create & Start \(viewModel.plannedRunnerCount) Runner\(viewModel.plannedRunnerCount == 1 ? "" : "s")")
+                        Text(AppLocalization.string("Create & Start (\(viewModel.plannedRunnerCount))", locale: locale))
                     }
                 }
             }
             .buttonStyle(.borderedProminent)
             .tint(OctoTheme.accentBlue)
             .disabled(viewModel.isProvisioning || viewModel.plannedRunnerCount == 0)
-            .accessibilityLabel("Create and start \(viewModel.plannedRunnerCount) runners")
-            .accessibilityHint("Creates the selected number of instances for every selected target")
+            .accessibilityLabel(AppLocalization.string("Create and start \(viewModel.plannedRunnerCount) runners", locale: locale))
+            .accessibilityHint(AppLocalization.string("Creates the selected number of instances for every selected target", locale: locale))
         }
     }
 }

@@ -114,6 +114,7 @@ struct WorkflowRunDetailView: View {
         case .authenticationRequired: "Reconnect this GitHub account to load history"
         case .permissionDenied: "This token cannot read Actions for the selected repository"
         case .rateLimited: "GitHub rate limit reached; refresh is paused"
+        case .resourceNotFound: "GitHub could not find this Actions resource or it is not visible to this account (HTTP 404)."
         case .tooManyPages: "Job details exceeded the safe pagination limit"
         case .unavailable: "Job details could not be loaded. Open GitHub or try again."
         }

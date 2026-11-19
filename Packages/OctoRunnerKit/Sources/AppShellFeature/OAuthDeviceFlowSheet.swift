@@ -5,6 +5,7 @@ import SwiftData
 import SwiftUI
 
 public struct OAuthDeviceFlowSheet: View {
+    @Environment(\.locale) private var locale
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: OAuthDeviceFlowViewModel
@@ -34,11 +35,11 @@ public struct OAuthDeviceFlowSheet: View {
             HStack(spacing: 8) {
                 Image(systemName: "terminal.fill")
                     .foregroundStyle(OctoTheme.accentBlue)
-                Text("OctoRunner — GitHub Authentication")
+                Text(AppLocalization.string("OctoRunner — GitHub Authentication", locale: locale))
                     .font(.system(size: 13, weight: .semibold))
             }
             Spacer()
-            Button("Close", systemImage: "xmark.circle.fill") {
+            Button(AppLocalization.string("Close", locale: locale), systemImage: "xmark.circle.fill") {
                 viewModel.cancelFlow()
                 dismiss()
             }
@@ -80,7 +81,7 @@ public struct OAuthDeviceFlowSheet: View {
                     Circle()
                         .fill(OctoTheme.onlineGreen)
                         .frame(width: 6, height: 6)
-                    Text("READY")
+                    Text(AppLocalization.string("READY", locale: locale))
                         .font(.system(size: 8, weight: .bold, design: .monospaced))
                 }
                 .padding(.horizontal, 6)
@@ -92,10 +93,10 @@ public struct OAuthDeviceFlowSheet: View {
             VStack(spacing: 4) {
                 Text("OctoRunner")
                     .font(.system(size: 21, weight: .bold))
-                Text("FOR GITHUB ACTIONS")
+                Text(AppLocalization.string("FOR GITHUB ACTIONS", locale: locale))
                     .font(.system(size: 10, weight: .semibold, design: .monospaced))
                     .foregroundStyle(OctoTheme.accentBlue)
-                Text("Manage your local macOS runners securely with native background persistence.")
+                Text(AppLocalization.string("Manage your local macOS runners securely with native background persistence.", locale: locale))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -103,7 +104,7 @@ public struct OAuthDeviceFlowSheet: View {
             }
 
             if let errorMessage = viewModel.errorMessage {
-                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                Label(errorMessage.localized(locale: locale), systemImage: "exclamationmark.triangle.fill")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(OctoTheme.errorRed)
                     .padding(.horizontal, 12)
@@ -118,10 +119,10 @@ public struct OAuthDeviceFlowSheet: View {
                     if viewModel.state == .requestingDeviceCode {
                         ProgressView()
                             .controlSize(.small)
-                        Text("Requesting Device Code & Opening Browser...")
+                        Text(AppLocalization.string("Requesting Device Code & Opening Browser...", locale: locale))
                     } else {
                         Image(systemName: "person.badge.key.fill")
-                        Text("Sign in with GitHub (OAuth Device Flow)")
+                        Text(AppLocalization.string("Sign in with GitHub (OAuth Device Flow)", locale: locale))
                         Image(systemName: "arrow.up.right.square")
                     }
                 }
@@ -134,7 +135,7 @@ public struct OAuthDeviceFlowSheet: View {
 
             HStack {
                 Rectangle().fill(OctoTheme.outlineVariant.opacity(0.4)).frame(height: 1)
-                Text("OR")
+                Text(AppLocalization.string("OR", locale: locale))
                     .font(.system(size: 10, weight: .semibold, design: .monospaced))
                     .foregroundStyle(.secondary)
                 Rectangle().fill(OctoTheme.outlineVariant.opacity(0.4)).frame(height: 1)
@@ -148,7 +149,7 @@ public struct OAuthDeviceFlowSheet: View {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 10))
                     .foregroundStyle(OctoTheme.onlineGreen)
-                Text("OAuth: repo and admin:org for runner management. Fine-grained PATs can limit access to selected repositories. Stored in macOS Keychain.")
+                Text(AppLocalization.string("OAuth: repo and admin:org for runner management. Fine-grained PATs can limit access to selected repositories. Stored in macOS Keychain.", locale: locale))
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
@@ -159,10 +160,10 @@ public struct OAuthDeviceFlowSheet: View {
     private var patInputCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Label("Or enter a Personal Access Token (PAT) manually", systemImage: "key.fill")
+                Label(AppLocalization.string("Or enter a Personal Access Token (PAT) manually", locale: locale), systemImage: "key.fill")
                     .font(.system(size: 11, weight: .medium))
                 Spacer()
-                Link("Create Token ↗", destination: URL(string: "https://github.com/settings/tokens")!)
+                Link(AppLocalization.string("Create Token ↗", locale: locale), destination: URL(string: "https://github.com/settings/tokens")!)
                     .font(.system(size: 10, design: .monospaced))
             }
 
@@ -178,7 +179,7 @@ public struct OAuthDeviceFlowSheet: View {
                 .font(.system(size: 12, design: .monospaced))
 
                 Button(
-                    viewModel.isPATVisible ? "Hide Token" : "Show Token",
+                    viewModel.isPATVisible ? AppLocalization.string("Hide Token", locale: locale) : AppLocalization.string("Show Token", locale: locale),
                     systemImage: viewModel.isPATVisible ? "eye.slash" : "eye"
                 ) {
                     viewModel.isPATVisible.toggle()
@@ -195,7 +196,7 @@ public struct OAuthDeviceFlowSheet: View {
                         } else {
                             Image(systemName: "checkmark.seal.fill")
                         }
-                        Text("Validate & Connect")
+                        Text(AppLocalization.string("Validate & Connect", locale: locale))
                     }
                     .font(.system(size: 11, weight: .medium))
                 }
@@ -215,24 +216,24 @@ public struct OAuthDeviceFlowSheet: View {
 
     private func pollingStateView(_ response: GitHubDeviceCodeResponse) -> some View {
         VStack(spacing: 14) {
-            Text("GitHub Device Authorization")
+            Text(AppLocalization.string("GitHub Device Authorization", locale: locale))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(OctoTheme.accentBlue)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background(OctoTheme.accentBlue.opacity(0.15), in: .capsule)
 
-            Text("Enter this code on GitHub")
+            Text(AppLocalization.string("Enter this code on GitHub", locale: locale))
                 .font(.system(size: 20, weight: .bold))
 
-            Text("We opened github.com/login/device in your default browser and copied the code to your clipboard.")
+            Text(AppLocalization.string("We opened github.com/login/device in your default browser and copied the code to your clipboard.", locale: locale))
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 440)
 
             VStack(spacing: 10) {
-                Text("YOUR ONE-TIME DEVICE CODE")
+                Text(AppLocalization.string("YOUR ONE-TIME DEVICE CODE", locale: locale))
                     .font(.system(size: 10, weight: .semibold, design: .monospaced))
                     .foregroundStyle(.secondary)
 
@@ -246,7 +247,7 @@ public struct OAuthDeviceFlowSheet: View {
                         viewModel.copyUserCode(response.userCode)
                     } label: {
                         Label(
-                            viewModel.copiedToClipboard ? "Copied" : "Copy Code",
+                            viewModel.copiedToClipboard ? AppLocalization.string("Copied", locale: locale) : AppLocalization.string("Copy Code", locale: locale),
                             systemImage: viewModel.copiedToClipboard ? "checkmark" : "doc.on.doc"
                         )
                         .font(.system(size: 12, weight: .semibold))
@@ -255,7 +256,7 @@ public struct OAuthDeviceFlowSheet: View {
                 }
 
                 if viewModel.copiedToClipboard {
-                    Text("✓ Code copied to clipboard — paste with ⌘V in your browser")
+                    Text(AppLocalization.string("✓ Code copied to clipboard — paste with ⌘V in your browser", locale: locale))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(OctoTheme.onlineGreen)
                 }
@@ -271,7 +272,7 @@ public struct OAuthDeviceFlowSheet: View {
             HStack(spacing: 8) {
                 ProgressView()
                     .controlSize(.small)
-                Text("Waiting for browser confirmation • Checking every \(response.interval)s...")
+                Text(AppLocalization.string("Waiting for browser confirmation • Checking every \(response.interval)s...", locale: locale))
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.secondary)
             }
@@ -284,7 +285,7 @@ public struct OAuthDeviceFlowSheet: View {
                     viewModel.openVerificationPage(response)
                 } label: {
                     HStack(spacing: 6) {
-                        Text("Open github.com/login/device in Browser")
+                        Text(AppLocalization.string("Open github.com/login/device in Browser", locale: locale))
                         Image(systemName: "arrow.up.right.square")
                     }
                     .font(.system(size: 12, weight: .semibold))
@@ -292,7 +293,7 @@ public struct OAuthDeviceFlowSheet: View {
                 .buttonStyle(.borderedProminent)
                 .tint(OctoTheme.accentBlue)
 
-                Button("Cancel", role: .cancel, action: viewModel.cancelFlow)
+                Button(AppLocalization.string("Cancel", locale: locale), role: .cancel, action: viewModel.cancelFlow)
                     .buttonStyle(.bordered)
             }
         }
@@ -307,10 +308,10 @@ public struct OAuthDeviceFlowSheet: View {
                 .font(.system(size: 46))
                 .foregroundStyle(OctoTheme.onlineGreen)
 
-            Text("Connected Successfully!")
+            Text(AppLocalization.string("Connected Successfully!", locale: locale))
                 .font(.system(size: 20, weight: .bold))
 
-            Text("Authorized as @\(session.user.login)")
+            Text(AppLocalization.string("Authorized as @\(session.user.login)", locale: locale))
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
                 .foregroundStyle(OctoTheme.accentBlue)
 
@@ -356,12 +357,12 @@ public struct OAuthDeviceFlowSheet: View {
                 Circle()
                     .fill(OctoTheme.onlineGreen)
                     .frame(width: 6, height: 6)
-                Text("Client ID: \(GitHubOAuthConfig.defaultClientID)")
+                Text(AppLocalization.string("Client ID: \(GitHubOAuthConfig.defaultClientID)", locale: locale))
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text("Apple Silicon (arm64) native")
+            Text(AppLocalization.string("Apple Silicon (arm64) native", locale: locale))
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundStyle(OctoTheme.onlineGreen)
         }

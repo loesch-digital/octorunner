@@ -3,6 +3,7 @@ import AppShellFeature
 import CoreModels
 import Foundation
 import GitHubAPI
+import RunnerEngine
 import SwiftData
 import SwiftUI
 import Synchronization
@@ -103,8 +104,8 @@ struct ResponsiveLayoutTests {
         #expect(vm.plannedRunnerCount == 1)
     }
 
-    @Test("New Runner honors finite viewport sizes with many repositories, labels and long names")
-    func populatedWizardFitsViewport() throws {
+    @Test("New Runner honors finite viewport sizes with many repositories, labels and long names", arguments: ["de", "en"])
+    func populatedWizardFitsViewport(language: String) throws {
         let container = try OctoRunnerPersistence.makeInMemoryContainer()
         Self.retainedContainers.append(container)
         let vm = AddRunnerWizardViewModel()
@@ -123,13 +124,13 @@ struct ResponsiveLayoutTests {
         let preferences = AppPreferencesStore(defaults: defaults)
         for appearance in [ColorScheme.light, .dark] {
             for feedbackVisible in [false, true] {
-                vm.errorMessage = feedbackVisible ? String(repeating: "Provisioning failed for a repository with a long name. ", count: 20) : nil
-                vm.provisioningProgressMessage = feedbackVisible ? "Preparing runner 640 of 640 for organization-with-a-long-name/repository-with-a-long-name" : nil
+                vm.errorMessage = feedbackVisible ? .failure(RunnerEngineError.downloadFailed(String(repeating: "Example diagnostic detail. ", count: 20))) : nil
+                vm.provisioningProgressMessage = feedbackVisible ? .verifyingBinary(filename: String(repeating: "long-archive-name-", count: 15)) : nil
                 for viewport in [CGSize(width: 560, height: 480), CGSize(width: 640, height: 640), CGSize(width: 900, height: 800)] {
                     let measurement = LayoutMeasurement()
                     let host = NSHostingView(rootView: FixedTestViewport(size: viewport, measurement: measurement) {
                         AddRunnerWizardSheet(viewModel: vm)
-                    }.environment(preferences).modelContainer(container).preferredColorScheme(appearance))
+                    }.environment(preferences).modelContainer(container).environment(\.locale, Locale(identifier: language)).preferredColorScheme(appearance))
                     host.appearance = NSAppearance(named: appearance == .dark ? .darkAqua : .aqua)
                     host.frame = CGRect(origin: .zero, size: viewport)
                     host.layoutSubtreeIfNeeded()
@@ -142,7 +143,7 @@ struct ResponsiveLayoutTests {
                     #expect(measured.height <= viewport.height, "Proposed: \(viewport), child: \(measured)")
                     #expect(measured.width > 0 && measured.height > 0)
                     if let path = ProcessInfo.processInfo.environment["OCTORUNNER_LAYOUT_CAPTURE_DIR"] {
-                        let url = URL(fileURLWithPath: path).appending(path: "wizard-\(Int(viewport.width))x\(Int(viewport.height))-\(appearance == .dark ? "dark" : "light")-\(feedbackVisible ? "feedback" : "normal").png")
+                        let url = URL(fileURLWithPath: path).appending(path: "wizard-\(language)-\(Int(viewport.width))x\(Int(viewport.height))-\(appearance == .dark ? "dark" : "light")-\(feedbackVisible ? "feedback" : "normal").png")
                         try #require(bitmap.representation(using: .png, properties: [:])).write(to: url)
                     }
                 }

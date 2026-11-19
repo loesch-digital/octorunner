@@ -14,6 +14,7 @@ public enum RunnerConsoleLogTab: String, CaseIterable, Identifiable, Sendable {
 }
 
 public struct RunnerConsoleLogSheet: View {
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     public let runner: RunnerEntity
 
@@ -107,20 +108,20 @@ public struct RunnerConsoleLogSheet: View {
 
             HStack(spacing: 8) {
                 if let url = URL(string: runner.scopeUrlString) {
-                    Button("Open in GitHub", systemImage: "safari") {
+                    Button(AppLocalization.string("Open in GitHub", locale: locale), systemImage: "safari") {
                         NSWorkspace.shared.open(url)
                     }
                     .controlSize(.small)
                     .buttonStyle(.bordered)
                 }
 
-                Button("Diagnostic Folder (_diag)", systemImage: "folder") {
+                Button(AppLocalization.string("Diagnostic Folder (_diag)", locale: locale), systemImage: "folder") {
                     openDiagDirectory()
                 }
                 .controlSize(.small)
                 .buttonStyle(.bordered)
 
-                Button("Close", systemImage: "xmark.circle.fill") {
+                Button(AppLocalization.string("Close", locale: locale), systemImage: "xmark.circle.fill") {
                     dismiss()
                 }
                 .labelStyle(.iconOnly)
@@ -134,9 +135,9 @@ public struct RunnerConsoleLogSheet: View {
 
     private var tabBarSection: some View {
         HStack(spacing: 12) {
-            Picker("Log Tab", selection: $selectedTab) {
+            Picker(AppLocalization.string("Log Tab", locale: locale), selection: $selectedTab) {
                 ForEach(RunnerConsoleLogTab.allCases) { tab in
-                    Text(tab.rawValue).tag(tab)
+                    Text(AppLocalization.string(String.LocalizationValue(stringLiteral: tab.rawValue), locale: locale)).tag(tab)
                 }
             }
             .labelsHidden()
@@ -145,12 +146,12 @@ public struct RunnerConsoleLogSheet: View {
 
             Spacer()
 
-            TextField("Filter log output…", text: $filterText)
+            TextField(AppLocalization.string("Filter log output…", locale: locale), text: $filterText)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 11, design: .monospaced))
                 .frame(width: 190)
 
-            Button("Refresh", systemImage: "arrow.clockwise") {
+            Button(AppLocalization.string("Refresh", locale: locale), systemImage: "arrow.clockwise") {
                 Task { await reloadLogs() }
             }
             .labelStyle(.iconOnly)
@@ -168,7 +169,7 @@ public struct RunnerConsoleLogSheet: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 3) {
                     if filteredLogLines.isEmpty {
-                        Text("No diagnostic log entries matching current filter.")
+                        Text(AppLocalization.string("No diagnostic log entries matching current filter.", locale: locale))
                             .font(.system(size: 11, design: .monospaced))
                             .foregroundStyle(.secondary)
                             .padding(14)
@@ -200,13 +201,13 @@ public struct RunnerConsoleLogSheet: View {
         case .diagnostics:
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Runner Diagnostic Summary")
+                    Text(AppLocalization.string("Runner Diagnostic Summary", locale: locale))
                         .font(.system(size: 13, weight: .bold, design: .monospaced))
-                    envRow("GitHub Agent ID", runner.githubRunnerId.map { String($0) } ?? "Unregistered")
-                    envRow("Listener PID", runner.pid.map { String($0) } ?? "Not running")
-                    envRow("Current Status", runner.status.rawValue.uppercased())
-                    envRow("Last Heartbeat", runner.lastHeartbeat.formatted(date: .abbreviated, time: .standard))
-                    envRow("Diagnostic Logs Loaded", "\(logLines.count) lines")
+                    envRow(AppLocalization.string("GitHub Agent ID", locale: locale), runner.githubRunnerId.map { String($0) } ?? AppLocalization.string("Unregistered", locale: locale))
+                    envRow(AppLocalization.string("Listener PID", locale: locale), runner.pid.map { String($0) } ?? AppLocalization.string("Not running", locale: locale))
+                    envRow(AppLocalization.string("Current Status", locale: locale), runner.status.localizedBadgeTitle(locale: locale))
+                    envRow(AppLocalization.string("Last Heartbeat", locale: locale), runner.lastHeartbeat.formatted(date: .abbreviated, time: .standard))
+                    envRow(AppLocalization.string("Diagnostic Logs Loaded", locale: locale), AppLocalization.string("\(logLines.count) lines", locale: locale))
                 }
                 .padding(18)
             }
@@ -256,17 +257,17 @@ public struct RunnerConsoleLogSheet: View {
 
     private var footerSection: some View {
         HStack(spacing: 12) {
-            Toggle("Auto-scroll", isOn: $autoScroll)
+            Toggle(AppLocalization.string("Auto-scroll", locale: locale), isOn: $autoScroll)
                 .toggleStyle(.checkbox)
                 .font(.system(size: 11))
 
-            Text("\(filteredLogLines.count) lines")
+            Text(AppLocalization.string("\(filteredLogLines.count) lines", locale: locale))
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.secondary)
 
             Spacer()
 
-            Button("Copy All Logs", systemImage: "doc.on.doc") {
+            Button(AppLocalization.string("Copy All Logs", locale: locale), systemImage: "doc.on.doc") {
                 let combined = filteredLogLines
                     .map { "[\($0.timestampText) \($0.level.rawValue)] \($0.message)" }
                     .joined(separator: "\n")
@@ -276,13 +277,13 @@ public struct RunnerConsoleLogSheet: View {
             .buttonStyle(.bordered)
             .controlSize(.small)
 
-            Button("Clear View", systemImage: "trash") {
+            Button(AppLocalization.string("Clear View", locale: locale), systemImage: "trash") {
                 logLines.removeAll()
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
 
-            Button("Done") {
+            Button(AppLocalization.string("Done", locale: locale)) {
                 dismiss()
             }
             .buttonStyle(.borderedProminent)

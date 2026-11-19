@@ -92,6 +92,7 @@ public actor GitHubWorkflowHistoryLoader: WorkflowHistoryLoading {
         } catch let error as GitHubActionsError {
             switch error {
             case .httpStatus(401, _): throw WorkflowHistoryLoadError.authenticationRequired
+            case .httpStatus(404, _): throw WorkflowHistoryLoadError.resourceNotFound
             case .httpStatus(let status, let rate) where status == 403 || status == 429:
                 if rate?.remaining == 0 || rate?.retryAfterSeconds != nil || status == 429 {
                     let retry = rate?.retryAfterSeconds.map { Date.now.addingTimeInterval(TimeInterval($0)) }

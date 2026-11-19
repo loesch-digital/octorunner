@@ -139,10 +139,14 @@ def main():
             while True:
                 now = time.monotonic()
                 reason = None
+                ready = None
                 if now - started >= options.timeout:
                     reason = "total deadline"
                 elif tests_started and now - last_output >= options.idle_timeout:
-                    reason = "no test output"
+                    # Progress may have arrived while the watchdog was off-CPU.
+                    ready = selector.select(timeout=0)
+                    if not ready:
+                        reason = "no test output"
                 if reason:
                     message = f"\n::error::Swift test watchdog timeout: {reason}; sampling private test session.\n"
                     sys.stdout.buffer.write(message.encode())
@@ -156,7 +160,8 @@ def main():
                         # Unavailable storage must never mask a timed-out test.
                         pass
                     return 124
-                ready = selector.select(timeout=0.1)
+                if ready is None:
+                    ready = selector.select(timeout=0.1)
                 if ready:
                     chunk = os.read(process.stdout.fileno(), 65536)
                     if chunk:

@@ -100,7 +100,7 @@ private actor WizardProvisioner: RunnerProvisioning {
     private(set) var request: Request?
     private(set) var calls = 0
     init(gate: WizardGate? = nil) { self.gate = gate }
-    func provisionRunners(instanceNames: [String], scopeType: RunnerScopeType, scopeURL: URL, labels: [String], registerLaunchAgent: Bool, accessToken: String, configuration: RunnerLaunchConfiguration, onStatusUpdate: @MainActor @Sendable (String) -> Void) async throws -> [ProvisionedRunnerSummary] {
+    func provisionRunners(instanceNames: [String], scopeType: RunnerScopeType, scopeURL: URL, labels: [String], registerLaunchAgent: Bool, accessToken: String, configuration: RunnerLaunchConfiguration, onStatusUpdate: @MainActor @Sendable (RunnerProvisioningProgress) -> Void) async throws -> [ProvisionedRunnerSummary] {
         calls += 1
         request = Request(names: instanceNames, scope: scopeType, labels: labels, configuration: configuration)
         if calls == 1, let gate { await gate.enter() }

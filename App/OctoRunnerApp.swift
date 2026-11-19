@@ -29,7 +29,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        AppQuitConfirmation.shouldTerminate(after: AppQuitConfirmation.makeAlert().runModal())
+        AppQuitConfirmation.shouldTerminate(after: AppQuitConfirmation.makeAlert(locale: services.preferences.language.locale).runModal())
             ? .terminateNow : .terminateCancel
     }
 

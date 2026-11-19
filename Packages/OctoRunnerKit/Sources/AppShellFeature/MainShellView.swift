@@ -68,14 +68,14 @@ public struct MainShellView: View {
                 .accessibilityLabel(Text("App Settings", bundle: .module))
                 .accessibilityHint(Text("Opens OctoRunner’s application settings", bundle: .module))
 
-                Button("Sync Runners", systemImage: "arrow.triangle.2.circlepath.circle") {
+                Button(AppLocalization.string("Sync Runners", locale: locale), systemImage: "arrow.triangle.2.circlepath.circle") {
                     Task { await syncLocalAndRemoteRunners(manual: true) }
                 }
                 .disabled(isSyncingRunners)
 
-                Button("Import Folder…", systemImage: "folder.badge.plus", action: importRunnerFolderViaOpenPanel)
+                Button(AppLocalization.string("Import Folder…", locale: locale), systemImage: "folder.badge.plus", action: importRunnerFolderViaOpenPanel)
 
-                Button("New Runner", systemImage: "plus") {
+                Button(AppLocalization.string("New Runner", locale: locale), systemImage: "plus") {
                     isShowingAddRunnerSheet = true
                 }
                 .buttonStyle(.borderedProminent)
@@ -123,7 +123,7 @@ public struct MainShellView: View {
     private var sidebarContent: some View {
         VStack(spacing: 0) {
             List(selection: $selectedSection) {
-                Section("RUNNER STATUS") {
+                Section(AppLocalization.string("RUNNER STATUS", locale: locale)) {
                     ForEach(SidebarSection.allCases) { section in
                         HStack {
                             if section == .queueWorkpools {
@@ -133,7 +133,7 @@ public struct MainShellView: View {
                             } else if section == .hostTelemetry {
                                 Label { Text("Host Telemetry", bundle: .module) } icon: { Image(systemName: section.systemImage) }
                             } else {
-                                Label(section.title, systemImage: section.systemImage)
+                                Label(AppLocalization.string(String.LocalizationValue(stringLiteral: section == .allRunners ? "All runners" : section.title), locale: locale), systemImage: section.systemImage)
                             }
                             Spacer()
                             if section != .queueWorkpools && section != .launchdSettings && section != .hostTelemetry {
@@ -200,10 +200,10 @@ public struct MainShellView: View {
                             .font(.system(size: 24))
                             .foregroundStyle(OctoTheme.accentBlue)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Sign in with GitHub")
+                            Text(AppLocalization.string("Sign in with GitHub", locale: locale))
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.primary)
-                            Text("Connect OAuth or PAT")
+                            Text(AppLocalization.string("Connect OAuth or PAT", locale: locale))
                                 .font(.system(size: 10))
                                 .foregroundStyle(.secondary)
                         }
@@ -261,7 +261,7 @@ public struct MainShellView: View {
                             Text(updateStatusMessage)
                                 .font(.system(size: 12, weight: .medium))
                             Spacer()
-                            Button("Dismiss", systemImage: "xmark") {
+                            Button(AppLocalization.string("Dismiss", locale: locale), systemImage: "xmark") {
                                 self.updateStatusMessage = nil
                             }
                             .labelStyle(.iconOnly)
@@ -283,7 +283,7 @@ public struct MainShellView: View {
             statusFooterBar
         }
         .background(OctoTheme.surfaceLowest)
-        .searchable(text: $searchText, prompt: "Search runners, labels...")
+        .searchable(text: $searchText, prompt: AppLocalization.string("Search runners, labels...", locale: locale))
     }
 
     private func updateAvailableBanner(_ update: AppUpdateInfo) -> some View {
@@ -293,9 +293,9 @@ public struct MainShellView: View {
                 .foregroundStyle(OctoTheme.accentBlue)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Update Available: OctoRunner v\(update.latestVersion)")
+                Text(AppLocalization.string("Update Available: OctoRunner v\(update.latestVersion)", locale: locale))
                     .font(.system(size: 13, weight: .bold))
-                Text("You are running v\(update.currentVersion). Click 'Install & Relaunch' to update automatically.")
+                Text(AppLocalization.string("You are running v\(update.currentVersion). Click 'Install & Relaunch' to update automatically.", locale: locale))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -308,10 +308,10 @@ public struct MainShellView: View {
                 HStack(spacing: 6) {
                     if isInstallingUpdate {
                         ProgressView().controlSize(.small)
-                        Text("Updating…")
+                        Text(AppLocalization.string("Updating…", locale: locale))
                     } else {
                         Image(systemName: "bolt.fill")
-                        Text("Install & Relaunch")
+                        Text(AppLocalization.string("Install & Relaunch", locale: locale))
                     }
                 }
                 .font(.system(size: 12, weight: .semibold))
@@ -335,21 +335,21 @@ public struct MainShellView: View {
     private var kpiHeaderRow: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], alignment: .leading, spacing: 12) {
             kpiCard(
-                title: "Running Instances",
-                value: "\(activeRunnerCount) of \(runners.count) active",
-                subtitle: activeRunnerCount > 0 ? "Supervised by Process Actor" : "Engine on standby",
+                title: AppLocalization.string("Running Instances", locale: locale),
+                value: AppLocalization.string("\(activeRunnerCount) of \(runners.count) active", locale: locale),
+                subtitle: activeRunnerCount > 0 ? AppLocalization.string("Supervised by Process Actor", locale: locale) : AppLocalization.string("Engine on standby", locale: locale),
                 accent: activeRunnerCount > 0 ? OctoTheme.onlineGreen : .secondary
             )
             kpiCard(
-                title: "Host CPU Architecture",
+                title: AppLocalization.string("Host CPU Architecture", locale: locale),
                 value: hostDisplay.cpuBrand,
-                subtitle: "\(hostDisplay.coreCount) logical cores",
+                subtitle: AppLocalization.string("\(hostDisplay.coreCount) logical cores", locale: locale),
                 accent: OctoTheme.accentBlue
             )
             kpiCard(
-                title: "Unified Memory",
-                value: "\(hostDisplay.memoryCapacity) GiB RAM",
-                subtitle: "\(hostDisplay.memoryUsed) GiB used",
+                title: AppLocalization.string("Unified Memory", locale: locale),
+                value: AppLocalization.string("\(hostDisplay.memoryCapacity) GiB RAM", locale: locale),
+                subtitle: AppLocalization.string("\(hostDisplay.memoryUsed) GiB used", locale: locale),
                 accent: OctoTheme.accentBlue
             )
         }
@@ -382,10 +382,10 @@ public struct MainShellView: View {
         VStack(alignment: .leading, spacing: 12) {
             if !jobResults.unreviewedFailures.isEmpty { JobFailureNotice(results: jobResults) }
             HStack {
-                Text("Registered Runner Pool")
+                Text(AppLocalization.string("Registered Runner Pool", locale: locale))
                     .font(.system(size: 15, weight: .semibold))
                 Spacer()
-                Text("\(filteredRunners.count) instance(s)")
+                Text(AppLocalization.string("Instances: \(filteredRunners.count)", locale: locale))
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.secondary)
             }
@@ -408,17 +408,17 @@ public struct MainShellView: View {
                     .frame(maxWidth: .infinity, minHeight: 200)
                 } else {
                     ContentUnavailableView {
-                        Label("No Runners Registered Yet", systemImage: "server.rack")
+                        Label(AppLocalization.string("No Runners Registered Yet", locale: locale), systemImage: "server.rack")
                     } description: {
-                        Text("Click 'Sync Runners' to auto-import local runners or 'New Runner' to register a new instance.")
+                        Text(AppLocalization.string("Click 'Sync Runners' to auto-import local runners or 'New Runner' to register a new instance.", locale: locale))
                     } actions: {
                         HStack(spacing: 10) {
-                            Button("Sync Local & GitHub Runners", systemImage: "arrow.triangle.2.circlepath") {
+                            Button(AppLocalization.string("Sync Local & GitHub Runners", locale: locale), systemImage: "arrow.triangle.2.circlepath") {
                                 Task { await syncLocalAndRemoteRunners(manual: true) }
                             }
                             .buttonStyle(.borderedProminent)
 
-                            Button("Import Runner Folder…", systemImage: "folder.badge.plus", action: importRunnerFolderViaOpenPanel)
+                            Button(AppLocalization.string("Import Runner Folder…", locale: locale), systemImage: "folder.badge.plus", action: importRunnerFolderViaOpenPanel)
                                 .buttonStyle(.bordered)
                         }
                     }
@@ -463,15 +463,15 @@ public struct MainShellView: View {
                 runnerID: runnerID, expectedSourcePath: sourcePath, managedRoot: managedRoot,
                 context: modelContext, actorLogin: actorLogin
             ) else {
-                updateStatusMessage = "Migration finished on disk, but the runner changed or was removed. Review the managed folder before retrying."
+                updateStatusMessage = AppLocalization.string("Migration finished on disk, but the runner changed or was removed. Review the managed folder before retrying.", locale: locale)
                 return
             }
-            updateStatusMessage = "Migrated '\(migratedName)' into OctoRunner managed pool with Autostart enabled."
+            updateStatusMessage = AppLocalization.string("Migrated '\(migratedName)' into OctoRunner managed pool with Autostart enabled.", locale: locale)
         } catch is CancellationError {
             return
         } catch {
             guard !Task.isCancelled else { return }
-            updateStatusMessage = "Migration failed: \(error.localizedDescription)"
+            updateStatusMessage = AppLocalization.string("Migration failed: \(error.localizedDescription)", locale: locale)
         }
     }
 
@@ -490,7 +490,7 @@ public struct MainShellView: View {
 
             Spacer()
 
-            Text("\(hostDisplay.cpuBrand) • \(hostDisplay.memoryCapacity) GiB Unified RAM")
+            Text(AppLocalization.string("\(hostDisplay.cpuBrand) • \(hostDisplay.memoryCapacity) GiB Unified RAM", locale: locale))
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.secondary)
         }
@@ -516,7 +516,7 @@ public struct MainShellView: View {
                 Spacer()
             }
 
-            Text("Scopes: \(account.scopes.isEmpty ? "Not reported by token; permissions checked when used" : account.scopes.joined(separator: ", "))")
+            Text(AppLocalization.string("Scopes: \(account.scopes.isEmpty ? AppLocalization.string("Not reported by token; permissions checked when used", locale: locale) : account.scopes.joined(separator: ", "))", locale: locale))
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundStyle(.secondary)
 
@@ -526,7 +526,7 @@ public struct MainShellView: View {
                 isShowingAccountPopover = false
                 Task { await syncLocalAndRemoteRunners(manual: true) }
             } label: {
-                Label("Sync Local & GitHub Runners", systemImage: "arrow.triangle.2.circlepath.circle")
+                Label(AppLocalization.string("Sync Local & GitHub Runners", locale: locale), systemImage: "arrow.triangle.2.circlepath.circle")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
@@ -544,7 +544,7 @@ public struct MainShellView: View {
                 isShowingAccountPopover = false
                 Task { await checkForAppUpdates(manual: true) }
             } label: {
-                Label("Check for Updates (v\(AppUpdaterActor.currentBundleVersion))", systemImage: "arrow.triangle.2.circlepath")
+                Label(AppLocalization.string("Check for Updates (v\(AppUpdaterActor.currentBundleVersion))", locale: locale), systemImage: "arrow.triangle.2.circlepath")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
@@ -553,7 +553,7 @@ public struct MainShellView: View {
                 isShowingAccountPopover = false
                 isShowingAuthSheet = true
             } label: {
-                Label("Switch / Re-authenticate Account…", systemImage: "person.badge.key.fill")
+                Label(AppLocalization.string("Switch / Re-authenticate Account…", locale: locale), systemImage: "person.badge.key.fill")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
@@ -564,7 +564,7 @@ public struct MainShellView: View {
                 isShowingAccountPopover = false
                 signOut(account)
             } label: {
-                Label("Sign Out @\(account.login)", systemImage: "rectangle.portrait.and.arrow.right")
+                Label(AppLocalization.string("Sign Out @\(account.login)", locale: locale), systemImage: "rectangle.portrait.and.arrow.right")
                     .foregroundStyle(OctoTheme.errorRed)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -651,15 +651,15 @@ public struct MainShellView: View {
         let count = Self.upsertDiscoveredRunners(discovered, into: modelContext)
         if manual {
             updateStatusMessage = count > 0
-                ? "Synced \(count) local runner(s) with GitHub."
-                : "No local .runner instances found in standard paths."
+                ? AppLocalization.string("Synced \(count) local runner(s) with GitHub.", locale: locale)
+                : AppLocalization.string("No local .runner instances found in standard paths.", locale: locale)
         }
     }
 
     private func importRunnerFolderViaOpenPanel() {
         let panel = NSOpenPanel()
-        panel.title = "Select Existing GitHub Actions Runner Folder"
-        panel.message = "Choose a folder containing a configured GitHub Actions runner (.runner)."
+        panel.title = AppLocalization.string("Select Existing GitHub Actions Runner Folder", locale: locale)
+        panel.message = AppLocalization.string("Choose a folder containing a configured GitHub Actions runner (.runner).", locale: locale)
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
@@ -692,12 +692,12 @@ public struct MainShellView: View {
 
     private var engineStatusText: String {
         if faultedRunnerCount > 0 {
-            return "Runner Engine: \(faultedRunnerCount) faulted"
+            return AppLocalization.string("Runner status: \(faultedRunnerCount) with errors", locale: locale)
         }
         if activeRunnerCount > 0 {
-            return "Runner Engine: Supervising \(activeRunnerCount) active runner(s)"
+            return AppLocalization.string("Runner status: \(activeRunnerCount) active", locale: locale)
         }
-        return "Runner Engine: Standby (0 active runners)"
+        return AppLocalization.string("Runner Engine: Standby (0 active runners)", locale: locale)
     }
 
     private var filteredRunners: [RunnerEntity] {
@@ -766,11 +766,11 @@ public struct MainShellView: View {
             let info = try await updaterActor.checkForUpdates()
             updateInfo = info
             if manual && !info.isUpdateAvailable {
-                updateStatusMessage = "OctoRunner v\(info.currentVersion) is up to date."
+                updateStatusMessage = AppLocalization.string("OctoRunner v\(info.currentVersion) is up to date.", locale: locale)
             }
         } catch {
             if manual {
-                updateStatusMessage = "Update check failed: \(error.localizedDescription)"
+                updateStatusMessage = AppLocalization.string("Update check failed: \(error.localizedDescription)", locale: locale)
             }
         }
     }
@@ -793,7 +793,7 @@ public struct MainShellView: View {
             guard !Task.isCancelled else { return }
             try? AppAuditEvent.updateFailed.record(in: modelContext)
             isInstallingUpdate = false
-            updateStatusMessage = "Auto-update failed (\(error.localizedDescription)) — opening release page."
+            updateStatusMessage = AppLocalization.string("Auto-update failed (\(error.localizedDescription)) — opening release page.", locale: locale)
             NSWorkspace.shared.open(update.releasePageURL)
         }
     }
