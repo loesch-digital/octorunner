@@ -15,6 +15,7 @@ public final class RunnerHealthMonitor {
     @ObservationIgnored private let sampler: any RunnerProcessSampling
     @ObservationIgnored private let preferences: AppPreferencesStore?
     @ObservationIgnored private let supervisor: RunnerSupervisorActor?
+    @ObservationIgnored private let publishesRecoveryEvents: Bool
     @ObservationIgnored private var tracker = RunnerHealthTransitionTracker()
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private var isRefreshing = false
@@ -24,12 +25,14 @@ public final class RunnerHealthMonitor {
         notifications: AppNotificationsController,
         sampler: any RunnerProcessSampling = RunnerProcessSampler(),
         preferences: AppPreferencesStore? = nil,
-        supervisor: RunnerSupervisorActor? = nil
+        supervisor: RunnerSupervisorActor? = nil,
+        publishesRecoveryEvents: Bool = false
     ) {
         self.notifications = notifications
         self.sampler = sampler
         self.preferences = preferences
         self.supervisor = supervisor
+        self.publishesRecoveryEvents = publishesRecoveryEvents
     }
 
     public func health(at date: Date) -> RunnerFleetHealth {
@@ -68,6 +71,9 @@ public final class RunnerHealthMonitor {
             guard !Task.isCancelled, revision == generation else { return }
             // Fetch after suspension: removed runners are never retained across await.
             let runners = try context.fetch(FetchDescriptor<RunnerEntity>())
+            let directErrorIDs = publishesRecoveryEvents
+                ? Set(runners.filter { $0.executionMode == .direct && phases[$0.id] != nil }.map(\.id))
+                : []
             let now = Date.now
             observations = runners.map { runner in
                 guard let path = runner.rootDirectoryPath, path.hasPrefix("/") else {
@@ -79,7 +85,7 @@ public final class RunnerHealthMonitor {
                 if process?.isWorkerActive == true { status = .busy }
                 else if process?.listenerPID != nil { status = .idle }
                 else if runner.executionMode == .direct, let phase = phases[runner.id] {
-                    status = phase == .faulted ? .faulted : .offline
+                    status = phase == .faulted || phase == .quarantined ? .faulted : .offline
                 }
                 else { status = runner.status == .faulted ? .faulted : .offline }
                 runner.status = status
@@ -90,7 +96,8 @@ public final class RunnerHealthMonitor {
             try context.save()
             await forwardSample(presence, to: targets, observedAt: sampleStarted, revision: revision)
             guard !Task.isCancelled, revision == generation else { return }
-            let events = tracker.consume(observations, at: now, locale: preferences?.language.locale ?? .current)
+            let events = tracker.consume(observations, at: now, locale: preferences?.language.locale ?? .current,
+                suppressErrorIDs: directErrorIDs)
             for event in events {
                 guard !Task.isCancelled, revision == generation else { return }
                 AuditLogRecorder.record(in: context, category: .runnerLifecycle,

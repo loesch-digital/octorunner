@@ -15,6 +15,8 @@ struct RunnerProcessControlsTests {
         #expect(RunnerProcessControlAction.available(phase: .running, activity: .idle) == [.drain, .restart])
         #expect(RunnerProcessControlAction.available(phase: .draining, activity: .busy).isEmpty)
         #expect(RunnerProcessControlAction.available(phase: .faulted, activity: .unknown) == [.start])
+        #expect(RunnerProcessControlAction.available(phase: .quarantined, activity: .unknown) == [.releaseQuarantine])
+        #expect(RunnerProcessControlAction.available(phase: .waitingForPower, activity: .unknown) == [.cancelRestart])
     }
 
     @Test("Process controls lay out in the runner detail column", arguments: ["de", "en"])

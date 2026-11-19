@@ -50,10 +50,11 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Interfaces:** Scheduler konsumiert Exitcode, Generation und RunnerRuntimePolicy; injizierte monotone Uhr, keine Echtzeit-Sleeps in Unit-Tests. Ergebnis: Restart-Termin oder Quarantäne; manuelle Freigabe eigener Befehl.
 
-- [ ] Rote Tests für Always/On Non-Zero/Manual, freiwilligen Stop, Verzögerung, N Fehlversuche, Reset nach stabilem Lauf und Cancellation schreiben; Grenze N exakt testen.
-- [ ] Battery Saver gegen `ProcessInfo.isLowPowerModeEnabled` testen und verdrahten: neue verwaltete Starts bei aktivierter Richtlinie zurückstellen, laufende Jobs erhalten; beim Ende des Low-Power-Modus Warteschlange wieder prüfen.
-- [ ] Policies implementieren und bestehende Einstellungen wirklich für verwaltete Runner anwenden; Crash-Ereignisse mit wiederholungsarmer macOS-Mitteilung verbinden. Berechtigung nur bei Aktivierung anfordern.
-- [ ] Quarantäne/Fehler/letztes Jobresultat optisch getrennt zeigen. Grün, Commit und beide CI-Gates.
+- [x] Always/On Non-Zero/Manual, freiwilligen Stopp, Verzögerung und die exakte Quarantänegrenze testen. Nach 60 Sekunden Laufzeit beginnt die Fehlerzählung von vorn. Auch schnelle, erfolgreiche Exits zählen bei Always zur Grenze.
+- [x] Battery Saver mit `ProcessInfo.isLowPowerModeEnabled` verdrahten. Neue Starts warten auf das Ende des Stromsparmodus. Laufende Jobs können weiterlaufen. Eine aufgeschobene Startanforderung lässt sich abbrechen.
+- [x] Die Richtlinien auf direkt verwaltete Runner anwenden. Crash und Quarantäne erzeugen Audit-Ereignisse und verwenden die vorhandene, abschaltbare Runner-Fehlermeldung in den macOS-Mitteilungen.
+- [x] Quarantäne und aufgeschobene Starts in den Runner-Details anzeigen. Das letzte Workflow-Ergebnis bleibt als eigene Information sichtbar.
+- [ ] Vollständige PR- und main-CI für Recovery abwarten.
 
 ### Task 3: Globales Parallelitätslimit
 

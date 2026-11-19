@@ -146,20 +146,6 @@ public struct MenuBarStatusView: View {
             .accessibilityLabel(Text("Open OctoRunner settings", bundle: .module))
             .accessibilityHint(Text("Opens app preferences in a separate settings window.", bundle: .module))
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(AppLocalization.string("Available in v0.6 — not active yet", locale: locale))
-                    .font(.caption)
-                Toggle(AppLocalization.string("Auto-restart Runner on Crash", locale: locale), isOn: .constant(false))
-                    .accessibilityHint(AppLocalization.string("Available in v0.6; currently unavailable", locale: locale))
-                Toggle(AppLocalization.string("Pause Queue during Battery Saver", locale: locale), isOn: .constant(false))
-                    .accessibilityHint(AppLocalization.string("Available in v0.6; currently unavailable", locale: locale))
-            }
-            .disabled(true)
-            .toggleStyle(.checkbox)
-            .font(.system(size: 11))
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(OctoTheme.surface, in: .rect(cornerRadius: 8))
         }
     }
 

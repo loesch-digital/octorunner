@@ -143,6 +143,8 @@ In den Stitch-Entwürfen und dem ersten Spec-Draft standen einige Konzepte, die 
 | Bestätigter User-LaunchAgent | `launchd` startet den Runner und lässt ihn nach GUI-Ende weiterlaufen. Steuerung erfolgt über den verifizierten Dienst und seine zugehörige Plist. |
 | Importiert oder Betriebsart ungeklärt | OctoRunner beobachtet den Runner. Steuerung erfordert eine explizite Übernahme. Ein gespeichertes PID-Feld oder generiertes Dienstlabel allein genügt dafür nicht. |
 
+Für direkt verwaltete Runner gilt die Ausfallsicherung, solange die App läuft. Sie bindet Wiederanlauf und Stopp an die konkrete Prozessgeneration. Ein im Stromsparmodus aufgeschobener Start behält seine Anforderung, bis der Energiesparmodus endet oder der Start abgebrochen wird. Die Quarantäne begrenzt Wiederanlaufversuche je App-Sitzung. Installierte LaunchAgents behalten ihre eigene `launchd`-Richtlinie.
+
 ### ADR-02: Native macOS Window-Chrome statt HTML-nachgebauter Traffic Lights
 - **Was in den Stitch-HTML-Exports steckt:** Eigene gezeichnete rote/gelbe/grüne Fenster-Buttons (`×`, `−`, `+`) und ein künstlicher Header-Balken im Content-Bereich.
 - **Warum man das in SwiftUI NICHT nachbaut:** Würde man in einer echten macOS-App eigene Traffic-Lights rendern, hätte man entweder doppelte Fenster-Buttons oder verlöre native macOS-Features (Vollbild-Tile-Menü beim Hover auf Grün, Stage Manager, Mission Control).
