@@ -1,4 +1,5 @@
-import AppShellFeature
+import AppKit
+@testable import AppShellFeature
 import CoreModels
 import Foundation
 import RunnerEngine
@@ -57,6 +58,26 @@ struct AppIntegrationTests {
         #expect(AppIntegrationController.shouldShowDock(hasVisibleDashboard: true, showInMenuBar: true, hideDockWhenClosed: true))
         #expect(!AppIntegrationController.shouldShowDock(hasVisibleDashboard: false, showInMenuBar: true, hideDockWhenClosed: true))
         #expect(AppIntegrationController.shouldShowDock(hasVisibleDashboard: false, showInMenuBar: true, hideDockWhenClosed: false))
+    }
+
+    @Test("Automatic Dock hiding must not demote the app before its first window is presented")
+    func dockStartupActivation() throws {
+        let name = "octorunner-dock-startup-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let preferences = AppPreferencesStore(defaults: defaults)
+        preferences.showInMenuBar = true
+        preferences.hideDockIconWhenClosed = true
+        let controller = AppIntegrationController(preferences: preferences)
+        // AppKit may send several updates before SwiftUI presents the dashboard.
+        for _ in 0..<3 {
+            #expect(controller.desiredDockPolicy(hasVisibleDashboard: false) == .regular)
+        }
+        #expect(controller.desiredDockPolicy(hasVisibleDashboard: true) == .regular)
+        #expect(controller.desiredDockPolicy(hasVisibleDashboard: false) == .accessory)
+        #expect(controller.desiredDockPolicy(hasVisibleDashboard: true) == .regular)
+        preferences.showInMenuBar = false
+        #expect(controller.desiredDockPolicy(hasVisibleDashboard: false) == .regular)
     }
 
     @Test("An older status refresh cannot overwrite a completed login change")
