@@ -107,30 +107,11 @@ struct RunnerBinaryCacheIntegrityTests {
     }
 
     private func withArchiveServer(_ body: (URL) async throws -> Void) async throws {
-        let server = Process()
-        let output = Pipe()
-        server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-        server.arguments = ["-u", "-c", Self.serverScript]
-        server.standardOutput = output
-        server.standardError = FileHandle.nullDevice
-        try server.run()
-        defer {
-            if server.isRunning { server.terminate() }
-            server.waitUntilExit()
-            try? output.fileHandleForReading.close()
-        }
-        let text = try #require(String(data: output.fileHandleForReading.availableData, encoding: .utf8))
-        let port = try #require(Int(text.trimmingCharacters(in: .whitespacesAndNewlines)))
-        try await body(try #require(URL(string: "http://127.0.0.1:\(port)")))
+        try await withPythonTestServer(script: Self.serverScript, body: body)
     }
 
     private static let serverScript = #"""
-    import os, threading
     from http.server import BaseHTTPRequestHandler, HTTPServer
-    # A safety deadline bounds setup failures; assertions synchronize on the port.
-    watchdog = threading.Timer(30, lambda: os._exit(0))
-    watchdog.daemon = True
-    watchdog.start()
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
             pass
