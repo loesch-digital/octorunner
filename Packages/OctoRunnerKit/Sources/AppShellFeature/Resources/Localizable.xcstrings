@@ -6659,6 +6659,557 @@
           }
         }
       }
+    },
+    "Pull request details unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pull request details unavailable"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pull-Request-Details nicht verfügbar"
+          }
+        }
+      }
+    },
+    "Open pull request #%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open pull request #%lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pull Request #%lld öffnen"
+          }
+        }
+      },
+      "comment": "The placeholder is the associated pull request number."
+    },
+    "Opens the associated pull request on GitHub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the associated pull request on GitHub"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet den zugehörigen Pull Request auf GitHub"
+          }
+        }
+      }
+    },
+    "Workflow, branch, commit or PR": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow, branch, commit or PR"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow, Branch, Commit oder PR"
+          }
+        }
+      }
+    },
+    "Filters loaded workflow names, repositories, branches, commits and pull request numbers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filters loaded workflow names, repositories, branches, commits and pull request numbers"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtert geladene Workflow-Namen, Repositorys, Branches, Commits und Pull-Request-Nummern"
+          }
+        }
+      }
+    },
+    "View workflow details": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View workflow details"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow-Details anzeigen"
+          }
+        }
+      }
+    },
+    "Shows jobs and steps for this run attempt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows jobs and steps for this run attempt"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeigt Jobs und Steps für diesen Laufversuch"
+          }
+        }
+      }
+    },
+    "Close workflow details": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close workflow details"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow-Details schließen"
+          }
+        }
+      }
+    },
+    "Returns to workflow history": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returns to workflow history"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kehrt zur Workflow-Historie zurück"
+          }
+        }
+      }
+    },
+    "Run #%lld · Attempt %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run #%lld · Attempt %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lauf #%lld · Versuch %lld"
+          }
+        }
+      },
+      "comment": "Placeholders are the GitHub run ID and selected run attempt, respectively."
+    },
+    "Loading job details…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading job details…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Details werden geladen …"
+          }
+        }
+      }
+    },
+    "Refresh job details": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh job details"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Details aktualisieren"
+          }
+        }
+      }
+    },
+    "Loads jobs and steps for this exact run attempt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loads jobs and steps for this exact run attempt"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lädt Jobs und Steps genau dieses Laufversuchs"
+          }
+        }
+      }
+    },
+    "Open workflow on GitHub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open workflow on GitHub"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow auf GitHub öffnen"
+          }
+        }
+      }
+    },
+    "Open job on GitHub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open job on GitHub"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job auf GitHub öffnen"
+          }
+        }
+      }
+    },
+    "Opens this job and its logs in your browser": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens this job and its logs in your browser"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet diesen Job und seine Logs im Browser"
+          }
+        }
+      }
+    },
+    "No steps reported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No steps reported"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Steps gemeldet"
+          }
+        }
+      }
+    },
+    "Step details unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step details unavailable"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step-Details nicht verfügbar"
+          }
+        }
+      }
+    },
+    "Shows steps, runner and links for this job": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows steps, runner and links for this job"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeigt Steps, Runner und Links für diesen Job"
+          }
+        }
+      }
+    },
+    "Job details could not be loaded. Open GitHub or try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job details could not be loaded. Open GitHub or try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Details konnten nicht geladen werden. Öffne GitHub oder versuche es erneut."
+          }
+        }
+      }
+    },
+    "Skipped": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skipped"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übersprungen"
+          }
+        }
+      }
+    },
+    "Load job log": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load job log"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Log laden"
+          }
+        }
+      }
+    },
+    "Close job log": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close job log"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Log schließen"
+          }
+        }
+      }
+    },
+    "Returns to workflow details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returns to workflow details"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kehrt zu den Workflow-Details zurück"
+          }
+        }
+      }
+    },
+    "Logs load only on request. This is a snapshot, not a live stream.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logs load only on request. This is a snapshot, not a live stream."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logs werden nur auf Anfrage geladen. Dies ist eine Momentaufnahme, kein Live-Stream."
+          }
+        }
+      }
+    },
+    "Loading job log…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading job log…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Log wird geladen …"
+          }
+        }
+      }
+    },
+    "Log truncated to 1 MiB. Open GitHub for the complete output.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log truncated to 1 MiB. Open GitHub for the complete output."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log auf 1 MiB gekürzt. Die vollständige Ausgabe ist auf GitHub verfügbar."
+          }
+        }
+      }
+    },
+    "The log contains no output": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The log contains no output"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Log enthält keine Ausgabe"
+          }
+        }
+      }
+    },
+    "Job log output": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job log output"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Log-Ausgabe"
+          }
+        }
+      }
+    },
+    "Downloads a bounded log snapshot for this job": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads a bounded log snapshot for this job"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lädt eine größenbegrenzte Log-Momentaufnahme für diesen Job"
+          }
+        }
+      }
+    },
+    "Logs are not available yet or have expired. Open GitHub for the current job.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logs are not available yet or have expired. Open GitHub for the current job."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logs sind noch nicht verfügbar oder bereits abgelaufen. Öffne den aktuellen Job auf GitHub."
+          }
+        }
+      }
+    },
+    "This log is not supported UTF-8 text. Open it on GitHub.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This log is not supported UTF-8 text. Open it on GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Log enthält keinen unterstützten UTF-8-Text. Öffne es auf GitHub."
+          }
+        }
+      }
+    },
+    "Job log could not be loaded. Open GitHub or try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job log could not be loaded. Open GitHub or try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Job-Log konnte nicht geladen werden. Öffne GitHub oder versuche es erneut."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

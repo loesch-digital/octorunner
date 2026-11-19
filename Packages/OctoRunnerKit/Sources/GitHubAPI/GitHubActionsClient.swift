@@ -23,8 +23,28 @@ public actor GitHubActionsClient {
         let path = try repositoryPath(repository) + "/actions/runs/\(runID)/attempts/\(attempt)/jobs"
         let (data, next, rate) = try await load(path: path, page: page, token: token)
         let result = try Self.decoder().decode(GitHubWorkflowJobsResponse.self, from: data)
-        guard result.jobs.allSatisfy({ $0.runID == runID }) else { throw GitHubActionsError.invalidResponse }
+        guard result.jobs.allSatisfy({ $0.runID == runID && ($0.runAttempt == nil || $0.runAttempt == attempt) && $0.id > 0 && $0.hasValidStepIdentities }) else { throw GitHubActionsError.invalidResponse }
         return GitHubActionsPage(items: result.jobs, nextPage: next, totalCount: result.totalCount, rateLimit: rate)
+    }
+
+    public func workflowRunAttempt(repository: String, runID: Int64, attempt: Int, token: String) async throws -> GitHubActionsPage<GitHubWorkflowRunDTO> {
+        guard runID > 0, attempt > 0 else { throw GitHubActionsError.invalidRunAttempt }
+        let path = try repositoryPath(repository) + "/actions/runs/\(runID)/attempts/\(attempt)"
+        let (data, next, rate) = try await load(path: path, page: nil, token: token)
+        let run = try Self.decoder().decode(GitHubWorkflowRunDTO.self, from: data)
+        guard run.id == runID, run.runAttempt == attempt, next == nil else { throw GitHubActionsError.invalidResponse }
+        return .init(items: [run], nextPage: nil, totalCount: 1, rateLimit: rate)
+    }
+
+    public func pullRequests(repository: String, commitSHA: String, token: String, page: URL? = nil) async throws -> GitHubActionsPage<GitHubWorkflowPullRequestDTO> {
+        guard [40, 64].contains(commitSHA.utf8.count),
+              commitSHA.utf8.allSatisfy({ (48...57).contains($0) || (65...70).contains($0) || (97...102).contains($0) }) else {
+            throw GitHubActionsError.invalidResponse
+        }
+        let path = try repositoryPath(repository) + "/commits/\(commitSHA)/pulls"
+        let (data, next, rate) = try await load(path: path, page: page, token: token)
+        let items = try Self.decoder().decode([GitHubWorkflowPullRequestDTO].self, from: data)
+        return GitHubActionsPage(items: items, nextPage: next, totalCount: items.count, rateLimit: rate)
     }
 
     private func load(path: String, page: URL?, token: String) async throws -> (Data, URL?, GitHubRateLimitSnapshot?) {

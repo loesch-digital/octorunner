@@ -4,8 +4,8 @@ In Arbeit für v0.5.0. API, Persistenz, Kennzahlen und Lade-/Accountwechselsteue
 sind implementiert und an die Jobs-Ansicht im Hauptfenster angebunden.
 Die vollständige v0.5.0 bleibt in Arbeit.
 
-Der neue Actions-Client liest ausschließlich Workflow-Runs und Jobs über GET.
-Er fordert keine zusätzlichen Schreibrechte an. Weiterleitungen werden abgelehnt;
+Der Actions-Client liest Workflow-Runs, Jobs, Steps und verfügbare Job-Logs ausschließlich über GET.
+Er fordert keine zusätzlichen Schreibrechte an. JSON-Weiterleitungen werden abgelehnt;
 Pagination bleibt auf HTTPS, `api.github.com` und dem angefragten Repository samt
 Endpoint beschränkt. Rate-Limit und Retry-After kommen aus tatsächlichen Headern.
 Fehler enthalten Statuscodes statt Serverantworten oder Zugangsdaten.
@@ -70,7 +70,7 @@ und in einem frischen ModelContext wieder gelesen werden können.
 ## Bedienung und Aktualisierung
 
 In der Seitenleiste öffnet **Jobs & Workflow-Läufe** die Historie im vorhandenen
-Hauptfenster. Filter für Status, Repository, Runner sowie Workflow/Branch/Commit
+Hauptfenster. Filter für Status, Repository, Runner sowie Workflow/Branch/Commit/PR
 beziehen sich auf den jeweils neuesten bekannten Versuch. Job-Details werden
 aufgeklappt; der GitHub-Link öffnet den zugehörigen Workflow samt Logs erst nach
 bewusstem Klick. Links auf fremde Hosts oder andere Runs werden nicht angeboten.
@@ -121,3 +121,33 @@ keinen Test aller unterstützten macOS-Versionen. Noch manuell prüfen:
    keine Daten des vorherigen Accounts und keine Fehlermeldung allein durch Abbruch.
 6. Bei einem echten API-/Berechtigungsfehler die sichtbare Fehlermeldung und pausierte
    Aktualisierung prüfen. Keine echten Limits absichtlich durch viele Requests provozieren.
+
+## PR-Zuordnung und Actions-Details
+
+**Workflow-Details anzeigen** öffnet den ausgewählten, bekannten Run-Versuch mit
+aufklappbaren Jobs und einzelnen Steps. Nummer, Zustand, Ergebnis und vorhandene
+Zeitstempel bleiben getrennt. Fehlende Zeiten ergeben keine erfundene Dauer.
+Laufende Jobs werden in der offenen Detailansicht alle 30 Sekunden aktualisiert;
+der Beobachtungszeitpunkt bleibt sichtbar. Fehler oder unvollständige Job-Seiten
+werden ausdrücklich angezeigt. Schließen oder Kontowechsel verwirft verspätete Daten.
+
+PR-Referenzen stammen aus dem Basis-Repository der API-Antwort. Fehlen sie bei einem
+PR-Ereignis, versucht die History gezielt einen begrenzten Commit-PR-Lookup.
+Dafür benötigt ein Fine-grained Token zusätzlich **Pull requests: read**;
+**Actions: read** genügt weiterhin für Jobs, Steps und Logs. Fehlendes PR-Leserecht
+unterbricht die Actions-Historie nicht: Die Zuordnung bleibt unbekannt.
+OAuth-Schreibrechte werden nicht zusätzlich angefordert. Abgeleitete Web-Links
+führen ausschließlich zum validierten Repository und PR/Run/Job auf github.com.
+
+**Job-Log laden** öffnet eine separate Ansicht. Erst deren Lade-Schaltfläche
+fordert den Log-Snapshot an. Es gibt keinen automatischen Download beim App-Start,
+keinen privaten Log-Export und keinen vorgetäuschten REST-Live-Stream.
+Ein separater Byte-Stream liest höchstens 1 MiB plus ein Byte zur Kürzungserkennung
+und beendet danach den Transfer. Nur UTF-8-Text wird angezeigt; Kürzung und
+Ladezeitpunkt sind sichtbar. Noch nicht verfügbare oder abgelaufene Logs erhalten
+einen eigenen Hinweis, GitHub bleibt als Fallback erreichbar.
+
+Der Log-Endpoint darf einmal auf eine temporäre HTTPS-Downloadadresse weiterleiten.
+Dieser zweite Request enthält weder Authorization noch Cookies; weitere Redirects
+werden abgelehnt. Signierte URLs und Log-Inhalte gelangen weder in SwiftData noch
+in Audit-/Diagnoseausgaben. Lokales Runner-Live-Streaming folgt getrennt in v0.6.

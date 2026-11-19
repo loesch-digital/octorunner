@@ -7,6 +7,7 @@ struct WorkflowRunHistoryRow: View {
     let entry: WorkflowHistoryEntry
     let jobs: [WorkflowHistoryEntry]
     let now: Date
+    var openDetails: (() -> Void)? = nil
 
     var body: some View {
         let presentation = WorkflowHistoryPresentation(entry: entry, now: now, locale: locale)
@@ -41,6 +42,13 @@ struct WorkflowRunHistoryRow: View {
                 Spacer()
                 if let event = entry.event { Text(event).lineLimit(1).help(event) }
             }.font(.caption)
+            if let openDetails {
+                Button(action: openDetails) { Text("View workflow details", bundle: .module) }
+                    .disabled(entry.attempt == nil)
+                    .accessibilityLabel(Text("View workflow details", bundle: .module))
+                    .accessibilityHint(Text("Shows jobs and steps for this run attempt", bundle: .module))
+            }
+            WorkflowPullRequestLinksView(entry: entry)
             if let observed = entry.observedAt {
                 HStack {
                     Text("Observed", bundle: .module)

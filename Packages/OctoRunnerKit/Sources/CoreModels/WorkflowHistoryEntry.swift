@@ -24,6 +24,8 @@ public struct WorkflowHistoryEntry: Sendable, Identifiable {
     public let event: String?
     public let htmlURL: URL?
     public let observedAt: Date?
+    public let pullRequests: [WorkflowPullRequestReference]?
+    public let steps: [WorkflowJobStep]?
 
     @MainActor
     public init(_ entity: JobRunEntity) {
@@ -49,6 +51,10 @@ public struct WorkflowHistoryEntry: Sendable, Identifiable {
         event = entity.event
         htmlURL = entity.htmlURLString.flatMap(URL.init(string:))
         observedAt = entity.observedAt
+        steps = entity.jobStepsData.flatMap { try? JSONDecoder().decode([WorkflowJobStep].self, from: $0) }
+        pullRequests = entity.pullRequestReferencesData
+            .flatMap { try? JSONDecoder().decode([WorkflowPullRequestReference].self, from: $0) }
+            .map { references in references.compactMap { $0.validated(repository: entity.repositoryFullName) } }
     }
 
     public func isFresh(at now: Date, maxAge: TimeInterval = 90) -> Bool {

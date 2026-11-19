@@ -31,6 +31,7 @@ struct WorkflowHistoryTests {
         #expect(job.runner?.jobRuns.count == 1)
         #expect(job.recordKindRaw == "workflow" && job.sourceRaw == "legacy")
         #expect(job.runAttempt == nil && job.githubJobId == nil && job.conclusion == nil)
+        #expect(job.pullRequestReferencesData == nil)
         #expect(try context.fetch(FetchDescriptor<GitHubAccountEntity>()).map(\.login) == ["fixture-account"])
         #expect(try context.fetch(FetchDescriptor<AuditLogEntity>()).map(\.title) == ["Fixture audit"])
         #expect(try context.fetchCount(FetchDescriptor<RunnerEntity>()) == 1)

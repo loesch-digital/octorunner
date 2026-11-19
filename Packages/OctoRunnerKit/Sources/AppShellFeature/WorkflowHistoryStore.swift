@@ -13,7 +13,7 @@ public enum WorkflowHistoryStore {
         try Task.checkCancellation()
         let repository = try canonicalRepository(repository)
         guard accountID > 0, run.id > 0, run.runAttempt.map({ $0 > 0 }) ?? true,
-              jobs.allSatisfy({ $0.runID == run.id && $0.id > 0 }),
+              jobs.allSatisfy({ $0.runID == run.id && ($0.runAttempt == nil || $0.runAttempt == run.runAttempt) && $0.id > 0 && $0.hasValidStepIdentities }),
               Set(jobs.map(\.id)).count == jobs.count,
               jobs.isEmpty || run.runAttempt != nil else { throw WorkflowHistoryError.inconsistentPayload }
 
@@ -39,6 +39,7 @@ public enum WorkflowHistoryStore {
             entity.recordKindRaw = "job"
             entity.githubJobId = job.id
             entity.jobName = job.name
+            entity.jobStepsData = try job.steps.map { try JSONEncoder().encode($0.map(\.snapshot)) }
             entity.statusRaw = job.status
             entity.conclusion = job.conclusion
             entity.createdAt = job.createdAt
@@ -78,6 +79,23 @@ public enum WorkflowHistoryStore {
         entity.actualStartedAt = run.startedAt
         entity.event = run.event
         entity.htmlURLString = run.htmlURL?.absoluteString
+        if let requests = run.pullRequests {
+            let references = requests.compactMap { request -> WorkflowPullRequestReference? in
+                guard let url = request.base?.repo?.url,
+                      let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                      parts.scheme == "https", parts.host == "api.github.com",
+                      parts.port == nil || parts.port == 443, parts.user == nil, parts.password == nil,
+                      parts.query == nil, parts.fragment == nil,
+                      parts.percentEncodedPath.lowercased() == "/repos/\(repository)" else { return nil }
+                return WorkflowPullRequestReference(number: request.number, repository: repository)
+            }
+            // Empty/missing PR metadata on an Actions refresh is not proof that
+            // a previously confirmed association disappeared.
+            if !references.isEmpty || entity.pullRequestReferencesData == nil {
+                var seen = Set<String>()
+                entity.pullRequestReferencesData = try? JSONEncoder().encode(references.filter { seen.insert($0.id).inserted })
+            }
+        }
     }
 
     private static func canonicalRepository(_ value: String) throws -> String {
