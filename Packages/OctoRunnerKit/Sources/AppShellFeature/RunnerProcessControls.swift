@@ -1,6 +1,7 @@
 import CoreModels
 import DesignSystem
 import RunnerEngine
+import SwiftData
 import SwiftUI
 
 enum RunnerProcessControlAction: String, Identifiable {

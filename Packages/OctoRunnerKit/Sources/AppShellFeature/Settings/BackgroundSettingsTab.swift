@@ -1,11 +1,17 @@
 import CoreModels
 import DesignSystem
+import RunnerEngine
+import SwiftData
 import SwiftUI
 
 public struct BackgroundSettingsTab: View {
   @Environment(AppPreferencesStore.self) private var preferences
 
-  public init() {}
+  private let launchAgents: RunnerLaunchAgentInspector?
+
+  public init(launchAgents: RunnerLaunchAgentInspector? = nil) {
+    self.launchAgents = launchAgents
+  }
 
   public var body: some View {
     @Bindable var preferences = preferences
@@ -21,6 +27,9 @@ public struct BackgroundSettingsTab: View {
         Text(
           "The app login item is independent of installed runner LaunchAgents.", bundle: .module)
         .font(.callout).foregroundStyle(OctoTheme.secondaryText)
+      }
+      if let launchAgents {
+        RunnerLaunchAgentsCard(inspector: launchAgents)
       }
       SettingsCard(
         "New runner environment", symbol: "terminal",
@@ -55,5 +64,48 @@ public struct BackgroundSettingsTab: View {
       }
     }
     .background(OctoTheme.surface)
+  }
+}
+
+private struct RunnerLaunchAgentsCard: View {
+  @Query(sort: \RunnerEntity.name) private var runners: [RunnerEntity]
+  let inspector: RunnerLaunchAgentInspector
+
+  var body: some View {
+    let candidates = runners.compactMap { runner in
+      runner.launchAgentTarget.map { (id: runner.id, target: $0) }
+    }
+    SettingsCard(
+      "Runner LaunchAgents", symbol: "gearshape.2",
+      subtitle: "Inspect the installed configuration and current status of each runner service."
+    ) {
+      if candidates.isEmpty {
+        Text("No runner LaunchAgents are configured.", bundle: .module)
+          .foregroundStyle(OctoTheme.secondaryText)
+      } else {
+        ForEach(candidates, id: \.id) { candidate in
+          RunnerLaunchAgentRow(runnerID: candidate.id, target: candidate.target, inspector: inspector)
+        }
+      }
+    }
+  }
+}
+
+private struct RunnerLaunchAgentRow: View {
+  @State private var expanded = false
+  let runnerID: UUID
+  let target: RunnerLaunchAgentTarget
+  let inspector: RunnerLaunchAgentInspector
+
+  var body: some View {
+    DisclosureGroup(isExpanded: $expanded) {
+      if expanded {
+        RunnerLaunchAgentPanel(runnerID: runnerID, target: target, inspector: inspector)
+          .padding(.top, 8)
+      }
+    } label: {
+      Text(verbatim: target.name)
+    }
+    .accessibilityHint(Text("Shows the configuration and status of this service.", bundle: .module))
   }
 }

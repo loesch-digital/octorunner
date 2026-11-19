@@ -41,8 +41,8 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 - [x] Graceful Drain, Fristablauf und separat bestätigten erzwungenen Stopp testen. Der Quit-Dialog erklärt, welche Runner weiterlaufen. Vor freiwilligem Stopp und Quit wird der lokale Jobzustand erneut geprüft.
 - [x] Direkten Prozessadapter ohne blockierendes `waitUntilExit` implementieren. Der Exit bleibt der Startgeneration zugeordnet und wird erst nach Ende der eigenen Prozessgruppe gemeldet. Native Tests verwenden kurzlebige Prüfprozesse.
 - [x] App-Controls für direkte Runner mit bestätigter PID, Laufzeit, Status und Audit anbinden. Speicherbereinigung und Prozessstart verwenden eine gemeinsame Verzeichnissperre.
-- [ ] PR und main-CI für die direkte Prozessaufsicht vollständig grün prüfen.
-- [ ] LaunchAgent-Diagnose aus Screenshot 07 im anschließenden PR ergänzen. Die installierte Plist mit Syntaxprüfung zur Ansicht anbieten und Reload nur für den bestätigten eigenen Dienst ermöglichen. Tests für fehlenden und wechselnden Dienst ergänzen.
+- [x] PR und main-CI für die direkte Prozessaufsicht vollständig grün prüfen.
+- [x] LaunchAgent-Diagnose aus Screenshot 07 in Einstellungen und Runner-Details ergänzen. Die installierte Plist mit Syntaxprüfung zur Ansicht anbieten und einen entladenen, nachweislich eigenen Dienst wieder laden. Ein geladener Dienst kann weiterlaufen. Tests decken fehlende, fremde und während der Prüfung ersetzte Definitionen ab.
 
 ### Task 2: Restart, Throttle und Quarantäne
 

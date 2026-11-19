@@ -113,6 +113,7 @@ struct InterfaceLocalizationTests {
     }
 
     @Test("Runner ownership labels follow the selected language", arguments: [true, false])
+    @MainActor
     func ownershipLabel(imported: Bool) {
         #expect(DashboardRunnerRow.ownershipLabel(imported: imported, locale: Locale(identifier: "de"))
             == AppLocalization.string(imported ? "Imported" : "Managed", locale: Locale(identifier: "de")))

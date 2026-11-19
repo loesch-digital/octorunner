@@ -10,18 +10,18 @@ struct RunnerSupervisorTests {
         let supervisor = RunnerSupervisorActor(processes: backend)
         let config = configuration()
         try await supervisor.configure(config)
-        let reserved = await supervisor.reserveStorage(roots: [config.rootDirectory])
+        let reserved = await supervisor.reserveIdleDirectories(roots: [config.rootDirectory])
         #expect(reserved.count == 1)
         await #expect(throws: RunnerSupervisionError.operationInProgress) {
             try await supervisor.start(runnerID: config.runnerID)
         }
-        await supervisor.releaseStorage(paths: reserved)
+        await supervisor.releaseDirectories(paths: reserved)
         let start = Task { try await supervisor.start(runnerID: config.runnerID) }
         await backend.waitForStart()
-        #expect(await supervisor.reserveStorage(roots: [config.rootDirectory]).isEmpty)
+        #expect(await supervisor.reserveIdleDirectories(roots: [config.rootDirectory]).isEmpty)
         await backend.release()
         try await start.value
-        #expect(await supervisor.reserveStorage(roots: [config.rootDirectory]).isEmpty)
+        #expect(await supervisor.reserveIdleDirectories(roots: [config.rootDirectory]).isEmpty)
         try await supervisor.forceStop(runnerID: config.runnerID)
     }
 

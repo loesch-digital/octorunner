@@ -15,6 +15,7 @@ public final class AppServices {
     public let diskMonitor: DiskSpaceMonitor
     public let jobFailureMonitor: LocalJobFailureMonitor
     public let supervisor: RunnerSupervisorActor
+    public let launchAgents: RunnerLaunchAgentInspector
 
     public init(
         preferences: AppPreferencesStore = AppPreferencesStore(),
@@ -36,6 +37,11 @@ public final class AppServices {
             let root = LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: rootDirectory)
             return (processes[root]?.listenerPID, processes[root]?.workerPID)
         })
+        launchAgents = RunnerLaunchAgentInspector(supervisor: supervisor) { rootDirectory in
+            let processes = try await sampler.sample()
+            let root = LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: rootDirectory)
+            return processes[root] != nil
+        }
         storageMaintenance = StorageMaintenanceController(preferences: preferences, supervisor: supervisor)
         integration = AppIntegrationController(preferences: preferences, loginService: loginService ?? supervisor)
         notifications = AppNotificationsController(preferences: preferences, client: notificationClient)

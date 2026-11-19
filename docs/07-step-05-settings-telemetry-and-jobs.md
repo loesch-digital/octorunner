@@ -33,15 +33,15 @@ Vervollständigung aller verbleibenden Screens aus deinem Stitch-Design:
   - Standard-Shell (`/bin/zsh`, `/bin/bash`, `/opt/homebrew/bin/bash`) + Toggle `Inherit host PATH and Homebrew binaries (/opt/homebrew/bin)`.
   - Log-Retention (`7`, `14`, `30`, `90` Tage).
 
-### Tab 7: `launchd` Daemon & Auto-Recovery (`LaunchdSettingsTab.swift`)
+### Tab 7: Autostart & Background (`BackgroundSettingsTab.swift`)
+
 - **System Startup & Login Persistence:**
-  - Status-Anzeige `gui/<uid>/io.octorunner.agent.*` mit `PID`, `Uptime` sowie Buttons `Reload Service` und `View launchd plist`.
-  - *(Hinweis gemäß unserer Abstimmung: Die Checkbox "Run daemon headless as system-wide root daemon" ist sichtbar, aber als `Phase 2 / Pro` gekennzeichnet, da User-LaunchAgents für Xcode/iOS-Simulatoren der empfohlene Standard sind).*
-- **Failure Recovery & KeepAlive Policies:**
-  - `KeepAlive Restart Policy`: `Always (Recommended)`, `On Non-Zero Exit`, `Manual Only`.
-  - `ThrottleInterval / Restart Delay` (Standard: `10 sec`) & `Quarantine Threshold` (`5 tries`).
-- **Live `launchd` Plist Inspector:**
-  - Read-only XML-Vorschau der generierten `.plist` mit Syntax-Validierungs-Badge (`Valid Syntax`).
+  - Das Login-Objekt der App und die LaunchAgents der Runner haben getrennte Einstellungen.
+  - Pro Runner lassen sich Dienst-ID, aktueller Status, PID und Laufzeit von `gui/<uid>/io.octorunner.agent.*` anzeigen. Die Prüfung startet beim Aufklappen der Zeile und lässt sich manuell aktualisieren.
+  - „Dienst laden“ lädt einen entladenen, verifizierten LaunchAgent. Dafür prüft OctoRunner das verwaltete Verzeichnis und ob dort bereits ein Listener läuft. Ein bereits geladener Dienst kann laufende Jobs weiter ausführen.
+- **`launchd`-Plist-Inspektor:**
+  - Zeigt die installierte, zugeordnete Plist als kopierbares XML. Fehlende, syntaktisch ungültige oder nicht zuordenbare Dateien haben eigene Statusmeldungen.
+- **Failure Recovery & KeepAlive Policies** sind im eigenen Bereich „Ausfallsicherung“ geplant.
 
 ### Tab 7b: Cache & Storage (`StoragePruningTab.swift`)
 - **Disk Space & APFS Storage Allocation:**
