@@ -66,25 +66,25 @@ public actor RunnerProvisionerActor {
         registerLaunchAgent: Bool,
         accessToken: String,
         configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration(),
-        onStatusUpdate: @MainActor @Sendable (String) -> Void
+        onStatusUpdate: @MainActor @Sendable (RunnerProvisioningProgress) -> Void
     ) async throws -> [ProvisionedRunnerSummary] {
         for name in instanceNames {
             try Self.validateRunnerName(name)
         }
-        await onStatusUpdate("Fetching macOS ARM64 runner binary metadata from GitHub…")
+        await onStatusUpdate(.fetchingMetadata)
         let candidate = try await provisioningClient.fetchArm64RunnerDownload(
             scopeURL: scopeURL,
             token: accessToken
         )
 
         let version = Self.extractVersion(fromFilename: candidate.filename) ?? "latest"
-        await onStatusUpdate("Ensuring verified runner binary (\(candidate.filename)) in cache…")
+        await onStatusUpdate(.verifyingBinary(filename: candidate.filename))
         let archiveURL = try await binaryCache.ensureBinaryDownloadedAndVerified(package: candidate)
 
         let baseDir = self.baseRunnersDirectory
         try FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
 
-        await onStatusUpdate("Provisioning \(instanceNames.count) runner instance(s) in parallel…")
+        await onStatusUpdate(.registeringInstances(count: instanceNames.count))
         let client = self.provisioningClient
 
         return try await withThrowingTaskGroup(of: ProvisionedRunnerSummary.self) { group in

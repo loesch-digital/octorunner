@@ -2,16 +2,16 @@ import AppKit
 
 @MainActor
 public enum AppQuitConfirmation {
-    public static func makeAlert() -> NSAlert {
+    public static func makeAlert(locale: Locale = .current) -> NSAlert {
         let alert = NSAlert()
-        alert.messageText = "Quit OctoRunner?"
-        alert.informativeText = """
+        alert.messageText = AppLocalization.string("Confirm quitting OctoRunner", locale: locale)
+        alert.informativeText = AppLocalization.string("""
         OctoRunner and its menu bar item will close. Installed runner LaunchAgents continue running through launchd.
 
         Imported runners that have not been migrated remain under their previous process manager. OctoRunner cannot guarantee that they continue running or are supervised after quitting.
-        """
-        alert.addButton(withTitle: "Quit OctoRunner")
-        alert.addButton(withTitle: "Cancel").keyEquivalent = "\u{1b}"
+        """, locale: locale)
+        alert.addButton(withTitle: AppLocalization.string("Quit OctoRunner", locale: locale))
+        alert.addButton(withTitle: AppLocalization.string("Cancel", locale: locale)).keyEquivalent = "\u{1b}"
         return alert
     }
 

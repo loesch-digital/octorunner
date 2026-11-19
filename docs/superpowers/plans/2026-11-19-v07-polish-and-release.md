@@ -58,7 +58,13 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Interfaces:** Konsumiert verifizierte v0.6 und Task 1/2; liefert aktuelle Nutzerdoku und unveränderliches signiertes Release.
 
-- [ ] Doku/aktuelle Screenshots/Release Notes auf tatsächlichen Funktionsstand bringen; Entwicklungsabnahme über Xcode und signiertes ZIP ohne Homebrew erklären.
+- [ ] Öffentliche `README.md` ausschließlich auf Englisch erstellen (Nutzerentscheidung 19.11.2026). Aufbau und Verständlichkeit an https://github.com/podman-desktop/podman-desktop orientieren: Produktname/kurzer Nutzen, reales App-Screenshot als Einstieg, übersichtliche Navigation und Features mit passenden Screenshots. Keine Funktionen als fertig ausweisen, die noch geplant sind.
+- [ ] Installation mit geprüften Copy-and-paste-Befehlen für Homebrew (Tap/Cask) und alternativ signiertem Release-ZIP beschreiben; Voraussetzungen macOS/Architektur, Updates und erster Start erklären. Keine Gatekeeper-Umgehungen empfehlen.
+- [ ] Quick Start: GitHub verbinden, minimale Rechte je Funktion, Runner hinzufügen/importieren, Workflow-Labels `runs-on` konfigurieren und Status/Jobs ansehen. GUI-/LaunchAgent-Lebensdauer sowie Grenzen von Neustart und Parallelität klar benennen.
+- [ ] Entwicklungsabnahme ohne Homebrew über Xcode und vorhandene lokale Startskripte dokumentieren, einschließlich Voraussetzungen und tatsächlich geprüfter Build-/Testbefehle. Auf ausführliche Entwickler-/Architekturdoku verlinken statt deren Inhalt in die README zu kopieren.
+- [ ] Aktuelle echte App-Screenshots für Dashboard, Runner-Assistent, Details/Logs, Jobs/Workflow und Einstellungen aufnehmen, ohne Tokens/private Daten; Mockups in `docs/assets/screens/` nur als Designvorlage verwenden. Bilder mit englischen Alt-Texten, funktionierenden relativen Links und angemessener Größe einbinden.
+- [ ] Verifizierte CI-/Release-Badges, Release-/Support-/Lizenzlinks ergänzen, soweit tatsächlich vorhanden. README nur einmal auf Englisch, keine parallelen Übersetzungen. Alle Links, Homebrew-/ZIP-Schritte und Bilddateien vor Release prüfen.
+- [ ] `docs/README.md`, Lieferplan und Release Notes auf tatsächlichen Funktionsstand bringen.
 - [ ] Vollständige Tests, nativer Build, grüne PR-/main-CI. `npx release-it 0.7.0 --ci`, danach Release-Lauf, Homebrew-Installation, App-Start und Gatekeeper vollständig prüfen.
 - [ ] Deutsche Abschlussübersicht mit offenen Einschränkungen und höchstens drei manuellen Punkten liefern.
 - [ ] **STOPP nach v0.7.0:** Nutzer ausdrücklich fragen, ob und wann v1.0.0 erscheinen soll. Kein v1.0.0-Tag und keine automatische Fortsetzung.

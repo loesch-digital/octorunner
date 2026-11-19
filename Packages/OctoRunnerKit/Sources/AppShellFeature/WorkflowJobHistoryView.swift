@@ -160,7 +160,7 @@ public struct WorkflowJobHistoryView: View {
         case .unavailable: key = "History could not be loaded; saved observations remain available"
         case nil:
             if !model.repositoryFailures.isEmpty {
-                return AppLocalization.string("Some repositories could not be refreshed", locale: locale) + ": " + model.repositoryFailures.map(\.repository).joined(separator: ", ")
+                return AppLocalization.string("Some repositories could not be refreshed", locale: locale) + ": " + "\n" + model.repositoryFailures.map { $0.localizedMessage(locale: locale) }.joined(separator: "\n")
             }
             if let deadline = model.retryNotBefore, deadline > .now {
                 return AppLocalization.string("GitHub rate limit reached; refresh is paused", locale: locale) + " · " + deadline.formatted(date: .omitted, time: .standard)

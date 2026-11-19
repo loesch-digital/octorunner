@@ -48,7 +48,7 @@ public final class AddRunnerWizardViewModel {
 
     public var isLoadingTargets: Bool = false
     public var isProvisioning: Bool = false
-    public var provisioningProgressMessage: String?
+    public var provisioningProgressMessage: RunnerProvisioningProgress?
     public var errorMessage: String?
 
     private let provisioningClient: any RunnerTargetLoading

@@ -1,8 +1,10 @@
 import DesignSystem
 import SwiftUI
+import RunnerEngine
 
 struct RunnerProvisioningFeedback: View {
-    let progress: String?
+    @Environment(\.locale) private var locale
+    let progress: RunnerProvisioningProgress?
     let errorMessage: String?
 
     var body: some View {
@@ -10,7 +12,7 @@ struct RunnerProvisioningFeedback: View {
             if let progress {
                 HStack(alignment: .top, spacing: 10) {
                     ProgressView().controlSize(.small)
-                    Text(progress)
+                    Text(progress.localizedMessage(locale: locale))
                         .font(.callout.monospaced())
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -21,7 +23,7 @@ struct RunnerProvisioningFeedback: View {
             }
             if let errorMessage {
                 Label {
-                    Text(errorMessage)
+                    Text(AppLocalization.string(String.LocalizationValue(stringLiteral: errorMessage), locale: locale))
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
                 } icon: {

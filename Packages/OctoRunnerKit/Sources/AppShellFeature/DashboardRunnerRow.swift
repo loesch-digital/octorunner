@@ -3,6 +3,7 @@ import DesignSystem
 import SwiftUI
 
 public struct DashboardRunnerRow: View {
+    @Environment(\.locale) private var locale
     let runner: RunnerEntity
     let lastJob: WorkflowHistoryEntry?
     let openLog: () -> Void
@@ -92,7 +93,7 @@ public struct DashboardRunnerRow: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .help(runner.labels.joined(separator: ", "))
-                    .accessibilityLabel("Labels: \(runner.labels.joined(separator: ", "))")
+                    .accessibilityLabel(AppLocalization.string("Labels: \(runner.labels.joined(separator: ", "))", locale: locale))
             }
         }
         .padding(10)

@@ -48,16 +48,16 @@ public struct MenuBarStatusView: View {
                     .font(.system(size: 16))
                     .foregroundStyle(OctoTheme.accentBlue)
                     .accessibilityHidden(true)
-                Text("OctoRunner Engine")
+                Text(AppLocalization.string("OctoRunner Engine", locale: locale))
                     .font(.system(size: 13, weight: .bold))
                 Spacer()
-                Button("Dashboard", systemImage: "macwindow") {
+                Button(AppLocalization.string("Dashboard", locale: locale), systemImage: "macwindow") {
                     DashboardWindowCoordinator.activateOrOpenDashboard(openWindow: openWindow)
                 }
                 .controlSize(.small)
                 .buttonStyle(.bordered)
-                .accessibilityLabel("Open Dashboard Window")
-                .accessibilityHint("Brings the existing OctoRunner dashboard window to the front")
+                .accessibilityLabel(AppLocalization.string("Open Dashboard Window", locale: locale))
+                .accessibilityHint(AppLocalization.string("Brings the existing OctoRunner dashboard window to the front", locale: locale))
             }
 
             TimelineView(.periodic(from: .now, by: 15)) { context in
@@ -79,12 +79,12 @@ public struct MenuBarStatusView: View {
 
     private func workpoolRunnersSection(results: LocalJobResults) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("LOCAL WORKPOOL RUNNERS")
+            Text(AppLocalization.string("LOCAL WORKPOOL RUNNERS", locale: locale))
                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                 .foregroundStyle(.secondary)
 
             if runners.isEmpty {
-                Text("No local runners configured yet.")
+                Text(AppLocalization.string("No local runners configured yet.", locale: locale))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 80)
@@ -122,7 +122,7 @@ public struct MenuBarStatusView: View {
                             .background(OctoTheme.surface, in: .rect(cornerRadius: 7))
                             .accessibilityElement(children: .contain)
                             .accessibilityLabel("Runner \(runner.name)")
-                            .accessibilityValue("\(runner.status.badgeTitle), \(runner.scopeUrlString)")
+                            .accessibilityValue("\(runner.status.localizedBadgeTitle(locale: locale)), \(runner.scopeUrlString)")
                         }
                     }
             }
@@ -133,7 +133,7 @@ public struct MenuBarStatusView: View {
 
     private var systemPoliciesSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("AUTOSTART & SYSTEM POLICIES")
+            Text(AppLocalization.string("AUTOSTART & SYSTEM POLICIES", locale: locale))
                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                 .foregroundStyle(.secondary)
 
@@ -147,12 +147,12 @@ public struct MenuBarStatusView: View {
             .accessibilityHint(Text("Opens app preferences in a separate settings window.", bundle: .module))
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Coming in v0.5.0 — not active yet")
+                Text(AppLocalization.string("Available in v0.6 — not active yet", locale: locale))
                     .font(.caption)
-                Toggle("Auto-restart Runner on Crash", isOn: .constant(false))
-                    .accessibilityHint("Coming in v0.5.0; currently unavailable")
-                Toggle("Pause Queue during Battery Saver", isOn: .constant(false))
-                    .accessibilityHint("Coming in v0.5.0; currently unavailable")
+                Toggle(AppLocalization.string("Auto-restart Runner on Crash", locale: locale), isOn: .constant(false))
+                    .accessibilityHint(AppLocalization.string("Available in v0.6; currently unavailable", locale: locale))
+                Toggle(AppLocalization.string("Pause Queue during Battery Saver", locale: locale), isOn: .constant(false))
+                    .accessibilityHint(AppLocalization.string("Available in v0.6; currently unavailable", locale: locale))
             }
             .disabled(true)
             .toggleStyle(.checkbox)
@@ -173,21 +173,21 @@ public struct MenuBarStatusView: View {
 
             Spacer()
 
-            Button("Hide Window", systemImage: "eye.slash") {
+            Button(AppLocalization.string("Hide Window", locale: locale), systemImage: "eye.slash") {
                 DashboardWindowCoordinator.hideDashboardWindowToMenuBar()
             }
             .buttonStyle(.borderless)
             .font(.system(size: 11, weight: .medium))
-            .help("Closes the Dashboard window while keeping OctoRunner active in the Menu Bar")
-            .accessibilityLabel("Hide Dashboard Window to Menu Bar")
+            .help(AppLocalization.string("Closes the Dashboard window while keeping OctoRunner active in the Menu Bar", locale: locale))
+            .accessibilityLabel(AppLocalization.string("Hide Dashboard Window to Menu Bar", locale: locale))
 
-            Button("Quit", systemImage: "power", role: .destructive) {
+            Button(AppLocalization.string("Quit", locale: locale), systemImage: "power", role: .destructive) {
                 NSApplication.shared.terminate(nil)
             }
             .buttonStyle(.borderless)
             .font(.system(size: 11, weight: .medium))
-            .help("Quits OctoRunner and removes its menu bar item. Installed runner LaunchAgents continue running; imported runners may require migration.")
-            .accessibilityLabel("Quit OctoRunner GUI")
+            .help(AppLocalization.string("Quits OctoRunner and removes its menu bar item. Installed runner LaunchAgents continue running; imported runners may require migration.", locale: locale))
+            .accessibilityLabel(AppLocalization.string("Quit OctoRunner GUI", locale: locale))
         }
     }
 
