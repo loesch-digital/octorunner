@@ -29,7 +29,7 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
     private var drainTimers: [UUID: Task<Void, Never>] = [:]
     private var removedOrReserved: Set<UUID> = []
     private var stopChecks: Set<UUID> = []
-    private var storagePaths: Set<String> = []
+    private var reservedPaths: Set<String> = []
     private var isQuitting = false
 
     public init(
@@ -89,7 +89,7 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
         guard !isQuitting else { throw RunnerSupervisionError.operationInProgress }
         guard !removedOrReserved.contains(runnerID) else { throw RunnerSupervisionError.notManaged }
         guard let runtime = runners[runnerID], runtime.configuration.mode == .direct else { throw RunnerSupervisionError.notManaged }
-        guard !storagePaths.contains(runtime.configuration.rootDirectory.standardizedFileURL.path) else {
+        guard !reservedPaths.contains(runtime.configuration.rootDirectory.standardizedFileURL.path) else {
             throw RunnerSupervisionError.operationInProgress
         }
         if runtime.phase == .starting, let generation = runtime.generation {
@@ -151,18 +151,18 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
         else { removedOrReserved.remove(runnerID) }
     }
 
-    public func reserveStorage(roots: [URL]) -> Set<String> {
+    public func reserveIdleDirectories(roots: [URL]) -> Set<String> {
         let activePaths = Set(runners.values.compactMap { runtime -> String? in
             guard runtime.handle != nil || runtime.phase == .starting else { return nil }
             return runtime.configuration.rootDirectory.standardizedFileURL.path
         })
-        let available = Set(roots.map { $0.standardizedFileURL.path }).subtracting(activePaths).subtracting(storagePaths)
-        storagePaths.formUnion(available)
+        let available = Set(roots.map { $0.standardizedFileURL.path }).subtracting(activePaths).subtracting(reservedPaths)
+        reservedPaths.formUnion(available)
         return available
     }
 
-    public func releaseStorage(paths: Set<String>) {
-        storagePaths.subtract(paths)
+    public func releaseDirectories(paths: Set<String>) {
+        reservedPaths.subtract(paths)
     }
 
     /// Freeze new starts and preflight every current child before requesting

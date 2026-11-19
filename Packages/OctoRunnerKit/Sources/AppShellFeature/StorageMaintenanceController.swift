@@ -76,10 +76,10 @@ public final class StorageMaintenanceController {
             var roots = try managedRunners(in: context)
             let candidateIDs = Set(snapshot.candidates.map(\.runnerID))
             let candidateRoots = roots.filter { candidateIDs.contains($0.id) }.map(\.root)
-            let reserved = await supervisor?.reserveStorage(roots: candidateRoots)
+            let reserved = await supervisor?.reserveIdleDirectories(roots: candidateRoots)
             defer {
                 if let supervisor, let reserved, !reserved.isEmpty {
-                    Task { await supervisor.releaseStorage(paths: reserved) }
+                    Task { await supervisor.releaseDirectories(paths: reserved) }
                 }
             }
             try Task.checkCancellation()

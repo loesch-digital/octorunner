@@ -27,12 +27,15 @@ public struct RunnerConfigDetailSheet: View {
     private let provisionerActor = RunnerProvisionerActor()
     private let supervisor: RunnerSupervisorActor?
     private let launchConfiguration: RunnerLaunchConfiguration
+    private let launchAgents: RunnerLaunchAgentInspector?
 
     public init(runner: RunnerEntity, supervisor: RunnerSupervisorActor? = nil,
-                launchConfiguration: RunnerLaunchConfiguration = RunnerLaunchConfiguration()) {
+                launchConfiguration: RunnerLaunchConfiguration = RunnerLaunchConfiguration(),
+                launchAgents: RunnerLaunchAgentInspector? = nil) {
         self.runner = runner
         self.supervisor = supervisor
         self.launchConfiguration = launchConfiguration
+        self.launchAgents = launchAgents
         _editableLabels = State(initialValue: runner.labels)
     }
 
@@ -262,10 +265,15 @@ public struct RunnerConfigDetailSheet: View {
                     }
 
                     Text(AppLocalization.string(
-                        "This runner is currently located at its original folder (\(runner.rootDirectoryPath ?? AppLocalization.string("external path", locale: locale))). Clicking 'Migrate into OctoRunner' copies the runner configuration into OctoRunner's managed Application Support directory, sets up automatic background start on macOS login, and switches management to OctoRunner.", locale: locale)
+                        "This runner is currently located at its original folder (\(runner.rootDirectoryPath ?? AppLocalization.string("external path", locale: locale))). Migration copies its configuration into OctoRunner’s Application Support folder. You can also enable automatic startup at login.", locale: locale)
                     )
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+
+                    Toggle(isOn: $registerBackgroundService) {
+                        Text("Automatic Background Start on macOS Login", bundle: .module)
+                    }
+                    .accessibilityHint(Text("Installs a LaunchAgent when the runner is migrated.", bundle: .module))
 
                     Button {
                         Task { await migrateRunnerToOctoRunner() }
@@ -276,7 +284,7 @@ public struct RunnerConfigDetailSheet: View {
                                 Text(AppLocalization.string("Migrating Runner…", locale: locale))
                             } else {
                                 Image(systemName: "bolt.horizontal.circle.fill")
-                                Text(AppLocalization.string("Migrate into OctoRunner & Enable Autostart", locale: locale))
+                                Text(AppLocalization.string("Migrate into OctoRunner", locale: locale))
                             }
                         }
                     }
@@ -290,20 +298,17 @@ public struct RunnerConfigDetailSheet: View {
                     RoundedRectangle(cornerRadius: 10)
                         .strokeBorder(OctoTheme.accentBlue.opacity(0.5), lineWidth: 1)
                 }
+            } else if let launchAgents, let target = runner.launchAgentTarget {
+                RunnerLaunchAgentPanel(runnerID: runner.id, target: target, inspector: launchAgents)
+                    .padding(14)
+                    .background(OctoTheme.surface, in: .rect(cornerRadius: 10))
+            } else if runner.executionMode == .direct {
+                Text("This runner is managed by OctoRunner while the app is open.", bundle: .module)
+                    .foregroundStyle(OctoTheme.secondaryText)
+            } else {
+                Text("No managed LaunchAgent is assigned to this runner.", bundle: .module)
+                    .foregroundStyle(OctoTheme.secondaryText)
             }
-
-            Toggle(isOn: $registerBackgroundService) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(AppLocalization.string("Automatic Background Start on macOS Login", locale: locale))
-                        .font(.system(size: 12, weight: .semibold))
-                    Text(AppLocalization.string("Service ID: \(runner.serviceLabel)", locale: locale))
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .toggleStyle(.switch)
-            .padding(14)
-            .background(OctoTheme.surface, in: .rect(cornerRadius: 10))
         }
     }
 
@@ -367,33 +372,35 @@ public struct RunnerConfigDetailSheet: View {
         errorMessage = nil
         defer { isMigrating = false }
 
-        let oldRoot = runner.rootDirectoryPath ?? URL(fileURLWithPath: runner.workDirectoryPath).deletingLastPathComponent().path()
-        let sourceURL = URL(fileURLWithPath: oldRoot, isDirectory: true)
+        let runnerID = runner.id
+        let runnerName = runner.name
+        let sourcePath = runner.rootDirectoryPath ?? runner.workDirectoryPath
+        let sourceURL = if let root = runner.rootDirectoryPath {
+            URL(filePath: root, directoryHint: .isDirectory)
+        } else {
+            URL(filePath: runner.workDirectoryPath).deletingLastPathComponent()
+        }
+        let launchAgentInstalled = registerBackgroundService
+        let actorLogin = accounts.first(where: { $0.isActive })?.login
 
         do {
             let migratedRoot = try await provisionerActor.migrateImportedRunnerDirectory(
-                runnerName: runner.name,
+                runnerName: runnerName,
                 sourceRootDirectory: sourceURL,
-                registerLaunchAgent: registerBackgroundService
+                registerLaunchAgent: launchAgentInstalled
             )
-            runner.rootDirectoryPath = migratedRoot.path()
-            runner.workDirectoryPath = migratedRoot.appending(path: "_work").path()
-            runner.isImportedLocal = false
-
-            AuditLogRecorder.record(
-                in: modelContext,
-                category: .configuration,
-                severity: .info,
-                title: "Runner Migrated into OctoRunner",
-                summary: "Migrated \(runner.name) from \(oldRoot) to \(migratedRoot.path())",
-                actorAccountLogin: accounts.first?.login,
-                targetRunnerName: runner.name,
-                previousValue: oldRoot,
-                newValue: migratedRoot.path()
-            )
-            try? modelContext.save()
-            statusBannerMessage = AppLocalization.string("Successfully migrated '\(runner.name)' into OctoRunner!", locale: locale)
+            guard let migratedName = try RunnerMigrationCompletion.apply(
+                runnerID: runnerID, expectedSourcePath: sourcePath, managedRoot: migratedRoot,
+                context: modelContext, actorLogin: actorLogin, launchAgentInstalled: launchAgentInstalled
+            ) else {
+                errorMessage = AppLocalization.string("Migration finished on disk, but the runner changed or was removed. Review the managed folder before retrying.", locale: locale)
+                return
+            }
+            statusBannerMessage = AppLocalization.string("Successfully migrated '\(migratedName)' into OctoRunner!", locale: locale)
+        } catch is CancellationError {
+            return
         } catch {
+            guard !Task.isCancelled else { return }
             errorMessage = error.localizedDescription
         }
     }

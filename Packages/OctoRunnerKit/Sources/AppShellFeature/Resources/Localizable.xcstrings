@@ -1,6 +1,448 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Service PID": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dienst-PID"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service PID"
+          }
+        }
+      }
+    },
+    "View launchd plist": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "launchd-Plist anzeigen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View launchd plist"
+          }
+        }
+      }
+    },
+    "Shows the installed plist as read-only XML.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeigt die installierte Plist als schreibgeschütztes XML."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows the installed plist as read-only XML."
+          }
+        }
+      }
+    },
+    "Refresh service status": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dienststatus aktualisieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh service status"
+          }
+        }
+      }
+    },
+    "Checks the installed definition and the current launchd service.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüft die installierte Konfiguration und den aktuellen launchd-Dienst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checks the installed definition and the current launchd service."
+          }
+        }
+      }
+    },
+    "Load service": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dienst laden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load service"
+          }
+        }
+      }
+    },
+    "Loads the verified definition for the unloaded service.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lädt die geprüfte Konfiguration des derzeit entladenen Dienstes."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loads the verified definition for the unloaded service."
+          }
+        }
+      }
+    },
+    "Service status unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dienststatus nicht verfügbar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service status unavailable"
+          }
+        }
+      }
+    },
+    "Service unloaded": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dienst nicht geladen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service unloaded"
+          }
+        }
+      }
+    },
+    "Service loaded and stopped": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dienst geladen und gestoppt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service loaded and stopped"
+          }
+        }
+      }
+    },
+    "Service identity unverified": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dienst konnte nicht eindeutig zugeordnet werden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service identity unverified"
+          }
+        }
+      }
+    },
+    "Service running": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dienst läuft"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service running"
+          }
+        }
+      }
+    },
+    "Installed plist not found": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installierte Plist nicht gefunden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed plist not found"
+          }
+        }
+      }
+    },
+    "Installed plist has invalid syntax": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installierte Plist hat eine ungültige Syntax"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed plist has invalid syntax"
+          }
+        }
+      }
+    },
+    "Installed plist could not be verified": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installierte Plist konnte nicht zugeordnet werden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed plist could not be verified"
+          }
+        }
+      }
+    },
+    "Verified plist syntax and ownership": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syntax und Zuordnung der Plist geprüft"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verified plist syntax and ownership"
+          }
+        }
+      }
+    },
+    "The service could not be loaded. Check its current status.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Dienst konnte nicht geladen werden. Prüfe seinen aktuellen Status."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The service could not be loaded. Check its current status."
+          }
+        }
+      }
+    },
+    "Runner LaunchAgents": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LaunchAgents der Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner LaunchAgents"
+          }
+        }
+      }
+    },
+    "Inspect the installed configuration and current status of each runner service.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüfe die installierte Konfiguration und den aktuellen Status der Runner-Dienste."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspect the installed configuration and current status of each runner service."
+          }
+        }
+      }
+    },
+    "No runner LaunchAgents are configured.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für die Runner sind keine LaunchAgents konfiguriert."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No runner LaunchAgents are configured."
+          }
+        }
+      }
+    },
+    "Shows the configuration and status of this service.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeigt die Konfiguration und den Status dieses Dienstes."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows the configuration and status of this service."
+          }
+        }
+      }
+    },
+    "This runner is managed by OctoRunner while the app is open.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner verwaltet diesen Runner, solange die App geöffnet ist."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This runner is managed by OctoRunner while the app is open."
+          }
+        }
+      }
+    },
+    "No managed LaunchAgent is assigned to this runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für diesen Runner ist kein verwalteter LaunchAgent hinterlegt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No managed LaunchAgent is assigned to this runner."
+          }
+        }
+      }
+    },
+    "Installs a LaunchAgent when the runner is migrated.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installiert bei der Migration einen LaunchAgent."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installs a LaunchAgent when the runner is migrated."
+          }
+        }
+      }
+    },
+    "Migrate into OctoRunner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zu OctoRunner migrieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Migrate into OctoRunner"
+          }
+        }
+      }
+    },
+    "This runner is currently located at its original folder (%@). Migration copies its configuration into OctoRunner’s Application Support folder. You can also enable automatic startup at login.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Runner liegt in seinem ursprünglichen Ordner (%@). Die Migration kopiert seine Konfiguration in den Application-Support-Ordner von OctoRunner. Du kannst auch den automatischen Start bei der Anmeldung aktivieren."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This runner is currently located at its original folder (%@). Migration copies its configuration into OctoRunner’s Application Support folder. You can also enable automatic startup at login."
+          }
+        }
+      }
+    },
     "General": {
       "extractionState": "manual",
       "localizations": {

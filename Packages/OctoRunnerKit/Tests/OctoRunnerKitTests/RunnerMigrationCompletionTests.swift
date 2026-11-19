@@ -11,15 +11,17 @@ struct RunnerMigrationCompletionTests {
         let container = try OctoRunnerPersistence.makeInMemoryContainer()
         let context = container.mainContext
         let source = "/tmp/imported runner %20"
-        let runner = RunnerEntity(name: "fixture", scopeUrl: URL(string: "https://github.com/owner/repo")!, workDirectory: URL(fileURLWithPath: source), isImportedLocal: true)
+        let runner = RunnerEntity(name: "Build Fixture", scopeUrl: URL(string: "https://github.com/owner/repo")!, workDirectory: URL(fileURLWithPath: source), isImportedLocal: true)
         runner.rootDirectoryPath = source
         context.insert(runner)
         try context.save()
         let root = URL(fileURLWithPath: "/tmp/managed runner %20")
         #expect(try RunnerMigrationCompletion.apply(runnerID: runner.id, expectedSourcePath: source + "changed", managedRoot: root, context: context, actorLogin: nil) == nil)
         #expect(runner.isImportedLocal)
-        #expect(try RunnerMigrationCompletion.apply(runnerID: runner.id, expectedSourcePath: source, managedRoot: root, context: context, actorLogin: nil) == "fixture")
+        #expect(try RunnerMigrationCompletion.apply(runnerID: runner.id, expectedSourcePath: source, managedRoot: root, context: context, actorLogin: nil) == "Build Fixture")
         #expect(!runner.isImportedLocal)
+        #expect(runner.serviceLabel == "io.octorunner.agent.build-fixture")
+        #expect(runner.executionMode == .launchAgent)
         #expect(runner.rootDirectoryPath == "/tmp/managed runner %20")
         #expect(runner.workDirectoryPath == "/tmp/managed runner %20/_work")
         let count = try context.fetchCount(FetchDescriptor<AuditLogEntity>())

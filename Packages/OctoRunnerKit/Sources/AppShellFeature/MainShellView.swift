@@ -40,16 +40,19 @@ public struct MainShellView: View {
     private let provisioner = RunnerProvisionerActor()
     private let jobResults: LocalJobResults
     private let supervisor: RunnerSupervisorActor
+    private let launchAgents: RunnerLaunchAgentInspector?
 
     public init(
         section: SidebarSection = .allRunners,
         historyRateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(),
         accountSession: AccountSessionController = AccountSessionController(),
         jobResults: LocalJobResults = LocalJobResults(),
-        supervisor: RunnerSupervisorActor = RunnerSupervisorActor()
+        supervisor: RunnerSupervisorActor = RunnerSupervisorActor(),
+        launchAgents: RunnerLaunchAgentInspector? = nil
     ) {
         self.jobResults = jobResults
         self.supervisor = supervisor
+        self.launchAgents = launchAgents
         _historyRateBudget = State(initialValue: historyRateBudget)
         _accountSession = State(initialValue: accountSession)
         _selectedSection = State(initialValue: section)
@@ -100,7 +103,8 @@ public struct MainShellView: View {
             AddRunnerWizardSheet(viewModel: AddRunnerWizardViewModel(supervisor: supervisor))
         }
         .sheet(item: $activeConfigRunner) { runner in
-            RunnerConfigDetailSheet(runner: runner, supervisor: supervisor, launchConfiguration: runnerLaunchConfiguration)
+            RunnerConfigDetailSheet(runner: runner, supervisor: supervisor, launchConfiguration: runnerLaunchConfiguration,
+                launchAgents: launchAgents)
         }
         .sheet(item: $activeConsoleRunner) { runner in
             RunnerConsoleLogSheet(runner: runner)
@@ -254,7 +258,7 @@ public struct MainShellView: View {
         if selectedSection == .queueWorkpools {
             WorkflowJobHistoryView(rateBudget: historyRateBudget)
         } else if selectedSection == .launchdSettings {
-            SettingsWindowView(accountSession: accountSession)
+            SettingsWindowView(accountSession: accountSession, launchAgents: launchAgents)
         } else if selectedSection == .hostTelemetry {
             HostTelemetryDashboardView(accountID: accounts.first(where: { $0.isActive })?.githubUserId, rateBudget: historyRateBudget)
         } else {

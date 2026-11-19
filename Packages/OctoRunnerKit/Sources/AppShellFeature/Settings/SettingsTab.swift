@@ -57,7 +57,7 @@ extension SettingsTab {
     case .background:
       [
         "Autostart & Background", "Launch at macOS login", "Runner SHELL environment",
-        "Inherit OctoRunner's PATH",
+        "Inherit OctoRunner's PATH", "Runner LaunchAgents", "View launchd plist",
       ]
     case .failover:
       ["Failover", "Restart policy", "Restart delay (seconds)"]

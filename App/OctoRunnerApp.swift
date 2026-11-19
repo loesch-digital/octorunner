@@ -74,7 +74,8 @@ struct OctoRunnerApp: App {
                     historyRateBudget: services.historyRateBudget,
                     accountSession: services.accounts,
                     jobResults: results,
-                    supervisor: services.supervisor
+                    supervisor: services.supervisor,
+                    launchAgents: services.launchAgents
                 )
             }
                 .environment(services.preferences)
@@ -88,7 +89,7 @@ struct OctoRunnerApp: App {
         .windowToolbarStyle(.unified)
 
         Settings {
-            SettingsWindowView(accountSession: services.accounts)
+            SettingsWindowView(accountSession: services.accounts, launchAgents: services.launchAgents)
                 .environment(services.preferences)
                 .environment(services.integration)
                 .environment(services.notifications)
