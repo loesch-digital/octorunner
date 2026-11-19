@@ -102,7 +102,24 @@ public actor GitHubActionsClient {
             let components = part.split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) }
             guard components.dropFirst().contains("rel=\"next\"") else { continue }
             guard let target = components.first, target.hasPrefix("<"), target.hasSuffix(">"),
-                  let url = URL(string: String(target.dropFirst().dropLast())) else { throw GitHubActionsError.invalidPagination }
+                  var linked = URLComponents(string: String(target.dropFirst().dropLast())) else {
+                throw GitHubActionsError.invalidPagination
+            }
+            if linked.percentEncodedPath != path {
+                // GitHub may use /repositories/{id} for the same endpoint in
+                // Link. Keep only its paging parameters, never its repository.
+                let expected = path.split(separator: "/", maxSplits: 3)
+                let received = linked.percentEncodedPath.dropFirst()
+                    .split(separator: "/", maxSplits: 2, omittingEmptySubsequences: false)
+                guard linked.percentEncodedPath.hasPrefix("/repositories/"),
+                      expected.count == 4, received.count == 3, received[2] == expected[3],
+                      received[1].utf8.allSatisfy({ (48...57).contains($0) }),
+                      let repositoryID = Int64(received[1]), repositoryID > 0 else {
+                    throw GitHubActionsError.invalidPagination
+                }
+                linked.percentEncodedPath = path
+            }
+            guard let url = linked.url else { throw GitHubActionsError.invalidPagination }
             try validate(url, path: path)
             return url
         }

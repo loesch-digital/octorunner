@@ -28,6 +28,28 @@ struct WorkflowHistoryLoadingTests {
         #expect(requests[1].url?.path.contains("/attempts/2/jobs") == true)
     }
 
+    @Test("GitHub repository-ID pagination loads both history pages within the selected repository")
+    func repositoryIDPagination() async throws {
+        let nextLink = "<https://api.github.com/repositories/123456/actions/runs?per_page=10&page=2>; rel=\"next\", <https://api.github.com/repositories/123456/actions/runs?per_page=10&page=8>; rel=\"last\""
+        let transport = HistoryHTTPFixture(responses: [
+            .init(statusCode: 200, headers: ["Link": nextLink],
+                  data: Data(#"{"total_count":12,"workflow_runs":[{"id":42}]}"#.utf8)),
+            .init(statusCode: 200, headers: [:],
+                  data: Data(#"{"total_count":12,"workflow_runs":[{"id":41}]}"#.utf8))
+        ])
+        let loader = GitHubWorkflowHistoryLoader(client: GitHubActionsClient(transport: transport), secrets: HistorySecrets())
+
+        let first = try await loader.page(selection: selection, nextPage: nil, completedAttempts: [])
+        #expect(first.runs.map(\.run.id) == [42])
+        let nextPage = try #require(first.nextPage)
+        #expect(nextPage.absoluteString == "https://api.github.com/repos/example/repo/actions/runs?per_page=10&page=2")
+        let second = try await loader.page(selection: selection, nextPage: nextPage, completedAttempts: [])
+        #expect(second.runs.map(\.run.id) == [41])
+        let requests = await transport.requests
+        #expect(requests.count == 2)
+        #expect(requests.allSatisfy { $0.url?.path == "/repos/example/repo/actions/runs" })
+    }
+
     @Test("Terminal job pages must match total_count before history can cache completion", arguments: [2, 0, -1])
     func incompleteCompletedAttempt(_ total: Int) async {
         let transport = HistoryHTTPFixture([

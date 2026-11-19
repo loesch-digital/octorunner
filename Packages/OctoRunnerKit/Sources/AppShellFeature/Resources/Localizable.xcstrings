@@ -9202,6 +9202,40 @@
         }
       }
     },
+    "Copy error details": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy error details"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fehlerdetails kopieren"
+          }
+        }
+      }
+    },
+    "Copies the full workflow history warning to the clipboard": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copies the full workflow history warning to the clipboard"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopiert die vollständige Warnung der Workflow-Historie in die Zwischenablage"
+          }
+        }
+      }
+    },
     "Copy Code": {
       "extractionState": "manual",
       "localizations": {

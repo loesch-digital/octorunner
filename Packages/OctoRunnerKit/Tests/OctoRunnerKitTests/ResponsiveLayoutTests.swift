@@ -1,5 +1,5 @@
 import AppKit
-import AppShellFeature
+@testable import AppShellFeature
 import CoreModels
 import Foundation
 import GitHubAPI
@@ -41,7 +41,7 @@ struct ResponsiveLayoutTests {
             for viewport in [CGSize(width: 560, height: 480), CGSize(width: 900, height: 800)] {
                 let measurement = LayoutMeasurement()
                 let host = NSHostingView(rootView: FixedTestViewport(size: viewport, measurement: measurement) {
-                    WorkflowHistoryContent(entries: entries, repositories: [run.repositoryFullName] + (1...80).map { "long-organization/repository-\($0)" }, repository: .constant(run.repositoryFullName), filter: .constant(WorkflowHistoryFilter()), durationTarget: .constant(nil), isLoading: false, errorMessage: nil, lastRefresh: .now, rateLimitRemaining: 4990, canLoadOlder: false, refresh: {}, loadOlder: {})
+                    WorkflowHistoryContent(entries: entries, repositories: [run.repositoryFullName] + (1...80).map { "long-organization/repository-\($0)" }, repository: .constant(run.repositoryFullName), filter: .constant(WorkflowHistoryFilter()), durationTarget: .constant(nil), isLoading: false, errorMessage: "Einige Repositories konnten nicht aktualisiert werden:\n\(run.repositoryFullName): Die Verbindung ist fehlgeschlagen.", lastRefresh: .now, rateLimitRemaining: 4990, canLoadOlder: false, refresh: {}, loadOlder: {})
                 }.preferredColorScheme(scheme).environment(\.locale, Locale(identifier: "de")))
                 host.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
                 host.frame = CGRect(origin: .zero, size: viewport)
@@ -55,6 +55,16 @@ struct ResponsiveLayoutTests {
                 }
             }
         }
+    }
+
+    @Test("Copying a workflow warning preserves the complete multiline message")
+    func copyWorkflowWarning() {
+        let message = "Einige Repositories konnten nicht aktualisiert werden:\nexample/repo: Historie konnte nicht geladen werden."
+        let pasteboard = NSPasteboard.withUniqueName()
+        defer { pasteboard.releaseGlobally() }
+        let banner = WorkflowHistoryErrorBanner(message: message)
+        #expect(banner.copy(to: pasteboard))
+        #expect(pasteboard.string(forType: .string) == message)
     }
 
     @Test("Dashboard runner rows stay within narrow and wide viewports with long metadata")
