@@ -13,6 +13,7 @@ public final class AppIntegrationController {
     @ObservationIgnored private let preferences: AppPreferencesStore
     @ObservationIgnored private let loginService: any LoginItemServicing
     @ObservationIgnored private var loginOperation = 0
+    @ObservationIgnored private var hasPresentedWindow = false
 
     public init(preferences: AppPreferencesStore, loginService: any LoginItemServicing = RunnerSupervisorActor()) {
         self.preferences = preferences
@@ -55,13 +56,22 @@ public final class AppIntegrationController {
         hasVisibleDashboard || !showInMenuBar || !hideDockWhenClosed
     }
 
-    public func applyDockVisibility(hasVisibleDashboard: Bool) {
+    func desiredDockPolicy(hasVisibleDashboard: Bool) -> NSApplication.ActivationPolicy {
+        hasPresentedWindow = hasPresentedWindow || hasVisibleDashboard
+        // Before SwiftUI presents its first window, "no visible window" means
+        // startup, not a user closing the dashboard. Demoting here can prevent
+        // Launch Services/XCTest from ever completing foreground activation.
+        guard hasPresentedWindow else { return .regular }
         let show = Self.shouldShowDock(
             hasVisibleDashboard: hasVisibleDashboard,
             showInMenuBar: preferences.showInMenuBar,
             hideDockWhenClosed: preferences.hideDockIconWhenClosed
         )
-        let policy: NSApplication.ActivationPolicy = show ? .regular : .accessory
+        return show ? .regular : .accessory
+    }
+
+    public func applyDockVisibility(hasVisibleDashboard: Bool) {
+        let policy = desiredDockPolicy(hasVisibleDashboard: hasVisibleDashboard)
         if NSApplication.shared.activationPolicy() != policy {
             NSApplication.shared.setActivationPolicy(policy)
         }

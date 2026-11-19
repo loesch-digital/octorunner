@@ -25,4 +25,11 @@
 - [x] Reproduce full suite with `--maximum-repetitions 3 --repeat-until fail`; watchdog exit 124; `/tmp/octorunner-full-repeat-diagnostics/sample-59011.txt` shows `Process.waitUntilExit()` at `GitHubActionsTransportTests.swift:19`.
 - [x] Add initially red lifecycle regression tests (`/tmp/octorunner-server-lifecycle-red.log`) and an async owned server fixture; preserve real redirect/cache integration coverage.
 - [x] Verify fast exit, startup failure, body failure and actual cancellation, including PID-exit assertions. Removing the exit wait fails both cleanup tests (`/tmp/octorunner-server-mutation-red.log`). Fresh review findings corrected; final full suite: 286 tests, three repetitions each, 33.583s (`/tmp/octorunner-server-reviewed-green.log`).
-- [ ] PR/main CI for lifecycle fix. This does not by itself prove every application hang resolved.
+- [x] Lifecycle fix merged as PR #28; PR CI 44466663572 green (8m50). Main CI 44467709824 passes Swift tests but exposes a separate cold-launch UI activation failure; see Task 4. User clarified that the reported hangs concern GitHub test runs.
+
+
+### Task 4: Preserve foreground activation during first window presentation
+- [x] Inspect main CI 44467709824 failed logs and downloaded xcresult. First AuditLog UI launch stays Running Background; following telemetry/settings tests pass. Session log records accessory activation while XCTest waits for foreground.
+- [x] Reproduce the premature Dock demotion in `AppIntegrationTests.dockStartupActivation`: three false/no-window startup updates fail the `.regular` expectation (`/tmp/octorunner-dock-startup-behavior-red.log`).
+- [x] Keep regular policy until the first visible window; retain existing close/reopen/menu visibility rules afterward. Full Swift suite GREEN 287 tests (`/tmp/octorunner-dock-startup-green.log`); fresh review has no findings.
+- [ ] PR/main CI with actual native UI tests. Local native test cannot initialize macOS automation mode and is not counted as passed (`/tmp/octorunner-dock-activation-ui.log`); no permission bypass, skips or failure retries.
