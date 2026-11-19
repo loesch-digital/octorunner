@@ -7,31 +7,17 @@ struct GitHubActionsTransportTests {
     func rejectsRealRedirect() async throws {
         // Use the actual URLSession stack, not a mocked delegate invocation. The
         // server binds only to loopback and never receives real credentials.
-        let server = Process()
-        let output = Pipe()
-        server.executableURL = URL(filePath: "/usr/bin/python3")
-        server.arguments = ["-u", "-c", Self.serverScript]
-        server.standardOutput = output
-        server.standardError = FileHandle.nullDevice
-        try server.run()
-        defer {
-            if server.isRunning { server.terminate() }
-            server.waitUntilExit()
-            try? output.fileHandleForReading.close()
+        try await withPythonTestServer(script: Self.serverScript) { baseURL in
+            let session = URLSession(configuration: .ephemeral)
+            defer { session.invalidateAndCancel() }
+            let transport = GitHubActionsURLSessionTransport(session: session)
+            var request = URLRequest(url: baseURL.appending(path: "redirect"))
+            request.setValue("Bearer synthetic-fixture", forHTTPHeaderField: "Authorization")
+            let response = try await transport.send(request)
+            #expect(response.statusCode == 301)
+            let (count, _) = try await session.data(from: baseURL.appending(path: "count"))
+            #expect(String(data: count, encoding: .utf8) == "0")
         }
-        let portData = output.fileHandleForReading.availableData
-        let portText = try #require(String(data: portData, encoding: .utf8))
-        let port = try #require(Int(portText.trimmingCharacters(in: .whitespacesAndNewlines)))
-        let baseURL = try #require(URL(string: "http://127.0.0.1:\(port)"))
-        let session = URLSession(configuration: .ephemeral)
-        defer { session.invalidateAndCancel() }
-        let transport = GitHubActionsURLSessionTransport(session: session)
-        var request = URLRequest(url: baseURL.appending(path: "redirect"))
-        request.setValue("Bearer synthetic-fixture", forHTTPHeaderField: "Authorization")
-        let response = try await transport.send(request)
-        #expect(response.statusCode == 301)
-        let (count, _) = try await session.data(from: baseURL.appending(path: "count"))
-        #expect(String(data: count, encoding: .utf8) == "0")
     }
 
     private static let serverScript = #"""
