@@ -21,7 +21,7 @@ public final class OAuthDeviceFlowViewModel {
     public var isPATVisible: Bool = false
     public var isValidatingPAT: Bool = false
     public var copiedToClipboard: Bool = false
-    public var errorMessage: String?
+    public var errorMessage: AppErrorMessage?
 
     private let oauthActor: any GitHubAuthenticating
     private var pollingTask: Task<Void, Never>?
@@ -70,7 +70,7 @@ public final class OAuthDeviceFlowViewModel {
             if generation == revision { state = .initial }
         } catch {
             guard isCurrent(revision) else { return }
-            errorMessage = error.localizedDescription
+            errorMessage = .failure(error)
             state = .initial
         }
     }
@@ -103,7 +103,7 @@ public final class OAuthDeviceFlowViewModel {
                 // Cooperative cancellation on modal close or user cancel
             } catch {
                 guard isCurrent(revision) else { return }
-                errorMessage = error.localizedDescription
+                errorMessage = .failure(error)
                 state = .initial
             }
         }
@@ -136,7 +136,7 @@ public final class OAuthDeviceFlowViewModel {
             return
         } catch {
             guard isCurrent(revision) else { return }
-            errorMessage = error.localizedDescription
+            errorMessage = .failure(error)
         }
     }
 

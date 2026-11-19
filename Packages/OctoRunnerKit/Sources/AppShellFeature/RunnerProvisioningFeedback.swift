@@ -5,7 +5,7 @@ import RunnerEngine
 struct RunnerProvisioningFeedback: View {
     @Environment(\.locale) private var locale
     let progress: RunnerProvisioningProgress?
-    let errorMessage: String?
+    let errorMessage: AppErrorMessage?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -23,7 +23,7 @@ struct RunnerProvisioningFeedback: View {
             }
             if let errorMessage {
                 Label {
-                    Text(AppLocalization.string(String.LocalizationValue(stringLiteral: errorMessage), locale: locale))
+                    Text(errorMessage.localized(locale: locale))
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
                 } icon: {

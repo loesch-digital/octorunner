@@ -3,6 +3,7 @@ import AppKit
 import CoreModels
 import DesignSystem
 import Foundation
+import GitHubAPI
 import RunnerEngine
 import Testing
 
@@ -50,6 +51,12 @@ struct InterfaceLocalizationTests {
         #expect(RunnerStatus.busy.rawValue == "busy")
     }
 
+    @Test("The runner sidebar retains its English navigation label")
+    func allRunnersSidebarTitle() {
+        #expect(AppLocalization.string("All runners", locale: Locale(identifier: "en")) == "All Runners")
+        #expect(AppLocalization.string("All runners", locale: Locale(identifier: "de")) == "Alle Runner")
+    }
+
     @Test("Interpolated interface counts retain translated labels")
     func counts() {
         #expect(AppLocalization.string("Instances: \(3)", locale: Locale(identifier: "de")) == "Instanzen: 3")
@@ -77,6 +84,37 @@ struct InterfaceLocalizationTests {
         #expect(RunnerProvisioningProgress.verifyingBinary(filename: "runner-arm64.tar.gz").localizedMessage(locale: Locale(identifier: "de")).contains("runner-arm64.tar.gz"))
         #expect(RunnerProvisioningProgress.registeringInstances(count: 2).localizedMessage(locale: Locale(identifier: "de")) == "Runner-Instanzen werden eingerichtet: 2 …")
         #expect(RunnerProvisioningProgress.registeringInstances(count: 2).localizedMessage(locale: Locale(identifier: "en")) == "Provisioning runner instances: 2…")
+    }
+
+    @Test("App-owned errors use the selected language")
+    func appErrors() {
+        let german = Locale(identifier: "de")
+        #expect(AppErrorMessage.failure(GitHubAuthError.invalidTokenOrUnauthorized).localized(locale: german) == "Das GitHub-Token ist ungültig oder abgelaufen.")
+        #expect(AppErrorMessage.failure(RunnerEngineError.runnerDirectoryAlreadyExists).localized(locale: german).contains("anderen Namen"))
+        #expect(AppErrorMessage.failure(GitHubAuthError.invalidHTTPStatus(502)).localized(locale: german).contains("502"))
+    }
+
+    @Test("A rate limit preserves an earlier repository failure")
+    func combinedHistoryFailures() throws {
+        let failure = WorkflowHistoryRepositoryFailure(repository: "owner/one", error: .permissionDenied)
+        let text = try #require(WorkflowHistoryRepositoryFailure.banner(
+            error: .rateLimited(until: nil), failures: [failure], locale: Locale(identifier: "en")))
+        #expect(text.contains("GitHub rate limit reached"))
+        #expect(text.contains("owner/one: This token cannot read Actions"))
+    }
+
+    @Test("A hidden or missing Actions resource retains the HTTP distinction")
+    func notFoundHistoryMessage() {
+        let failure = WorkflowHistoryRepositoryFailure(repository: "owner/one", error: .resourceNotFound)
+        #expect(failure.localizedMessage(locale: Locale(identifier: "en")).contains("HTTP 404"))
+    }
+
+    @Test("Runner ownership labels follow the selected language", arguments: [true, false])
+    func ownershipLabel(imported: Bool) {
+        #expect(DashboardRunnerRow.ownershipLabel(imported: imported, locale: Locale(identifier: "de"))
+            == AppLocalization.string(imported ? "Imported" : "Managed", locale: Locale(identifier: "de")))
+        #expect(DashboardRunnerRow.ownershipLabel(imported: imported, locale: Locale(identifier: "en"))
+            == (imported ? "Imported" : "Managed"))
     }
 
 }

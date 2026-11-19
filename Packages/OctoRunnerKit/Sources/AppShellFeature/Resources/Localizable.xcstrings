@@ -2036,7 +2036,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "All runners"
+            "value": "All Runners"
           }
         }
       }
@@ -10490,6 +10490,244 @@
           "stringUnit": {
             "state": "translated",
             "value": "„%@“ wurde erfolgreich zu OctoRunner migriert!"
+          }
+        }
+      }
+    },
+    "GitHub returned HTTP status %lld.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub returned HTTP status %lld."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub hat den HTTP-Status %lld zurückgegeben."
+          }
+        }
+      }
+    },
+    "The device authorization code has expired. Please request a new code.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The device authorization code has expired. Please request a new code."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Gerätecode ist abgelaufen. Fordere einen neuen Code an."
+          }
+        }
+      }
+    },
+    "Authorization was cancelled or denied in the browser.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authorization was cancelled or denied in the browser."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Freigabe wurde im Browser abgebrochen oder abgelehnt."
+          }
+        }
+      }
+    },
+    "The provided GitHub token is invalid or expired.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The provided GitHub token is invalid or expired."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das GitHub-Token ist ungültig oder abgelaufen."
+          }
+        }
+      }
+    },
+    "Missing required token scopes: %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Missing required token scopes: %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erforderliche Token-Berechtigungen fehlen: %@."
+          }
+        }
+      }
+    },
+    "Unexpected response from GitHub: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unexpected response from GitHub: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unerwartete Antwort von GitHub: %@"
+          }
+        }
+      }
+    },
+    "Runner binary SHA256 checksum mismatch (expected %@, got %@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner binary SHA256 checksum mismatch (expected %@, got %@)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die SHA256-Prüfsumme des Runner-Archivs stimmt nicht überein (erwartet %@, erhalten %@)."
+          }
+        }
+      }
+    },
+    "Failed to download runner binary: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to download runner binary: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download des Runner-Archivs fehlgeschlagen: %@"
+          }
+        }
+      }
+    },
+    "Failed to extract runner archive (exit code %lld).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to extract runner archive (exit code %lld)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Archiv konnte nicht entpackt werden (Exitcode %lld)."
+          }
+        }
+      }
+    },
+    "config.sh exited with code %lld: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "config.sh exited with code %lld: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "config.sh wurde mit Exitcode %lld beendet: %@"
+          }
+        }
+      }
+    },
+    "launchctl exited with code %lld: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "launchctl exited with code %lld: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "launchctl wurde mit Exitcode %lld beendet: %@"
+          }
+        }
+      }
+    },
+    "Runner names must be a single non-empty directory name without path separators or control characters.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner names must be a single non-empty directory name without path separators or control characters."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib einen einzelnen Ordnernamen ohne Pfadtrennzeichen oder Steuerzeichen ein."
+          }
+        }
+      }
+    },
+    "A managed runner directory already exists. Choose another name to preserve the existing runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A managed runner directory already exists. Choose another name to preserve the existing runner."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es gibt bereits einen verwalteten Runner-Ordner. Wähle einen anderen Namen, um den vorhandenen Runner zu erhalten."
+          }
+        }
+      }
+    },
+    "GitHub could not find this Actions resource or it is not visible to this account (HTTP 404).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub could not find this Actions resource or it is not visible to this account (HTTP 404)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub hat diese Actions-Ressource nicht gefunden oder sie ist für dieses Konto nicht sichtbar (HTTP 404)."
           }
         }
       }

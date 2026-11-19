@@ -49,7 +49,7 @@ public final class AddRunnerWizardViewModel {
     public var isLoadingTargets: Bool = false
     public var isProvisioning: Bool = false
     public var provisioningProgressMessage: RunnerProvisioningProgress?
-    public var errorMessage: String?
+    public var errorMessage: AppErrorMessage?
 
     private let provisioningClient: any RunnerTargetLoading
     private let provisionerActor: any RunnerProvisioning
@@ -157,7 +157,7 @@ public final class AddRunnerWizardViewModel {
                 selectedOrganizationLogin = firstOrg.login
             }
         } catch {
-            self.errorMessage = error.localizedDescription
+            self.errorMessage = .failure(error)
         }
     }
 
@@ -219,12 +219,12 @@ public final class AddRunnerWizardViewModel {
         guard !isProvisioning, !Task.isCancelled else { return false }
         errorMessage = nil
         guard let login = accountLogin, let key = keychainAccountKey, !key.isEmpty else {
-            errorMessage = "Please sign in with GitHub before provisioning a runner."
+            errorMessage = .key("Please sign in with GitHub before provisioning a runner.")
             return false
         }
         let targets = resolvedTargetSummaries
         guard !targets.isEmpty else {
-            errorMessage = "Please select at least one GitHub Repository or Organization."
+            errorMessage = .key("Please select at least one GitHub Repository or Organization.")
             return false
         }
         // Freeze form input before credential loading suspends this actor.
@@ -298,7 +298,7 @@ public final class AddRunnerWizardViewModel {
             return false
         } catch {
             guard !Task.isCancelled else { return false }
-            errorMessage = error.localizedDescription
+            errorMessage = .failure(error)
             return false
         }
     }

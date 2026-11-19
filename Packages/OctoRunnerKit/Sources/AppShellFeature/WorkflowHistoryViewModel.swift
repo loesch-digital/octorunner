@@ -73,7 +73,7 @@ public final class WorkflowHistoryViewModel {
             if let error {
                 switch error {
                 case .authenticationRequired, .rateLimited: return
-                case .permissionDenied, .tooManyPages, .unavailable:
+                case .permissionDenied, .resourceNotFound, .tooManyPages, .unavailable:
                     failures.append(WorkflowHistoryRepositoryFailure(repository: source.repository, error: error))
                     repositoryFailures = failures
                     self.error = nil

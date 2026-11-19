@@ -124,7 +124,7 @@ struct ResponsiveLayoutTests {
         let preferences = AppPreferencesStore(defaults: defaults)
         for appearance in [ColorScheme.light, .dark] {
             for feedbackVisible in [false, true] {
-                vm.errorMessage = feedbackVisible ? String(repeating: "Provisioning failed for a repository with a long name. ", count: 20) : nil
+                vm.errorMessage = feedbackVisible ? .failure(RunnerEngineError.downloadFailed(String(repeating: "Example diagnostic detail. ", count: 20))) : nil
                 vm.provisioningProgressMessage = feedbackVisible ? .verifyingBinary(filename: String(repeating: "long-archive-name-", count: 15)) : nil
                 for viewport in [CGSize(width: 560, height: 480), CGSize(width: 640, height: 640), CGSize(width: 900, height: 800)] {
                     let measurement = LayoutMeasurement()

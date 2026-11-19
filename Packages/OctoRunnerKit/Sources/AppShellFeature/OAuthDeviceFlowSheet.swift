@@ -104,7 +104,7 @@ public struct OAuthDeviceFlowSheet: View {
             }
 
             if let errorMessage = viewModel.errorMessage {
-                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                Label(errorMessage.localized(locale: locale), systemImage: "exclamationmark.triangle.fill")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(OctoTheme.errorRed)
                     .padding(.horizontal, 12)

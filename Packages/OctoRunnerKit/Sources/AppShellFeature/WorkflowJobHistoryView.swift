@@ -151,23 +151,14 @@ public struct WorkflowJobHistoryView: View {
     private func errorMessage(account: WorkflowHistorySelection?) -> String? {
         guard account != nil else { return AppLocalization.string("Connect a GitHub account to load workflow history", locale: locale) }
         if cacheLoadFailed { return AppLocalization.string("History could not be loaded; saved observations remain available", locale: locale) }
-        let key: String.LocalizationValue
-        switch model.error {
-        case .authenticationRequired: key = "Reconnect this GitHub account to load history"
-        case .permissionDenied: key = "This token cannot read Actions for the selected repository"
-        case .rateLimited: key = "GitHub rate limit reached; refresh is paused"
-        case .tooManyPages: key = "Job details exceeded the safe pagination limit"
-        case .unavailable: key = "History could not be loaded; saved observations remain available"
-        case nil:
-            if !model.repositoryFailures.isEmpty {
-                return AppLocalization.string("Some repositories could not be refreshed", locale: locale) + ": " + "\n" + model.repositoryFailures.map { $0.localizedMessage(locale: locale) }.joined(separator: "\n")
-            }
-            if let deadline = model.retryNotBefore, deadline > .now {
-                return AppLocalization.string("GitHub rate limit reached; refresh is paused", locale: locale) + " · " + deadline.formatted(date: .omitted, time: .standard)
-            }
-            return nil
+        let banner = WorkflowHistoryRepositoryFailure.banner(error: model.error,
+            failures: model.repositoryFailures, locale: locale)
+        if model.error == nil, let deadline = model.retryNotBefore, deadline > .now {
+            let pause = AppLocalization.string("GitHub rate limit reached; refresh is paused", locale: locale)
+                + " · " + deadline.formatted(Date.FormatStyle(date: .omitted, time: .standard).locale(locale))
+            return [pause, banner].compactMap { $0 }.joined(separator: "\n")
         }
-        return AppLocalization.string(key, locale: locale)
+        return banner
     }
 
     private func observe(_ request: WorkflowHistoryRequest) async {

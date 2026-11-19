@@ -73,7 +73,7 @@ public struct DashboardRunnerRow: View {
             HStack(spacing: 8) {
                 RunnerStatusBadge(status: runner.status)
                     .fixedSize()
-                Text(runner.isImportedLocal ? String(localized: "Imported", bundle: .module) : String(localized: "Managed", bundle: .module))
+                Text(Self.ownershipLabel(imported: runner.isImportedLocal, locale: locale))
                     .lineLimit(1)
                 if let version = runner.runnerVersion {
                     Text("v\(version)").lineLimit(1).truncationMode(.middle)
@@ -102,4 +102,8 @@ public struct DashboardRunnerRow: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Runner \(runner.name)")
     }
+    static func ownershipLabel(imported: Bool, locale: Locale) -> String {
+        AppLocalization.string(imported ? "Imported" : "Managed", locale: locale)
+    }
+
 }
