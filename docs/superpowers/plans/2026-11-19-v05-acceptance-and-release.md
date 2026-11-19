@@ -48,7 +48,7 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Files:** Release-Versionierung gemäß vorhandener release-it-Konfiguration, `docs/releases/v0.5.0.md`, `docs/10-development-and-acceptance.md`.
 
-**Interfaces:** Konsumiert grünen main-Commit aus Task 1; liefert unveränderliches Tag und signiertes/notarisiertes App-ZIP plus Homebrew-Cask.
+**Interfaces:** Konsumiert grünen main-Commit aus Task 1 und den ergänzten Plan `2026-11-19-workflow-github-details.md` (Nutzerfrage vom 19.11.; PR-/Step-/Log-Ansicht noch nicht implementiert); liefert unveränderliches Tag und signiertes/notarisiertes App-ZIP plus Homebrew-Cask.
 
 - [ ] Aktuelle Releases, Toolchain und offene CI-Läufe prüfen; Release Notes enthalten Features, belegte Einschränkungen und den verschobenen Parallelitätsumfang.
 - [ ] Erst nach grüner main-CI `npx release-it 0.5.0 --ci` ausführen; vollständigen Release-Lauf einschließlich Tap bis zum Abschluss beobachten.

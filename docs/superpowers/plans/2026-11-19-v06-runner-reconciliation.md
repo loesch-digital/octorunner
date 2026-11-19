@@ -57,6 +57,7 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Interfaces:** Personal Multi-Repo erzeugt getrennte Repository-Registrierungen; Organisationen können echte Runner-Gruppen verwenden. Prefix ist Namenshilfe, ein Label ist Routing, eine Gruppe ist Berechtigungs-/Organisationsstruktur.
 
+- [ ] Organisations-/Repository-Berechtigungsübersicht aus Screenshot 07c mit zugewiesenen Runner-Zahlen und explizitem „Berechtigungen abgleichen“ implementieren; reale Gruppen-/Scope-Daten statt Ableitung aus OAuth-Scopes. Rote Tests für fehlende Rechte, Kontowechsel und veraltete Sync-Antworten.
 - [ ] Screens 03 und 04 erneut abgleichen. Rote Tests für zwei Repos mit gleichem Prefix, Org-Gruppen ohne Berechtigung, Teilfehler und Identität nach Migration.
 - [ ] Wizard/Modell/API konsistent verdrahten, keine erfundenen Personal-Account-Runner. Rechte je Endpunkt anhand aktueller GitHub-Doku prüfen; nur tatsächlich benötigte Rechte anfordern, fehlende Fine-grained-PAT-Scope-Header bleiben „unbekannt“.
 - [ ] Alle drei v0.6-Pläne einschließlich Parallelität abnehmen, vollständige lokale Tests/Build/Review, grüne PR-/main-CI. Dann `npx release-it 0.6.0 --ci`, Release vollständig beobachten, Brew/App/Gatekeeper prüfen und deutsche Abnahmezusammenfassung liefern.

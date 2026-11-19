@@ -64,3 +64,5 @@ Nach v0.7.0 endet der freigegebene Versionsplan. v1.0.0 erfordert eine ausdrück
 3. **Lokaler Build, Tests und interaktive Abnahme** des Branches [direkt aus Xcode](./10-development-and-acceptance.md), ohne Homebrew-Installation der App.
 4. **PR-CI abwarten, PR mergen und main-CI abwarten.**
 5. **Release & Bereitstellung** via `npm run release`: `release-it` erstellt Versionscommit und Tag; der Tag startet den GitHub-Workflow für Build, Signierung, Notarisierung, GitHub Release und Homebrew-Tap. Den vollständigen Release-Lauf abwarten und anschließend Homebrew-Upgrade und Gatekeeper prüfen. Das signierte ZIP kann auch ohne Homebrew installiert werden.
+
+- [GitHub-PR-Verknüpfung und Actions-Details — ergänzter v0.5-Umfang](superpowers/plans/2026-11-19-workflow-github-details.md)
