@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bound a CI test process and retain diagnostics when its output stops.
 
-Only the private process group created here is inspected/signalled. No process
+Only the private process session created here is inspected/signalled. No process
 arguments, environment dumps, existing app or runner processes are collected.
 """
 import argparse
@@ -14,39 +14,81 @@ import sys
 import time
 
 
-def stop_group(process):
+def private_members(process):
+    """SwiftPM creates additional groups inside our new private session."""
+    listing = subprocess.run(["ps", "-axo", "pid=,pgid=,stat=,comm="],
+                             capture_output=True, text=True, timeout=3, check=True)
+    members = []
+    for line in listing.stdout.splitlines():
+        fields = line.strip().split(None, 3)
+        if len(fields) != 4 or fields[2].startswith("Z"):
+            continue
+        pid, group = int(fields[0]), int(fields[1])
+        try:
+            if os.getsid(pid) == process.pid:
+                members.append((pid, group, fields[3]))
+        except (ProcessLookupError, PermissionError):
+            continue
+    return members
+
+
+def signal_private_groups(process, members, sig):
+    sent = set()
+    for pid, group, _ in members:
+        if group in sent:
+            continue
+        try:
+            # Both values can change after enumeration; never trust stale rows.
+            if os.getsid(pid) == process.pid and os.getpgid(pid) == group:
+                os.killpg(group, sig)
+                sent.add(group)
+        except (ProcessLookupError, PermissionError):
+            continue
+
+
+def stop_session(process):
     try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
+        remaining = private_members(process)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        remaining = []
+    # An unreaped child reserves its PID even if ps is unavailable. Never use
+    # this numerical fallback after poll()/wait() has already reaped it.
+    leader = [(process.pid, process.pid, "")] if process.returncode is None else []
+    signal_private_groups(process, remaining + leader, signal.SIGTERM)
+    deadline = time.monotonic() + 2
+    # Keep the leader unreaped while group identifiers are still in use.
+    # Zombie rows are excluded by private_members and need no grace period.
+    while time.monotonic() < deadline:
+        try:
+            remaining = private_members(process)
+        except (OSError, ValueError, subprocess.SubprocessError):
+            break
+        if not remaining:
+            break
+        time.sleep(0.02)
+    # Always refresh after the grace period; if ps fails, the last candidates
+    # remain safe to consider only after signal_private_groups revalidates them.
+    try:
+        remaining = private_members(process)
+    except (OSError, ValueError, subprocess.SubprocessError):
         pass
+    signal_private_groups(process, remaining + leader, signal.SIGKILL)
     try:
         process.wait(timeout=2)
     except subprocess.TimeoutExpired:
-        pass
-    # The parent may have exited while a descendant still owns the output pipe.
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
-    process.wait()
+        print("Private test command did not exit within the cleanup deadline.", file=sys.stderr)
 
 
 def diagnose(process, directory):
-    """Sample only members of the newly created group, preferring test runners."""
+    """Sample only members of the newly created session, preferring test runners."""
     try:
-        listing = subprocess.run(["ps", "-axo", "pid=,pgid=,comm="],
-                                 capture_output=True, text=True, timeout=3, check=True)
-        members = []
-        for line in listing.stdout.splitlines():
-            fields = line.strip().split(None, 2)
-            if len(fields) == 3 and int(fields[1]) == process.pid:
-                members.append((int(fields[0]), fields[2]))
-        members.sort(key=lambda item: ("testing" not in item[1].lower(), item[0]))
-        for pid, _ in members[:8]:
+        members = private_members(process)
+        members.sort(key=lambda item: ("testing" not in item[2].lower(), item[0]))
+        for pid, _, _ in members[:8]:
             try:
-                if os.getpgid(pid) != process.pid:
+                if os.getsid(pid) != process.pid:
                     continue
-            except ProcessLookupError:
+            except (ProcessLookupError, PermissionError):
                 continue
             path = directory / f"sample-{pid}.txt"
             try:
@@ -57,7 +99,7 @@ def diagnose(process, directory):
             except (OSError, subprocess.TimeoutExpired):
                 path.write_text("Stack sample unavailable for this test process.\n")
     except (OSError, ValueError, subprocess.SubprocessError):
-        (directory / "sampling-unavailable.txt").write_text("Could not enumerate the private test group.\n")
+        (directory / "sampling-unavailable.txt").write_text("Could not enumerate the private test session.\n")
 
 
 def positive_seconds(value):
@@ -102,7 +144,7 @@ def main():
                 elif tests_started and now - last_output >= options.idle_timeout:
                     reason = "no test output"
                 if reason:
-                    message = f"\n::error::Swift test watchdog timeout: {reason}; sampling private test group.\n"
+                    message = f"\n::error::Swift test watchdog timeout: {reason}; sampling private test session.\n"
                     sys.stdout.buffer.write(message.encode())
                     sys.stdout.buffer.flush()
                     log.write(message.encode())
@@ -132,7 +174,7 @@ def main():
                 elif process.poll() is not None:
                     return process.returncode if process.returncode >= 0 else 128 - process.returncode
     finally:
-        stop_group(process)
+        stop_session(process)
 
 
 if __name__ == "__main__":

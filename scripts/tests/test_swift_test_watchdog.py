@@ -1,5 +1,6 @@
 """Exercise the watchdog with private subprocess fixtures, never existing runners."""
 import os
+import importlib.util
 import select
 import signal
 import textwrap
@@ -9,6 +10,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts/run-swift-tests.py"
@@ -35,7 +37,7 @@ class SwiftTestWatchdogTests(unittest.TestCase):
             self.assertEqual(result.returncode, 124, result.stdout + result.stderr)
             self.assertTrue((directory / "moved/swift-tests.log").exists())
 
-    def test_process_that_moves_groups_is_not_sampled_from_stale_listing(self):
+    def test_process_that_leaves_the_session_is_not_sampled_from_stale_listing(self):
         with tempfile.TemporaryDirectory() as name:
             directory = Path(name)
             child_pid_file = directory / "child-pid"
@@ -47,7 +49,7 @@ class SwiftTestWatchdogTests(unittest.TestCase):
                 from pathlib import Path
                 Path({str(child_pid_file)!r}).write_text(str(os.getpid()))
                 while not Path({str(move)!r}).exists(): time.sleep(0.01)
-                os.setpgid(0, 0)
+                os.setsid()
                 Path({str(moved)!r}).touch()
                 time.sleep(10)
             """)
@@ -73,6 +75,91 @@ class SwiftTestWatchdogTests(unittest.TestCase):
                 if child_pid_file.exists():
                     try:
                         os.kill(int(child_pid_file.read_text()), signal.SIGTERM)
+                    except ProcessLookupError:
+                        pass
+
+    def test_swift_style_child_group_is_sampled_and_stopped_in_private_session(self):
+        with tempfile.TemporaryDirectory() as name:
+            directory = Path(name)
+            child_pid_file = directory / "child-pid"
+            terminated = directory / "terminated"
+            sample = directory / "sample"
+            sample.write_text('#!/bin/sh\necho "sampled $1" > "$4"\n')
+            sample.chmod(0o755)
+            child_source = textwrap.dedent(f"""
+                import os, signal, time
+                from pathlib import Path
+                def stop(*_):
+                    Path({str(terminated)!r}).touch()
+                    raise SystemExit(0)
+                signal.signal(signal.SIGTERM, stop)
+                Path({str(child_pid_file)!r}).write_text(str(os.getpid()))
+                time.sleep(10)
+            """)
+            source = textwrap.dedent(f"""
+                import subprocess, sys, time
+                from pathlib import Path
+                subprocess.Popen([sys.executable, '-c', {child_source!r}], process_group=0,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                while not Path({str(child_pid_file)!r}).exists(): time.sleep(0.01)
+                print('Test run started.', flush=True)
+                time.sleep(10)
+            """)
+            try:
+                result = self.invoke(source, directory)
+                self.assertEqual(result.returncode, 124, result.stdout + result.stderr)
+                child_pid = int(child_pid_file.read_text())
+                captures = list((directory / "diagnostics").glob("sample-*.txt"))
+                self.assertTrue(any(f"sampled {child_pid}" in p.read_text() for p in captures))
+                self.assertTrue(terminated.exists(), "Private child group must receive cleanup")
+            finally:
+                if child_pid_file.exists():
+                    try:
+                        os.kill(int(child_pid_file.read_text()), signal.SIGTERM)
+                    except ProcessLookupError:
+                        pass
+                    until = time.monotonic() + 2
+                    while not terminated.exists() and time.monotonic() < until:
+                        time.sleep(0.01)
+
+    def test_cleanup_never_signals_an_unverified_group_after_parent_was_reaped(self):
+        spec = importlib.util.spec_from_file_location("watchdog", SCRIPT)
+        watchdog = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(watchdog)
+        process = Mock(pid=12345, returncode=0)
+        with patch.object(watchdog, "private_members", return_value=[]), patch.object(watchdog.os, "killpg") as kill:
+            watchdog.stop_session(process)
+        kill.assert_not_called()
+        process.wait.assert_called_once_with(timeout=2)
+
+    def test_cleanup_kills_term_resistant_child_group_after_leader_consumes_grace(self):
+        with tempfile.TemporaryDirectory() as name:
+            directory = Path(name)
+            child_pid_file = directory / "child-pid"
+            sample = directory / "sample"
+            sample.write_text('#!/bin/sh\necho fixture > "$4"\n')
+            sample.chmod(0o755)
+            child_source = f"import os, signal, time; from pathlib import Path; signal.signal(signal.SIGTERM, signal.SIG_IGN); Path({str(child_pid_file)!r}).write_text(str(os.getpid())); time.sleep(30)"
+            source = textwrap.dedent(f"""
+                import signal, subprocess, sys, time
+                from pathlib import Path
+                signal.signal(signal.SIGTERM, signal.SIG_IGN)
+                subprocess.Popen([sys.executable, '-c', {child_source!r}], process_group=0,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                while not Path({str(child_pid_file)!r}).exists(): time.sleep(0.01)
+                print('Test run started.', flush=True)
+                time.sleep(30)
+            """)
+            try:
+                result = self.invoke(source, directory)
+                self.assertEqual(result.returncode, 124, result.stdout + result.stderr)
+                child_pid = int(child_pid_file.read_text())
+                status = subprocess.run(['ps', '-p', str(child_pid), '-o', 'stat='], capture_output=True, text=True).stdout.strip()
+                self.assertTrue(not status or status.startswith('Z'), f"Child still alive: {status}")
+            finally:
+                if child_pid_file.exists():
+                    try:
+                        os.kill(int(child_pid_file.read_text()), signal.SIGKILL)
                     except ProcessLookupError:
                         pass
 

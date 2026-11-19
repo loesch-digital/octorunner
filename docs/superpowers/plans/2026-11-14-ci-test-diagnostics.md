@@ -13,3 +13,9 @@
 - [x] Add scripts/run-swift-tests.py with 120s test-idle / 600s total deadline, bounded private-group sampling/termination, live output and persistent transcript.
 - [x] Use launcher in ci.yml/release.yml, preserve diagnostics artifact and document observed hang without claiming its root cause fixed.
 - [ ] Full Python/Swift launcher integration, native sampling check, fresh review; commit/PR CI, merge/main CI.
+
+### Task 2: Include SwiftPM child groups in the private session
+- [x] Reproduce missing helper sampling with a private child using `process_group=0`; RED `/tmp/octorunner-watchdog-session-red.log`.
+- [x] Enumerate only members of the new POSIX session, recheck SID/PGID before signals, and sample Swift testing helpers first. A fixture leaving via setsid remains excluded.
+- [x] Full Python suite GREEN 29 tests in `/tmp/octorunner-watchdog-session-green.log`.
+- [ ] Fresh review of the changed ownership boundary, local Swift integration, PR CI with actual helper stack capture if the stall recurs; investigate cause before merge/main-CI.
