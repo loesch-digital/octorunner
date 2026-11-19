@@ -10,10 +10,13 @@ struct WorkflowRunDetailView: View {
     let selection: WorkflowRunDetailSelection
     @State private var model: WorkflowRunDetailModel
     @State private var refreshTicket = UUID()
+    @State private var selectedLog: WorkflowJobLogSelection?
+    private let rateBudget: WorkflowHistoryRateBudget
 
     init(entry: WorkflowHistoryEntry, selection: WorkflowRunDetailSelection,
          rateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(), model: WorkflowRunDetailModel? = nil) {
         self.entry = entry; self.selection = selection
+        self.rateBudget = rateBudget
         _model = State(initialValue: model ?? WorkflowRunDetailModel(rateBudget: rateBudget))
     }
 
@@ -57,7 +60,11 @@ struct WorkflowRunDetailView: View {
                     if model.jobs.isEmpty && !model.isLoading && model.error == nil {
                         Text("No job details loaded", bundle: .module).foregroundStyle(OctoTheme.secondaryText)
                     }
-                    ForEach(model.jobs) { job in WorkflowJobDetailCard(job: job, selection: selection) }
+                    ForEach(model.jobs) { job in
+                        WorkflowJobDetailCard(job: job, selection: selection) {
+                            selectedLog = .init(detail: selection, jobID: job.id, jobName: job.name)
+                        }
+                    }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -73,6 +80,9 @@ struct WorkflowRunDetailView: View {
             }
         }
         .onDisappear { model.invalidate() }
+        .sheet(item: $selectedLog) { log in
+            WorkflowJobLogView(selection: log, rateBudget: rateBudget)
+        }
     }
 
     @ViewBuilder private var actions: some View {

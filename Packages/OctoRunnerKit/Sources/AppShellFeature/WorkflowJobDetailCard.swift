@@ -8,11 +8,17 @@ struct WorkflowJobDetailCard: View {
     @State private var isExpanded = true
     let job: GitHubWorkflowJobDTO
     let selection: WorkflowRunDetailSelection
+    var openLog: (() -> Void)? = nil
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(job.runnerName ?? "—").font(.caption).textSelection(.enabled)
+                if let openLog {
+                    Button(action: openLog) { Text("Load job log", bundle: .module) }
+                        .accessibilityLabel(Text("Load job log", bundle: .module))
+                        .accessibilityHint(Text("Downloads a bounded log snapshot for this job", bundle: .module))
+                }
                 if let url = jobURL {
                     Link(destination: url) { Text("Open job on GitHub", bundle: .module) }
                         .accessibilityLabel(Text("Open job on GitHub", bundle: .module))

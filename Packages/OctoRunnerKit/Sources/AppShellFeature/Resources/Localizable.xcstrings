@@ -7018,6 +7018,198 @@
           }
         }
       }
+    },
+    "Load job log": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load job log"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Log laden"
+          }
+        }
+      }
+    },
+    "Close job log": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close job log"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Log schließen"
+          }
+        }
+      }
+    },
+    "Returns to workflow details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returns to workflow details"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kehrt zu den Workflow-Details zurück"
+          }
+        }
+      }
+    },
+    "Logs load only on request. This is a snapshot, not a live stream.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logs load only on request. This is a snapshot, not a live stream."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logs werden nur auf Anfrage geladen. Dies ist eine Momentaufnahme, kein Live-Stream."
+          }
+        }
+      }
+    },
+    "Loading job log…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading job log…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Log wird geladen …"
+          }
+        }
+      }
+    },
+    "Log truncated to 1 MiB. Open GitHub for the complete output.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log truncated to 1 MiB. Open GitHub for the complete output."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log auf 1 MiB gekürzt. Die vollständige Ausgabe ist auf GitHub verfügbar."
+          }
+        }
+      }
+    },
+    "The log contains no output": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The log contains no output"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Log enthält keine Ausgabe"
+          }
+        }
+      }
+    },
+    "Job log output": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job log output"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job-Log-Ausgabe"
+          }
+        }
+      }
+    },
+    "Downloads a bounded log snapshot for this job": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads a bounded log snapshot for this job"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lädt eine größenbegrenzte Log-Momentaufnahme für diesen Job"
+          }
+        }
+      }
+    },
+    "Logs are not available yet or have expired. Open GitHub for the current job.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logs are not available yet or have expired. Open GitHub for the current job."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logs sind noch nicht verfügbar oder bereits abgelaufen. Öffne den aktuellen Job auf GitHub."
+          }
+        }
+      }
+    },
+    "This log is not supported UTF-8 text. Open it on GitHub.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This log is not supported UTF-8 text. Open it on GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Log enthält keinen unterstützten UTF-8-Text. Öffne es auf GitHub."
+          }
+        }
+      }
+    },
+    "Job log could not be loaded. Open GitHub or try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job log could not be loaded. Open GitHub or try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Job-Log konnte nicht geladen werden. Öffne GitHub oder versuche es erneut."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
