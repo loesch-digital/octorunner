@@ -163,18 +163,20 @@ struct SettingsTests {
         }
     }
 
-    @Test("Settings warning and error text retain AA contrast in Light and Dark")
+    @Test("Warning and error text retain AA contrast on card and workflow page backgrounds")
     func settingsStatusContrast() throws {
         for name in [NSAppearance.Name.aqua, .darkAqua] {
             let appearance = try #require(NSAppearance(named: name))
             appearance.performAsCurrentDrawingAppearance {
                 for color in [OctoTheme.warningOrange, OctoTheme.errorRed] {
                     let foreground = NSColor(color).usingColorSpace(.sRGB)!
-                    let background = NSColor(OctoTheme.surface).usingColorSpace(.sRGB)!
-                    let ratio = OctoTheme.wcagContrastRatio(
-                        foregroundRGB: (foreground.redComponent, foreground.greenComponent, foreground.blueComponent),
-                        backgroundRGB: (background.redComponent, background.greenComponent, background.blueComponent))
-                    #expect(ratio >= 4.5, "Appearance: \(name.rawValue), ratio: \(ratio), foreground: \(foreground), background: \(background)")
+                    for surface in [OctoTheme.surface, OctoTheme.surfaceLowest] {
+                        let background = NSColor(surface).usingColorSpace(.sRGB)!
+                        let ratio = OctoTheme.wcagContrastRatio(
+                            foregroundRGB: (foreground.redComponent, foreground.greenComponent, foreground.blueComponent),
+                            backgroundRGB: (background.redComponent, background.greenComponent, background.blueComponent))
+                        #expect(ratio >= 4.5, "Appearance: \(name.rawValue), ratio: \(ratio), foreground: \(foreground), background: \(background)")
+                    }
                 }
             }
         }

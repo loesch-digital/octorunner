@@ -57,7 +57,7 @@ public struct WorkflowHistoryContent: View {
                 }
                 if isLoading { ProgressView().controlSize(.small).accessibilityLabel(Text("Loading history", bundle: .module)) }
                 if let errorMessage {
-                    Label(errorMessage, systemImage: "exclamationmark.triangle").foregroundStyle(OctoTheme.warningOrange).font(.callout)
+                    WorkflowHistoryErrorBanner(message: errorMessage)
                 }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 12)], spacing: 12) {
                     metric("Running / queued", value: "\(metrics.runningCount) / \(metrics.queuedCount)")

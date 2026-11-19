@@ -91,7 +91,12 @@ struct GitHubActionsTests {
         "https://api.github.com/repos/other/repo/actions/runs?page=2",
         "https://api.github.com:8443/repos/example/repo/actions/runs?page=2",
         "https://user@api.github.com/repos/example/repo/actions/runs?page=2",
-        "https://api.github.com/repos/example/repo/actions/runs?page=2&page=3"
+        "https://api.github.com/repos/example/repo/actions/runs?page=2&page=3",
+        "https://evil.example/repositories/123/actions/runs?page=2",
+        "https://api.github.com/repositories/123/actions/artifacts?page=2",
+        "https://api.github.com/repositories//123/actions/runs?page=2",
+        "https://api.github.com/repositories/abc/actions/runs?page=2",
+        "https://api.github.com/repositories/123/actions/runs?page=2&token=fixture"
     ])
     func unsafePagination(_ next: String) async throws {
         let transport = ActionsFixtureTransport([GitHubActionsHTTPResponse(statusCode: 200, headers: ["Link": "<\(next)>; rel=\"next\""], data: Data(Self.runsJSON.utf8))])
@@ -100,6 +105,17 @@ struct GitHubActionsTests {
             try await client.workflowRuns(repository: "example/repo", token: "fixture-token")
         }
         #expect(await transport.requests.count == 1)
+    }
+
+    @Test("A caller cannot submit a linked numeric repository path as a request target")
+    func unsafeCallerPage() async throws {
+        let transport = ActionsFixtureTransport([])
+        let client = GitHubActionsClient(transport: transport)
+        let page = try #require(URL(string: "https://api.github.com/repositories/123/actions/runs?page=2"))
+        await #expect(throws: GitHubActionsError.invalidPagination) {
+            try await client.workflowRuns(repository: "example/repo", token: "fixture-token", page: page)
+        }
+        #expect(await transport.requests.isEmpty)
     }
 
     @Test("Invalid repository names are rejected before a network request", arguments: ["../repo", "example/repo/extra", "example/repo?token=x", "https://github.com/example/repo", "example/%2e%2e"])
