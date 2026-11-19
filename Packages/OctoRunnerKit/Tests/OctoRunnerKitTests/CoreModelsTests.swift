@@ -61,6 +61,29 @@ struct CoreModelsTests {
         #expect(remainingJobs.isEmpty)
     }
 
+    @Test("Only explicit ownership is persisted and an imported runner remains external")
+    @MainActor
+    func runnerExecutionModePersistence() throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let context = container.mainContext
+        let repository = try #require(URL(string: "https://github.com/example/fixture"))
+        let work = URL(filePath: "/tmp/octorunner-execution-fixture")
+        let direct = RunnerEntity(name: "direct", scopeUrl: repository, workDirectory: work, executionMode: .direct)
+        let service = RunnerEntity(name: "service", scopeUrl: repository, workDirectory: work, executionMode: .launchAgent)
+        let legacy = RunnerEntity(name: "legacy", scopeUrl: repository, workDirectory: work)
+        let imported = RunnerEntity(name: "imported", scopeUrl: repository, workDirectory: work, isImportedLocal: true)
+        imported.executionMode = .direct
+        for runner in [direct, service, legacy, imported] { context.insert(runner) }
+        try context.save()
+
+        let fetched = try ModelContext(container).fetch(FetchDescriptor<RunnerEntity>())
+        let byName = Dictionary(uniqueKeysWithValues: fetched.map { ($0.name, $0) })
+        #expect(byName["direct"]?.executionMode == .direct)
+        #expect(byName["service"]?.executionMode == .launchAgent)
+        #expect(byName["legacy"]?.executionMode == nil)
+        #expect(byName["imported"]?.executionMode == .external)
+    }
+
     @Test("GitHubAccountEntity persistence without storing raw secret")
     @MainActor
     func githubAccountEntityPersistence() throws {

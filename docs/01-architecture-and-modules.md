@@ -11,7 +11,7 @@
 | **UI Framework** | SwiftUI 6 (`@Observable`, `NavigationSplitView`, `MenuBarExtra`, `Settings` Scene) |
 | **Persistenz** | SwiftData (`@Model`, `@Relationship(deleteRule: .cascade)`, `#Index`, `#Predicate`) |
 | **Security & Tokens** | Data Protection Keychain (`SecItem`, `kSecClassGenericPassword`, `SecAccessControl`) gemäß `swift-security-expert` |
-| **Prozess-Steuerung** | **Hybrid-Architektur (Evaluierung siehe § 4):** `SMAppService.mainApp` für App-Login-Autostart + Direkte Prozess-Steuerung via **`swift-subprocess` / `Foundation.Process` + Process-Group (`setpgid`) & Non-Blocking Pipe Streaming** als Primärmodus (Echtzeit-Logs ohne Disk-I/O) + optionaler `launchd` User-LaunchAgent (`~/Library/LaunchAgents/io.octorunner.agent.<uuid>.plist`) für Headless-Betrieb nach App-Ende |
+| **Prozess-Steuerung** | **Hybrid-Architektur (siehe ADR-01):** `SMAppService.mainApp` für den App-Login-Autostart, direkte Prozessaufsicht über eine eigene Gruppe ab `posix_spawn` und eigenständige User-LaunchAgents unter `~/Library/LaunchAgents` für den Betrieb nach App-Ende. Pipe-Streaming ist als eigener Schritt geplant. |
 | **Sandbox Status** | **Hardened Runtime aktiviert** (`ENABLE_HARDENED_RUNTIME = YES`), **App Sandbox deaktiviert** (`com.apple.security.app-sandbox = false`), damit `xcodebuild`, `fastlane`, `git`, Homebrew und Subprozesse uneingeschränkt laufen können |
 | **Lokalisierung** | String Catalog (`Localizable.xcstrings`) für Deutsch (`de`) und Englisch (`en`) |
 
@@ -133,12 +133,15 @@ In den Stitch-Entwürfen und dem ersten Spec-Draft standen einige Konzepte, die 
 - **Was ist der moderne, saubere Weg (Unsere Lösung)?**
   1. **Für den Autostart von OctoRunner selbst:** Wir nutzen **`SMAppService.mainApp`** (macOS 13+ Standard). Damit startet `OctoRunner` beim macOS-Login automatisch im Hintergrund (als MenuBar-App ohne Dock-Icon, wenn das Fenster zu ist).
   2. **Für die Runner-Prozesse (Dual-Mode Supervisor):**
-     - **Modus A — Direct Managed Child Process (Empfohlener Standard):** `OctoRunner` startet und überwacht `run.sh` / `Runner.Listener` direkt über einen Swift 6 Actor (`RunnerProcessActor`) mit eigener Process-Group (`setpgid`).
-       - **Vorteile gegenüber `launchd`:**
-         - **Echtzeit `stdout`/`stderr` Streaming über Pipes (`AsyncStream`):** Keine Verzögerung und kein SSD-Verschleiß durch Logfile-Polling.
-         - **Volle Benutzer-Umgebung:** Automatisches Erben von Keychain-Zugriff (für `fastlane match` in Workflows!), Xcode-Developer-Dir und Homebrew-Pfaden ohne fragiles `.plist`-Gefrickel.
-         - **Exaktes Graceful Shutdown & Child-Tracking:** Beim Stoppen oder App-Beenden senden wir gezielt `SIGINT`/`SIGTERM` an den `Runner.Listener` (damit er sich sauber bei GitHub abmeldet) und kennen sofort die exakte `PID`.
+     - **Modus A — Direct Managed Child Process (empfohlener Standard):** `RunnerSupervisorActor` verwaltet den Start von `run.sh` in einer eigenen Prozessgruppe. Die Gruppe entsteht atomar beim Start mit `posix_spawn`. Ein Stopp setzt die passende Startgeneration und eine frische Leerlaufbeobachtung voraus. Eine abgelaufene Wartefrist signalisiert dem Prozess nichts. Der GitHub-Scheduler kann zwischen Beobachtung und Signal einen neuen Job zuweisen.
+       - Für Echtzeit-Logs ist ein separater Anschluss von `stdout` und `stderr` über Pipes geplant. Der gestartete Prozess erhält die Umgebung der App. Schlüsselbundfreigaben, Xcode-Auswahl und im Terminal konfigurierte Pfade hängen weiterhin vom jeweiligen Startkontext ab.
      - **Modus B — Standalone `launchd` User LaunchAgent (Optional für Headless-Betrieb auch wenn OctoRunner beendet wird):** Wenn der User in den Settings explizit wünscht, dass Runner weiterlaufen, selbst wenn er `OctoRunner` per `⌘Q` komplett beendet, generiert die App eine saubere `.plist` unter `~/Library/LaunchAgents/io.octorunner.agent.<id>.plist` und lädt sie über das moderne `launchctl bootstrap gui/<uid>`.
+
+| Zustand | Prozessbesitz und Befugnisse |
+| --- | --- |
+| Direkt, aktuelle Startgeneration | OctoRunner startet und beobachtet die Prozessgruppe. Beenden und Neustart verwenden das zugehörige Handle. |
+| Bestätigter User-LaunchAgent | `launchd` startet den Runner und lässt ihn nach GUI-Ende weiterlaufen. Steuerung erfolgt über den verifizierten Dienst und seine zugehörige Plist. |
+| Importiert oder Betriebsart ungeklärt | OctoRunner beobachtet den Runner. Steuerung erfordert eine explizite Übernahme. Ein gespeichertes PID-Feld oder generiertes Dienstlabel allein genügt dafür nicht. |
 
 ### ADR-02: Native macOS Window-Chrome statt HTML-nachgebauter Traffic Lights
 - **Was in den Stitch-HTML-Exports steckt:** Eigene gezeichnete rote/gelbe/grüne Fenster-Buttons (`×`, `−`, `+`) und ein künstlicher Header-Balken im Content-Bereich.

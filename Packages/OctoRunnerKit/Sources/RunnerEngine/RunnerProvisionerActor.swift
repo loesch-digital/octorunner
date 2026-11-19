@@ -1,4 +1,5 @@
 import CoreModels
+import Darwin
 import Foundation
 import GitHubAPI
 
@@ -94,13 +95,19 @@ public actor RunnerProvisionerActor {
                         scopeURL: scopeURL,
                         token: accessToken
                     )
-                    let instanceRoot = baseDir.appending(path: instanceName, directoryHint: .isDirectory)
+                    let instanceRoot = try Self.createInstanceDirectory(name: instanceName, in: baseDir)
                     let workDir = instanceRoot.appending(path: "_work", directoryHint: .isDirectory)
                     let diagDir = instanceRoot.appending(path: "_diag", directoryHint: .isDirectory)
-                    try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
-                    try FileManager.default.createDirectory(at: diagDir, withIntermediateDirectories: true)
-
-                    try await Self.extractArchive(archiveURL: archiveURL, into: instanceRoot)
+                    do {
+                        try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
+                        try FileManager.default.createDirectory(at: diagDir, withIntermediateDirectories: true)
+                        try await Self.extractArchive(archiveURL: archiveURL, into: instanceRoot)
+                    } catch {
+                        // The registration command has not run, so this newly
+                        // reserved directory has no registered listener to preserve.
+                        try? FileManager.default.removeItem(at: instanceRoot)
+                        throw error
+                    }
                     try await Self.runConfigScript(
                         in: instanceRoot,
                         scopeURL: scopeURL,
@@ -128,8 +135,6 @@ public actor RunnerProvisionerActor {
                         try plistData.write(to: plistURL, options: .atomic)
                         launchdLabel = label
                         launchedPID = try await Self.bootstrapLaunchAgent(plistURL: plistURL)
-                    } else {
-                        launchedPID = Self.spawnDetachedRunnerProcess(in: instanceRoot, configuration: configuration)
                     }
 
                     return ProvisionedRunnerSummary(
@@ -195,6 +200,16 @@ public actor RunnerProvisionerActor {
         }
 
         return destinationRoot
+    }
+
+    static func createInstanceDirectory(name: String, in base: URL) throws -> URL {
+        try validateRunnerName(name)
+        let root = base.appending(path: name, directoryHint: .isDirectory)
+        guard mkdir(root.path, 0o700) == 0 else {
+            if errno == EEXIST { throw RunnerEngineError.runnerDirectoryAlreadyExists }
+            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        }
+        return root
     }
 
     private static func validateRunnerName(_ name: String) throws {
@@ -279,17 +294,4 @@ public actor RunnerProvisionerActor {
         return nil
     }
 
-    private static func spawnDetachedRunnerProcess(in instanceRoot: URL, configuration: RunnerLaunchConfiguration) -> Int32? {
-        let runScript = instanceRoot.appending(path: "run.sh")
-        guard FileManager.default.fileExists(atPath: runScript.path(percentEncoded: false)) else { return nil }
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/bash")
-        process.currentDirectoryURL = instanceRoot
-        process.arguments = [runScript.path(percentEncoded: false)]
-        process.environment = ProcessInfo.processInfo.environment.merging(configuration.environment) { _, configured in configured }
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
-        try? process.run()
-        return process.isRunning ? process.processIdentifier : nil
-    }
 }

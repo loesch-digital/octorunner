@@ -1,6 +1,7 @@
 import CoreModels
 import Foundation
 import Observation
+import RunnerEngine
 import SwiftData
 import SyncKit
 
@@ -13,15 +14,22 @@ public final class RunnerHealthMonitor {
     @ObservationIgnored private let notifications: AppNotificationsController
     @ObservationIgnored private let sampler: any RunnerProcessSampling
     @ObservationIgnored private let preferences: AppPreferencesStore?
+    @ObservationIgnored private let supervisor: RunnerSupervisorActor?
     @ObservationIgnored private var tracker = RunnerHealthTransitionTracker()
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private var isRefreshing = false
     @ObservationIgnored private var generation = 0
 
-    public init(notifications: AppNotificationsController, sampler: any RunnerProcessSampling = RunnerProcessSampler(), preferences: AppPreferencesStore? = nil) {
+    public init(
+        notifications: AppNotificationsController,
+        sampler: any RunnerProcessSampling = RunnerProcessSampler(),
+        preferences: AppPreferencesStore? = nil,
+        supervisor: RunnerSupervisorActor? = nil
+    ) {
         self.notifications = notifications
         self.sampler = sampler
         self.preferences = preferences
+        self.supervisor = supervisor
     }
 
     public func health(at date: Date) -> RunnerFleetHealth {
@@ -51,8 +59,12 @@ public final class RunnerHealthMonitor {
         isRefreshing = true
         defer { isRefreshing = false }
         let revision = generation
+        let targets = await supervisor?.processObservationTargets() ?? []
+        guard !Task.isCancelled, revision == generation else { return }
+        let sampleStarted = ContinuousClock.now
         do {
             let presence = try await sampler.sample()
+            let phases = await supervisor?.runtimePhases() ?? [:]
             guard !Task.isCancelled, revision == generation else { return }
             // Fetch after suspension: removed runners are never retained across await.
             let runners = try context.fetch(FetchDescriptor<RunnerEntity>())
@@ -66,6 +78,9 @@ public final class RunnerHealthMonitor {
                 let status: RunnerStatus
                 if process?.isWorkerActive == true { status = .busy }
                 else if process?.listenerPID != nil { status = .idle }
+                else if runner.executionMode == .direct, let phase = phases[runner.id] {
+                    status = phase == .faulted ? .faulted : .offline
+                }
                 else { status = runner.status == .faulted ? .faulted : .offline }
                 runner.status = status
                 runner.pid = process?.listenerPID ?? process?.workerPID
@@ -73,6 +88,8 @@ public final class RunnerHealthMonitor {
                 return RunnerHealthObservation(id: runner.id, name: runner.name, status: status, observedAt: now)
             }
             try context.save()
+            await forwardSample(presence, to: targets, observedAt: sampleStarted, revision: revision)
+            guard !Task.isCancelled, revision == generation else { return }
             let events = tracker.consume(observations, at: now, locale: preferences?.language.locale ?? .current)
             for event in events {
                 guard !Task.isCancelled, revision == generation else { return }
@@ -85,11 +102,27 @@ public final class RunnerHealthMonitor {
         } catch is CancellationError {
             return
         } catch {
+            await forwardSample([:], to: targets, observedAt: sampleStarted, revision: revision)
             guard !Task.isCancelled, revision == generation else { return }
             // Unavailable data is not evidence of an outage. Reset the transition
             // baseline so recovery from a measurement failure sends no false alert.
             observations = []
             _ = tracker.consume([], at: .now)
+        }
+    }
+
+    private func forwardSample(
+        _ presence: [String: RunnerProcessPresence],
+        to targets: [RunnerProcessObservationTarget],
+        observedAt: ContinuousClock.Instant,
+        revision: Int
+    ) async {
+        guard let supervisor else { return }
+        for target in targets {
+            guard !Task.isCancelled, revision == generation else { return }
+            let process = presence[target.rootPath]
+            await supervisor.observeProcesses(target, listenerPID: process?.listenerPID,
+                workerPID: process?.workerPID, observedAt: observedAt)
         }
     }
 }

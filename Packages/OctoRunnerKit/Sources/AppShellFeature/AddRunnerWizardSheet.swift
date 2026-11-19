@@ -348,7 +348,7 @@ public struct AddRunnerWizardSheet: View {
 
     private var footerActions: some View {
         HStack {
-            Button(AppLocalization.string("Cancel", locale: locale)) {
+            Button(AppLocalization.string(viewModel.provisioningCompleted ? "Done" : "Cancel", locale: locale)) {
                 dismiss()
             }
             .disabled(viewModel.isProvisioning)
@@ -367,7 +367,7 @@ public struct AddRunnerWizardSheet: View {
                         modelContext: modelContext,
                         configuration: configuration
                     )
-                    if ok && !Task.isCancelled {
+                    if ok && !Task.isCancelled && viewModel.errorMessage == nil {
                         dismiss()
                     }
                 }
@@ -384,7 +384,7 @@ public struct AddRunnerWizardSheet: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(OctoTheme.accentBlue)
-            .disabled(viewModel.isProvisioning || viewModel.plannedRunnerCount == 0)
+            .disabled(viewModel.isProvisioning || viewModel.provisioningCompleted || viewModel.plannedRunnerCount == 0)
             .accessibilityLabel(AppLocalization.string("Create and start \(viewModel.plannedRunnerCount) runners", locale: locale))
             .accessibilityHint(AppLocalization.string("Creates the selected number of instances for every selected target", locale: locale))
         }

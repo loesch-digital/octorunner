@@ -36,12 +36,13 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Interfaces:** Neue Sendable-Snapshots statt SwiftData-Objekten über Actor-Grenzen. Supervisor-API: `start(runnerID: UUID) async throws`, `stop(runnerID: UUID) async throws`, `restart(runnerID: UUID) async throws`; Prozessadapter liefert identifizierbare Exit-Ereignisse pro Startgeneration.
 
-- [ ] Eigentumsmatrix für direkte Child-Prozesse, bestehende LaunchAgents und importierte externe Listener dokumentieren. Direkter Modus gemäß ADR-01; vor Übernahme bestehenden Eigentümer verifiziert stoppen. Headless-LaunchAgent ohne zentrale Aufsicht nicht als überwacht ausweisen.
-- [ ] Rote Fake-Prozess-Tests: zweimaliges Starten startet einmal; verspäteter Exit der Generation A stoppt Generation B nicht; abgebrochener Start räumt eigene Ressourcen auf; Stop unbekannter/fremder Runner signalisiert nichts.
-- [ ] Rote Tests für Graceful Drain und Drain-Timeout ergänzen: Busy-Runner nicht ungefragt abbrechen; bestätigter erzwungener Stop ist eine getrennte Aktion. Bei GUI-Quit die tatsächliche Fortsetzung/Beendigung des gewählten Betriebsmodus anzeigen.
-- [ ] Prozessadapter ohne blockierendes `waitUntilExit` auf dem MainActor implementieren; Statusereignisse erst nach bestätigtem Start/Exit liefern. Native Tests ausschließlich mit eigenen kurzlebigen Testprozessen.
-- [ ] Betriebsdiagnose aus Screenshot 07 anbinden: echte PID/Laufzeit/Betriebsart sowie read-only generierte LaunchAgent-Plist mit Syntaxprüfung; Reload nur für den bestätigten eigenen Dienst und ohne Doppelstart. Tests für fehlenden und wechselnden Dienst ergänzen.
-- [ ] Grün prüfen, App-Controls verdrahten, Audit mit Runner-ID/-Name und echtem Ergebnis schreiben, danach Commit/PR-/main-CI.
+- [x] Eigentumsmatrix für direkte Child-Prozesse, bestehende LaunchAgents und importierte externe Listener dokumentieren. Der direkte Modus übernimmt laufende fremde Listener erst nach verifizierter Migration.
+- [x] Doppelstart, verspäteten Exit einer früheren Generation, abgebrochenen Start und fremde Prozesse mit Fake-Prozess-Tests abdecken.
+- [x] Graceful Drain, Fristablauf und separat bestätigten erzwungenen Stopp testen. Der Quit-Dialog erklärt, welche Runner weiterlaufen. Vor freiwilligem Stopp und Quit wird der lokale Jobzustand erneut geprüft.
+- [x] Direkten Prozessadapter ohne blockierendes `waitUntilExit` implementieren. Der Exit bleibt der Startgeneration zugeordnet und wird erst nach Ende der eigenen Prozessgruppe gemeldet. Native Tests verwenden kurzlebige Prüfprozesse.
+- [x] App-Controls für direkte Runner mit bestätigter PID, Laufzeit, Status und Audit anbinden. Speicherbereinigung und Prozessstart verwenden eine gemeinsame Verzeichnissperre.
+- [ ] PR und main-CI für die direkte Prozessaufsicht vollständig grün prüfen.
+- [ ] LaunchAgent-Diagnose aus Screenshot 07 im anschließenden PR ergänzen. Die installierte Plist mit Syntaxprüfung zur Ansicht anbieten und Reload nur für den bestätigten eigenen Dienst ermöglichen. Tests für fehlenden und wechselnden Dienst ergänzen.
 
 ### Task 2: Restart, Throttle und Quarantäne
 

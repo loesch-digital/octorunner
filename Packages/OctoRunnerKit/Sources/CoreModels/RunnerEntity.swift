@@ -16,6 +16,7 @@ public final class RunnerEntity {
     public var rootDirectoryPath: String?
     public var runnerVersion: String?
     public var isImportedLocal: Bool = false
+    public var executionModeRaw: String? = nil
     public var serviceLabel: String = ""
     public var currentJobName: String?
     public var currentRepo: String?
@@ -35,6 +36,13 @@ public final class RunnerEntity {
         set { scopeTypeRaw = newValue.rawValue }
     }
 
+    /// Legacy data may contain a generated service label without an installed
+    /// service. Only an explicit record establishes an OctoRunner-owned mode.
+    public var executionMode: RunnerExecutionMode? {
+        get { isImportedLocal ? .external : executionModeRaw.flatMap(RunnerExecutionMode.init(rawValue:)) }
+        set { executionModeRaw = isImportedLocal ? RunnerExecutionMode.external.rawValue : newValue?.rawValue }
+    }
+
     public init(
         id: UUID = UUID(),
         name: String,
@@ -46,7 +54,8 @@ public final class RunnerEntity {
         rootDirectoryPath: String? = nil,
         runnerVersion: String? = nil,
         isImportedLocal: Bool = false,
-        pid: Int32? = nil
+        pid: Int32? = nil,
+        executionMode: RunnerExecutionMode? = nil
     ) {
         self.id = id
         self.name = name
@@ -59,6 +68,7 @@ public final class RunnerEntity {
         self.rootDirectoryPath = rootDirectoryPath ?? workDirectory.deletingLastPathComponent().path(percentEncoded: false)
         self.runnerVersion = runnerVersion
         self.isImportedLocal = isImportedLocal
+        self.executionModeRaw = isImportedLocal ? RunnerExecutionMode.external.rawValue : executionMode?.rawValue
         self.serviceLabel = "io.octorunner.agent.\(name)"
         self.currentJobName = nil
         self.currentRepo = nil

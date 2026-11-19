@@ -25,9 +25,14 @@ public struct RunnerConfigDetailSheet: View {
 
     private let provisioningClient = GitHubRunnerProvisioningClient()
     private let provisionerActor = RunnerProvisionerActor()
+    private let supervisor: RunnerSupervisorActor?
+    private let launchConfiguration: RunnerLaunchConfiguration
 
-    public init(runner: RunnerEntity) {
+    public init(runner: RunnerEntity, supervisor: RunnerSupervisorActor? = nil,
+                launchConfiguration: RunnerLaunchConfiguration = RunnerLaunchConfiguration()) {
         self.runner = runner
+        self.supervisor = supervisor
+        self.launchConfiguration = launchConfiguration
         _editableLabels = State(initialValue: runner.labels)
     }
 
@@ -147,6 +152,13 @@ public struct RunnerConfigDetailSheet: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(OctoTheme.surfaceLow, in: .rect(cornerRadius: 6))
                 }
+            }
+
+            if let supervisor, runner.executionMode == .direct,
+               let root = runner.rootDirectoryPath, root.hasPrefix("/") {
+                Divider()
+                RunnerProcessControls(configuration: .init(runnerID: runner.id, name: runner.name,
+                    rootDirectory: URL(filePath: root), mode: .direct, launch: launchConfiguration), supervisor: supervisor)
             }
 
             Divider()

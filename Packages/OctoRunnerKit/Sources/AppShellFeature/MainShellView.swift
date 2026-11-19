@@ -11,6 +11,7 @@ import TelemetryKit
 public struct MainShellView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.locale) private var locale
+    @Environment(AppPreferencesStore.self) private var preferences: AppPreferencesStore?
     @Query(sort: \RunnerEntity.name) private var runners: [RunnerEntity]
     @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
 
@@ -38,9 +39,17 @@ public struct MainShellView: View {
     private let syncActor = GitHubRunnerSyncActor()
     private let provisioner = RunnerProvisionerActor()
     private let jobResults: LocalJobResults
+    private let supervisor: RunnerSupervisorActor
 
-    public init(section: SidebarSection = .allRunners, historyRateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(), accountSession: AccountSessionController = AccountSessionController(), jobResults: LocalJobResults = LocalJobResults()) {
+    public init(
+        section: SidebarSection = .allRunners,
+        historyRateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(),
+        accountSession: AccountSessionController = AccountSessionController(),
+        jobResults: LocalJobResults = LocalJobResults(),
+        supervisor: RunnerSupervisorActor = RunnerSupervisorActor()
+    ) {
         self.jobResults = jobResults
+        self.supervisor = supervisor
         _historyRateBudget = State(initialValue: historyRateBudget)
         _accountSession = State(initialValue: accountSession)
         _selectedSection = State(initialValue: section)
@@ -88,10 +97,10 @@ public struct MainShellView: View {
         }
         .onDisappear { accountTask?.cancel() }
         .sheet(isPresented: $isShowingAddRunnerSheet) {
-            AddRunnerWizardSheet()
+            AddRunnerWizardSheet(viewModel: AddRunnerWizardViewModel(supervisor: supervisor))
         }
         .sheet(item: $activeConfigRunner) { runner in
-            RunnerConfigDetailSheet(runner: runner)
+            RunnerConfigDetailSheet(runner: runner, supervisor: supervisor, launchConfiguration: runnerLaunchConfiguration)
         }
         .sheet(item: $activeConsoleRunner) { runner in
             RunnerConsoleLogSheet(runner: runner)
@@ -116,6 +125,11 @@ public struct MainShellView: View {
                 catch { return }
             }
         }
+    }
+
+    private var runnerLaunchConfiguration: RunnerLaunchConfiguration {
+        guard let preferences else { return RunnerLaunchConfiguration() }
+        return RunnerLaunchConfiguration(runtimePolicy: preferences.runtimePolicy, inheritHostPath: preferences.inheritHostPath)
     }
 
     // MARK: - Left Sidebar + Bottom-Left Account Card & Version Footer
@@ -443,7 +457,11 @@ public struct MainShellView: View {
             openLog: { activeConsoleRunner = runner },
             openSettings: { activeConfigRunner = runner },
             migrate: { Task { await migrateImportedRunnerInline(runner) } },
-            remove: { deleteRunner(runner) })
+            remove: {
+                let id = runner.id
+                let isDirect = runner.executionMode == .direct
+                Task { await deleteRunner(id: id, isDirect: isDirect) }
+            })
     }
 
     private func migrateImportedRunnerInline(_ runner: RunnerEntity) async {
@@ -587,9 +605,16 @@ public struct MainShellView: View {
         var importedOrUpdated = 0
 
         for item in discoveredList {
-            if let existing = existingRunners.first(where: {
-                $0.githubRunnerId == item.config.agentId || $0.name == item.config.agentName
-            }) {
+            let path = LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: item.rootDirectory)
+            let pathMatch = existingRunners.first { runner in
+                guard let root = runner.rootDirectoryPath else { return false }
+                return LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: URL(filePath: root)) == path
+            }
+            let legacyMatch = existingRunners.first { runner in
+                guard runner.executionMode != .direct, runner.executionMode != .launchAgent else { return false }
+                return runner.githubRunnerId == item.config.agentId || runner.name == item.config.agentName
+            }
+            if let existing = pathMatch ?? legacyMatch {
                 existing.githubRunnerId = item.config.agentId
                 existing.name = item.config.agentName
                 existing.scopeType = item.config.inferredScopeType
@@ -728,21 +753,37 @@ public struct MainShellView: View {
         }
     }
 
-    private func deleteRunner(_ runner: RunnerEntity) {
-        let name = runner.name
-        let oldLabels = runner.labels.joined(separator: ",")
-        modelContext.delete(runner)
-        AuditLogRecorder.record(
-            in: modelContext,
-            category: .runnerLifecycle,
-            severity: .warning,
-            title: "Runner Removed from Pool",
-            summary: "Removed runner \(name) from local pool",
-            actorAccountLogin: accounts.first?.login,
-            targetRunnerName: name,
-            previousValue: oldLabels
-        )
-        try? modelContext.save()
+    private func deleteRunner(id: UUID, isDirect: Bool) async {
+        if isDirect {
+            guard await supervisor.reserveRemoval(runnerID: id) else {
+                updateStatusMessage = AppLocalization.string("Stop this runner before removing it.", locale: locale)
+                return
+            }
+        }
+        var removed = false
+        do {
+            try Task.checkCancellation()
+            let descriptor = FetchDescriptor<RunnerEntity>(predicate: #Predicate { $0.id == id })
+            if let runner = try modelContext.fetch(descriptor).first,
+               (runner.executionMode == .direct) == isDirect {
+                try modelContext.transaction {
+                    let name = runner.name
+                    let oldLabels = runner.labels.joined(separator: ",")
+                    modelContext.delete(runner)
+                    modelContext.insert(AuditLogEntity(category: .runnerLifecycle, severity: .warning,
+                        title: "Runner Removed from Pool", summary: "Removed runner \(name) (\(id.uuidString)) from local pool",
+                        actorAccountLogin: accounts.first?.login, targetRunnerName: name, previousValue: oldLabels))
+                }
+                removed = true
+            }
+        } catch is CancellationError {
+            // A cancelled view must release its reservation without touching SwiftData.
+        } catch {
+            if !Task.isCancelled {
+                updateStatusMessage = AppLocalization.string("The runner could not be removed.", locale: locale)
+            }
+        }
+        if isDirect { await supervisor.finishRemoval(runnerID: id, removed: removed) }
     }
 
     private func signOut(_ account: GitHubAccountEntity) {

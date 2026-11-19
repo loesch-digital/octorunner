@@ -10,6 +10,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     let services = AppServices()
     let modelContainer = OctoRunnerPersistence.makeSharedContainer()
     private let notificationPresenter = NotificationPresentationDelegate()
+    private var isQuitRequestPending = false
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
         try? AppAuditEvent.started.record(in: modelContainer.mainContext)
@@ -29,8 +30,22 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        AppQuitConfirmation.shouldTerminate(after: AppQuitConfirmation.makeAlert(locale: services.preferences.language.locale).runModal())
-            ? .terminateNow : .terminateCancel
+        guard !isQuitRequestPending else { return .terminateLater }
+        let locale = services.preferences.language.locale
+        let confirmation = AppQuitConfirmation.makeAlert(locale: locale)
+        guard AppQuitConfirmation.shouldTerminate(after: confirmation.runModal()) else { return .terminateCancel }
+        isQuitRequestPending = true
+        Task {
+            do {
+                try await services.supervisor.shutdownForQuit()
+                sender.reply(toApplicationShouldTerminate: true)
+            } catch {
+                isQuitRequestPending = false
+                sender.reply(toApplicationShouldTerminate: false)
+                AppQuitConfirmation.makeBlockedAlert(error: error, locale: locale).runModal()
+            }
+        }
+        return .terminateLater
     }
 
     public func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -55,7 +70,12 @@ struct OctoRunnerApp: App {
         @Bindable var preferences = services.preferences
         Window("OctoRunner", id: "main-dashboard") {
             LocalJobResultsSource { results in
-                MainShellView(historyRateBudget: services.historyRateBudget, accountSession: services.accounts, jobResults: results)
+                MainShellView(
+                    historyRateBudget: services.historyRateBudget,
+                    accountSession: services.accounts,
+                    jobResults: results,
+                    supervisor: services.supervisor
+                )
             }
                 .environment(services.preferences)
                 .environment(services.integration)

@@ -36,9 +36,12 @@ struct InterfaceLocalizationTests {
         let german = AppQuitConfirmation.makeAlert(locale: Locale(identifier: "de"))
         #expect(german.messageText == "OctoRunner beenden?")
         #expect(german.informativeText.contains("Menüleistensymbol"))
+        #expect(german.informativeText.contains("Direkt verwaltete Runner"))
+        #expect(german.informativeText.contains("launchd"))
         #expect(german.buttons.map(\.title) == ["OctoRunner beenden", "Abbrechen"])
         let english = AppQuitConfirmation.makeAlert(locale: Locale(identifier: "en"))
         #expect(english.messageText == "Quit OctoRunner?")
+        #expect(english.informativeText.contains("Directly managed runners"))
         #expect(english.buttons.map(\.title) == ["Quit OctoRunner", "Cancel"])
     }
 

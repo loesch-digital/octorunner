@@ -1,10 +1,26 @@
 import CryptoKit
 import Foundation
-import RunnerEngine
+@testable import RunnerEngine
 import Testing
 
 @Suite("RunnerEngine & Process Supervisor Tests")
 struct RunnerEngineTests {
+    @Test("Provisioning cannot overwrite an existing runner directory")
+    func exclusiveRunnerDirectory() throws {
+        let base = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let root = try RunnerProvisionerActor.createInstanceDirectory(name: "runner", in: base)
+        let sentinel = root.appending(path: "run.sh")
+        try Data("original".utf8).write(to: sentinel)
+        do {
+            _ = try RunnerProvisionerActor.createInstanceDirectory(name: "runner", in: base)
+            Issue.record("A later provisioning request took over an existing directory")
+        } catch RunnerEngineError.runnerDirectoryAlreadyExists {
+            #expect(try String(contentsOf: sentinel, encoding: .utf8) == "original")
+        }
+    }
+
     @Test("Log reads never follow diagnostic symlinks outside the selected runner", arguments: [false, true])
     func logSymlinksCannotReadOutsideRunner(linkDirectory: Bool) async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: "OctoRunnerLogBoundary-\(UUID().uuidString)")
