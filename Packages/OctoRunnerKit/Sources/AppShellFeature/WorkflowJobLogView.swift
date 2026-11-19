@@ -48,12 +48,9 @@ struct WorkflowJobLogView: View {
                         icon: { Image(systemName: "exclamationmark.triangle") }
                         .font(.caption).foregroundStyle(OctoTheme.warningOrange)
                 }
-                ScrollView([.horizontal, .vertical]) {
-                    Text(snapshot.text.isEmpty ? AppLocalization.string("The log contains no output", locale: locale) : snapshot.text)
-                        .font(.system(.caption, design: .monospaced)).textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .topLeading).padding(12)
-                        .accessibilityLabel(Text("Job log output", bundle: .module))
-                }.background(OctoTheme.surface, in: .rect(cornerRadius: 8))
+                WorkflowJobLogTextView(text: snapshot.text.isEmpty
+                    ? AppLocalization.string("The log contains no output", locale: locale) : snapshot.text)
+                    .background(OctoTheme.surface, in: .rect(cornerRadius: 8))
             } else { Spacer(minLength: 0) }
         }
         .padding(20).frame(minWidth: 520, minHeight: 420).background(OctoTheme.surfaceLowest)

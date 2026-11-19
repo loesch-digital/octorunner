@@ -13,7 +13,7 @@ public enum WorkflowHistoryStore {
         try Task.checkCancellation()
         let repository = try canonicalRepository(repository)
         guard accountID > 0, run.id > 0, run.runAttempt.map({ $0 > 0 }) ?? true,
-              jobs.allSatisfy({ $0.runID == run.id && $0.id > 0 && $0.hasValidStepIdentities }),
+              jobs.allSatisfy({ $0.runID == run.id && ($0.runAttempt == nil || $0.runAttempt == run.runAttempt) && $0.id > 0 && $0.hasValidStepIdentities }),
               Set(jobs.map(\.id)).count == jobs.count,
               jobs.isEmpty || run.runAttempt != nil else { throw WorkflowHistoryError.inconsistentPayload }
 

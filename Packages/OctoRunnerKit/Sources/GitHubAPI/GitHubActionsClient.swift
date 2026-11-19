@@ -23,8 +23,17 @@ public actor GitHubActionsClient {
         let path = try repositoryPath(repository) + "/actions/runs/\(runID)/attempts/\(attempt)/jobs"
         let (data, next, rate) = try await load(path: path, page: page, token: token)
         let result = try Self.decoder().decode(GitHubWorkflowJobsResponse.self, from: data)
-        guard result.jobs.allSatisfy({ $0.runID == runID && $0.id > 0 && $0.hasValidStepIdentities }) else { throw GitHubActionsError.invalidResponse }
+        guard result.jobs.allSatisfy({ $0.runID == runID && ($0.runAttempt == nil || $0.runAttempt == attempt) && $0.id > 0 && $0.hasValidStepIdentities }) else { throw GitHubActionsError.invalidResponse }
         return GitHubActionsPage(items: result.jobs, nextPage: next, totalCount: result.totalCount, rateLimit: rate)
+    }
+
+    public func workflowRunAttempt(repository: String, runID: Int64, attempt: Int, token: String) async throws -> GitHubActionsPage<GitHubWorkflowRunDTO> {
+        guard runID > 0, attempt > 0 else { throw GitHubActionsError.invalidRunAttempt }
+        let path = try repositoryPath(repository) + "/actions/runs/\(runID)/attempts/\(attempt)"
+        let (data, next, rate) = try await load(path: path, page: nil, token: token)
+        let run = try Self.decoder().decode(GitHubWorkflowRunDTO.self, from: data)
+        guard run.id == runID, run.runAttempt == attempt, next == nil else { throw GitHubActionsError.invalidResponse }
+        return .init(items: [run], nextPage: nil, totalCount: 1, rateLimit: rate)
     }
 
     public func pullRequests(repository: String, commitSHA: String, token: String, page: URL? = nil) async throws -> GitHubActionsPage<GitHubWorkflowPullRequestDTO> {

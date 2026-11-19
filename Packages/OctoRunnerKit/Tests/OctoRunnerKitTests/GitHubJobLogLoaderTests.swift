@@ -8,7 +8,7 @@ struct GitHubJobLogLoaderTests {
     func redirect() async throws {
         let transport = LogFixture(responses: [response(302, headers: ["Location": "https://logs.example.test/signed?fixture=private"]), response(200, text: "test ✓\n")])
         let snapshot = try await GitHubJobLogLoader(transport: transport).load(repository: "example/repo", jobID: 100, token: "synthetic")
-        #expect(snapshot.text == "test ✓\n" && !snapshot.isTruncated)
+        #expect(snapshot.snapshot.text == "test ✓\n" && !snapshot.snapshot.isTruncated)
         let requests = await transport.requests
         #expect(requests.count == 2)
         #expect(requests.first?.url?.path == "/repos/example/repo/actions/jobs/100/logs")
@@ -42,7 +42,7 @@ struct GitHubJobLogLoaderTests {
         data.append(contentsOf: "€".utf8)
         let transport = LogFixture(responses: [.init(statusCode: 200, headers: [:], data: data)])
         let snapshot = try await GitHubJobLogLoader(transport: transport).load(repository: "example/repo", jobID: 100, token: "synthetic")
-        #expect(snapshot.isTruncated && snapshot.text.utf8.count == limit - 1)
+        #expect(snapshot.snapshot.isTruncated && snapshot.snapshot.text.utf8.count == limit - 1)
         #expect(await transport.limits == [limit + 1])
         for binary in [Data(repeating: 65, count: limit - 1) + Data([0xff, 65]), Data([0, 1, 2]), Data([0x50, 0x4b, 3, 4]), Data([0xff, 0x61])] {
             let invalid = LogFixture(responses: [.init(statusCode: 200, headers: [:], data: binary)])

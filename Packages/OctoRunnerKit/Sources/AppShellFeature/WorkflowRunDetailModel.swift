@@ -7,6 +7,8 @@ import SecurityKit
 @Observable
 final class WorkflowRunDetailModel {
     private(set) var jobs: [GitHubWorkflowJobDTO] = []
+    private(set) var workflow: GitHubWorkflowRunDTO?
+    var shouldRefresh: Bool { workflow != nil && workflow?.status != "completed" }
     private(set) var observedAt: Date?
     private(set) var isLoading = false
     private(set) var error: WorkflowHistoryLoadError?
@@ -24,7 +26,7 @@ final class WorkflowRunDetailModel {
     func select(_ selection: WorkflowRunDetailSelection?) {
         invalidate()
         self.selection = selection
-        jobs = []; observedAt = nil; error = nil
+        jobs = []; workflow = nil; observedAt = nil; error = nil
     }
 
     func invalidate() { generation += 1; isLoading = false }
@@ -42,6 +44,14 @@ final class WorkflowRunDetailModel {
             guard account > 0, !selection.source.keychainAccountKey.isEmpty,
                   let token = try await secrets.readSecret(account: selection.source.keychainAccountKey, category: "github-oauth"), !token.isEmpty else {
                 throw WorkflowHistoryLoadError.authenticationRequired
+            }
+            guard ticket == generation, !Task.isCancelled else { return }
+            let attemptPage = try await client.workflowRunAttempt(repository: selection.source.repository,
+                runID: selection.runID, attempt: selection.attempt, token: token)
+            rateBudget.observe(attemptPage.rateLimit, accountID: account)
+            if attemptPage.rateLimit?.remaining == 0 {
+                rateBudget.recordLimit(until: attemptPage.rateLimit?.resetAt, accountID: account, now: .now)
+                throw WorkflowHistoryLoadError.rateLimited(until: rateBudget.deadline(for: account))
             }
             guard ticket == generation, !Task.isCancelled else { return }
             var all: [GitHubWorkflowJobDTO] = []
@@ -74,7 +84,7 @@ final class WorkflowRunDetailModel {
                 throw WorkflowHistoryLoadError.unavailable
             }
             guard ticket == generation, !Task.isCancelled else { return }
-            jobs = all; observedAt = .now
+            jobs = all; workflow = attemptPage.items.first; observedAt = .now
         } catch {
             let failure: WorkflowHistoryLoadError
             if let apiError = error as? GitHubActionsError {

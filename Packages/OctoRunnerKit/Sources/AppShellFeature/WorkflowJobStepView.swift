@@ -12,7 +12,7 @@ struct WorkflowJobStepView: View {
             Text("\(step.number)").monospacedDigit().foregroundStyle(OctoTheme.secondaryText)
             VStack(alignment: .leading, spacing: 4) {
                 Text(step.name).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
-                Label(display.title, systemImage: display.symbol).font(.caption).foregroundStyle(color(display.symbol))
+                Label(display.title, systemImage: display.symbol).font(.caption).foregroundStyle(display.color)
             }
             Spacer(minLength: 8)
             Text(step.durationSeconds.map { Duration.seconds($0).formatted(.time(pattern: .minuteSecond)) } ?? "—")
@@ -20,13 +20,4 @@ struct WorkflowJobStepView: View {
         }.padding(.vertical, 5)
     }
 
-    private func color(_ symbol: String) -> Color {
-        switch symbol {
-        case "play.circle.fill": OctoTheme.accentBlue
-        case "xmark.circle.fill": OctoTheme.errorRed
-        case "checkmark.circle.fill": OctoTheme.onlineGreen
-        case "clock": OctoTheme.warningOrange
-        default: OctoTheme.secondaryText
-        }
-    }
 }

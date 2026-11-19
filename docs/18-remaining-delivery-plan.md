@@ -114,3 +114,25 @@ Die nativen, vom Nutzer positiv abgenommenen Settings-Seiten bleiben erhalten. D
 ### Aktuelle lokale Verifikation
 
 Am 19.11.2026 bestanden **293 Swift-Tests in 62 Suites**, einschließlich neuer Settings-Tests und aller bisherigen Regressionen. Zusätzlich bestanden alle **33 Python-Tests** mit dem für Prozessdiagnose und Compiler-Caches erforderlichen Zugriff; ein zuvor eingeschränkter Sandbox-Lauf wird nicht als Produktfehler oder erfolgreicher Test gezählt. Der native Debug-App-Build mit Xcode war erfolgreich. Die neuen Settings-Karten wurden in DE/EN, Hell/Dunkel und bei 620/960 Punkten gerendert und visuell geprüft. Native XCTest-Interaktion kann lokal wegen fehlender macOS-Automatisierungsinitialisierung nicht ausgeführt werden; sie wird ausdrücklich nicht als bestanden gezählt und muss in PR-/main-CI grün sein. Frühere positive Nutzerabnahmen für Settings-Lesbarkeit, Resize, Single-Window und Start ohne Dokumente-Abfrage bleiben erhalten.
+
+## GitHub-Details: ergänzendes v0.5-Gate
+
+PR #30 und main-CI [44511598034](https://github.com/loesch-digital/octorunner/actions/runs/44511598034)
+sind vollständig grün. Der anschließende Feature-Zweig ergänzt validierte PR-Links,
+Jobs/Steps je bekanntem Run-Versuch und bewusst geladene Job-Log-Momentaufnahmen.
+Screenshot 08 dient als Funktionsvorlage; keine vorgetäuschten Webhooks, REST-Livestreams
+oder schreibenden Rerun-/Cancel-Aktionen.
+
+Nach einem unabhängigen Review wurden sechs wichtige Punkte mit Regressionen
+korrigiert: vollständige History-Pagination, getrennte GitHub-/Download-Budgets,
+explizite Attempt-Prüfung, Aktualisierung wartender Workflows ohne Jobs, gemeinsame
+Statusfarben und tatsächlicher Accessibility-Text der nativen Log-Anzeige.
+Lokaler Stand: **330 Swift-Tests in 67 Suites**, **33 Python-Tests** und nativer
+Xcode-27.2-/Swift-6.4.2-Build grün. Das bestätigt die geprüften Szenarien, keine
+pauschale vollständige Testabdeckung. PR-/main-CI und Release sind separate Gates.
+
+Die DE/EN-Log- und Detailansichten wurden schmal/breit sowie Hell/Dunkel gerendert.
+Native authentifizierte Detail-/Log-Interaktionen benötigen weiterhin die kurze
+Abnahme; die CI prüft die Jobs-Navigation ohne private GitHub-Fixtures.
+Bekannte kleine Optimierung: abgeschlossene PR-Läufe können bei weiterhin leeren
+GitHub-Metadaten den begrenzten Commit-Lookup erneut ausführen.

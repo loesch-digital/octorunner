@@ -1,9 +1,20 @@
 import CoreModels
 import Foundation
+import DesignSystem
+import SwiftUI
 
 struct WorkflowStepPresentation {
     let title: String
     let symbol: String
+    var color: Color {
+        switch symbol {
+        case "play.circle.fill": OctoTheme.accentBlue
+        case "xmark.circle.fill": OctoTheme.errorRed
+        case "checkmark.circle.fill": OctoTheme.onlineGreen
+        case "clock": OctoTheme.warningOrange
+        default: OctoTheme.secondaryText
+        }
+    }
 
     init(step: WorkflowJobStep, locale: Locale) {
         let key: String.LocalizationValue

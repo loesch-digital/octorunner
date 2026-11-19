@@ -44,8 +44,9 @@ final class WorkflowJobLogModel {
             }
             guard ticket == generation, !Task.isCancelled else { return }
             let loaded = try await loader.load(repository: source.repository, jobID: selection.jobID, token: token)
+            observe(loaded.rateLimit, account: account)
             guard ticket == generation, !Task.isCancelled else { return }
-            snapshot = loaded
+            snapshot = loaded.snapshot
         } catch {
             let failure: WorkflowJobLogLoadError
             switch error {
@@ -59,11 +60,23 @@ final class WorkflowJobLogModel {
                 failure = .rateLimited
             case GitHubActionsError.httpStatus(403, _): failure = .permissionDenied
             case GitHubActionsError.httpStatus(404, _), GitHubActionsError.httpStatus(410, _): failure = .notAvailable
-            case GitHubJobLogError.unsupportedContent: failure = .unsupportedContent
+            case let logError as GitHubJobLogError:
+                observe(logError.rateLimit, account: account)
+                switch logError {
+                case .unsupportedContent: failure = .unsupportedContent
+                case .downloadFailed(let status, _) where status == 403 || status == 404 || status == 410: failure = .notAvailable
+                default: failure = .unavailable
+                }
             default: failure = .unavailable
             }
             guard ticket == generation, !Task.isCancelled, !(error is CancellationError) else { return }
             self.error = failure
+        }
+    }
+    private func observe(_ rate: GitHubRateLimitSnapshot?, account: Int64) {
+        rateBudget.observe(rate, accountID: account)
+        if rate?.remaining == 0 {
+            rateBudget.recordLimit(until: rate?.resetAt, accountID: account, now: .now)
         }
     }
 }

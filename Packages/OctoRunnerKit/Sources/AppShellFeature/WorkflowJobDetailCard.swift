@@ -38,7 +38,7 @@ struct WorkflowJobDetailCard: View {
                 conclusion: job.conclusion, startedAt: job.startedAt, completedAt: job.completedAt), locale: locale)
             VStack(alignment: .leading, spacing: 4) {
                 Text(job.name).font(.headline).fixedSize(horizontal: false, vertical: true)
-                Label(display.title, systemImage: display.symbol).font(.caption)
+                Label(display.title, systemImage: display.symbol).font(.caption).foregroundStyle(display.color)
             }
         }
         .accessibilityLabel(Text(job.name))

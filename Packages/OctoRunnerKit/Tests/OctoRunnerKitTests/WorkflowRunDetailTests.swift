@@ -1,6 +1,7 @@
 import CoreModels
 import Foundation
 import GitHubAPI
+import DesignSystem
 import SecurityKit
 import SwiftData
 import SwiftUI
@@ -36,7 +37,7 @@ struct WorkflowRunDetailTests {
         #expect(model.jobs.map(\.id) == [100])
         #expect(model.jobs.first?.steps == nil)
         #expect(model.observedAt != nil && model.error == nil && !model.isLoading)
-        #expect(await transport.requests.first?.url?.path == "/repos/example/repo/actions/runs/42/attempts/2/jobs")
+        #expect(await transport.requests.last?.url?.path == "/repos/example/repo/actions/runs/42/attempts/2/jobs")
     }
 
     @Test("Invalidation, account switching and cancellation discard late detail responses", arguments: [0, 1, 2])
@@ -141,6 +142,39 @@ struct WorkflowRunDetailTests {
         #expect(model.error != nil && model.jobs.isEmpty && model.observedAt == nil)
     }
 
+    @Test("Explicit mismatched job attempts are rejected before display and persistence")
+    func mismatchedAttempt() async throws {
+        let payload = #"{"total_count":1,"jobs":[{"id":100,"run_id":42,"run_attempt":1,"name":"Wrong attempt","status":"completed"}]}"#
+        let client = GitHubActionsClient(transport: InvalidStepTransport(payload: payload))
+        await #expect(throws: GitHubActionsError.invalidResponse) {
+            try await client.workflowJobs(repository: "example/repo", runID: 42, attempt: 2, token: "synthetic")
+        }
+        let run = try JSONDecoder().decode(GitHubWorkflowRunDTO.self, from: Data(#"{"id":42,"run_attempt":2,"status":"completed"}"#.utf8))
+        let job = try JSONDecoder().decode(GitHubWorkflowJobDTO.self, from: Data(#"{"id":100,"run_id":42,"run_attempt":1,"name":"Wrong attempt","status":"completed"}"#.utf8))
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        #expect(throws: WorkflowHistoryError.inconsistentPayload) {
+            try WorkflowHistoryStore.upsert(run: run, jobs: [job], repository: "example/repo", accountID: 7, in: container.mainContext)
+        }
+    }
+
+    @Test("Workflow state keeps queued and between-stage details refreshing", arguments: ["queued", "in_progress", "completed"])
+    func workflowRefresh(_ status: String) async {
+        let fixture = DetailHTTPFixture(totalCount: 0, workflowStatus: status, emptyJobs: true)
+        let model = WorkflowRunDetailModel(client: .init(transport: fixture), secrets: DetailSecrets())
+        model.select(selection(attempt: 2))
+        await model.load()
+        #expect(model.error == nil && model.jobs.isEmpty)
+        #expect(model.workflow?.status == status)
+        #expect(model.shouldRefresh == (status != "completed"))
+        #expect(await fixture.requests.first?.url?.path == "/repos/example/repo/actions/runs/42/attempts/2")
+    }
+
+    @Test("Job and step status use the same semantic blue for running")
+    func statusColors() {
+        let step = WorkflowJobStep(number: 1, name: "Build", status: "in_progress", conclusion: nil, startedAt: nil, completedAt: nil)
+        #expect(WorkflowStepPresentation(step: step, locale: Locale(identifier: "en")).color == OctoTheme.accentBlue)
+    }
+
     private func selection(attempt: Int) -> WorkflowRunDetailSelection {
         .init(source: .init(accountID: 7, keychainAccountKey: "fixture", repository: "example/repo"), runID: 42, attempt: attempt)
     }
@@ -156,15 +190,21 @@ private actor DetailHTTPFixture: GitHubActionsTransport {
     let withSteps: Bool
     let headers: [String: String]
     let totalCount: Int
+    let workflowStatus: String
+    let emptyJobs: Bool
     private let started = AsyncStream<Void>.makeStream()
     private var pending: CheckedContinuation<Void, Never>?
     private(set) var requests: [URLRequest] = []
-    init(gated: Bool = false, status: Int = 200, withSteps: Bool = false, headers: [String: String] = [:], totalCount: Int = 1) { self.gated = gated; self.status = status; self.withSteps = withSteps; self.headers = headers; self.totalCount = totalCount }
+    init(gated: Bool = false, status: Int = 200, withSteps: Bool = false, headers: [String: String] = [:], totalCount: Int = 1, workflowStatus: String = "in_progress", emptyJobs: Bool = false) { self.gated = gated; self.status = status; self.withSteps = withSteps; self.headers = headers; self.totalCount = totalCount; self.workflowStatus = workflowStatus; self.emptyJobs = emptyJobs }
     func send(_ request: URLRequest) async -> GitHubActionsHTTPResponse {
         requests.append(request)
         if gated && requests.count == 1 {
             await withCheckedContinuation { pending = $0; started.continuation.yield(()); started.continuation.finish() }
         }
+        if request.url?.path.hasSuffix("/jobs") != true {
+            return .init(statusCode: status, headers: headers, data: Data("{\"id\":42,\"run_attempt\":2,\"status\":\"\(workflowStatus)\"}".utf8))
+        }
+        if emptyJobs { return .init(statusCode: status, headers: headers, data: Data(#"{"total_count":0,"jobs":[]}"#.utf8)) }
         let steps = withSteps ? ",\"steps\":[{\"number\":1,\"name\":\"Build and test a long workflow step with a deliberately descriptive name\",\"status\":\"completed\",\"conclusion\":\"failure\"},{\"number\":2,\"name\":\"Upload diagnostics\",\"status\":\"in_progress\"}]" : ""
         return .init(statusCode: status, headers: headers, data: Data("{\"total_count\":\(totalCount),\"jobs\":[{\"id\":100,\"run_id\":42,\"name\":\"Build\",\"status\":\"\(withSteps ? "in_progress" : "queued")\"\(steps)}]}".utf8))
     }

@@ -44,6 +44,11 @@ struct WorkflowRunDetailView: View {
                 VStack(alignment: .leading, spacing: 8) { actions }
             }
             WorkflowPullRequestLinksView(entry: entry)
+            if let workflow = model.workflow {
+                let status = WorkflowStepPresentation(step: .init(number: 0, name: workflow.name ?? "",
+                    status: workflow.status ?? "unknown", conclusion: workflow.conclusion, startedAt: nil, completedAt: nil), locale: locale)
+                Label(status.title, systemImage: status.symbol).foregroundStyle(status.color).font(.subheadline)
+            }
             if let observed = model.observedAt {
                 HStack {
                     Text("Observed", bundle: .module)
@@ -73,7 +78,7 @@ struct WorkflowRunDetailView: View {
         .task(id: WorkflowRunDetailRequest(selection: selection, refreshTicket: refreshTicket)) {
             model.select(selection)
             await model.load()
-            while !Task.isCancelled, model.error == nil, model.jobs.contains(where: { $0.status != "completed" }) {
+            while !Task.isCancelled, model.error == nil, model.shouldRefresh {
                 do { try await Task.sleep(for: .seconds(30)) } catch { return }
                 guard !Task.isCancelled else { return }
                 await model.load()

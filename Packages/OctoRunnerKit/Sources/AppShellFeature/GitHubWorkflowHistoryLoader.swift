@@ -63,17 +63,27 @@ public actor GitHubWorkflowHistoryLoader: WorkflowHistoryLoading {
                     var visited: Set<URL> = []
                     var pages = 0
                     var complete = true
+                    var expectedTotal: Int?
                     repeat {
                         if responseRate?.remaining == 0 { complete = false; break }
                         guard pages < 20 else { throw WorkflowHistoryLoadError.tooManyPages }
                         let response = try await client.workflowJobs(repository: selection.repository, runID: run.id, attempt: attempt, token: token, page: next)
                         try Task.checkCancellation()
                         if let rate = response.rateLimit { responseRate = rate }
+                        guard response.totalCount >= 0, expectedTotal == nil || expectedTotal == response.totalCount else {
+                            throw WorkflowHistoryLoadError.unavailable
+                        }
+                        expectedTotal = response.totalCount
                         jobs.append(contentsOf: response.items)
                         next = response.nextPage
                         pages += 1
                         if let next, !visited.insert(next).inserted { throw WorkflowHistoryLoadError.tooManyPages }
                     } while next != nil
+                    if complete {
+                        guard jobs.count == expectedTotal, Set(jobs.map(\.id)).count == jobs.count else {
+                            throw WorkflowHistoryLoadError.unavailable
+                        }
+                    }
                     results.append(WorkflowRunDetails(run: run, jobs: complete ? jobs : nil))
                 } else { results.append(WorkflowRunDetails(run: run, jobs: nil)) }
             }

@@ -28,6 +28,18 @@ struct WorkflowHistoryLoadingTests {
         #expect(requests[1].url?.path.contains("/attempts/2/jobs") == true)
     }
 
+    @Test("Terminal job pages must match total_count before history can cache completion", arguments: [2, 0, -1])
+    func incompleteCompletedAttempt(_ total: Int) async {
+        let transport = HistoryHTTPFixture([
+            #"{"total_count":1,"workflow_runs":[{"id":42,"run_attempt":2,"status":"completed","conclusion":"success"}]}"#,
+            "{\"total_count\":\(total),\"jobs\":[{\"id\":100,\"run_id\":42,\"name\":\"Build\",\"status\":\"completed\",\"conclusion\":\"success\"}]}"
+        ])
+        let loader = GitHubWorkflowHistoryLoader(client: GitHubActionsClient(transport: transport), secrets: HistorySecrets())
+        await #expect(throws: WorkflowHistoryLoadError.unavailable) {
+            try await loader.page(selection: selection, nextPage: nil, completedAttempts: [])
+        }
+    }
+
     @Test("Completed job details are cached while workflow status is refreshed")
     func cachedDetails() async throws {
         let transport = HistoryHTTPFixture([#"{"total_count":1,"workflow_runs":[{"id":42,"run_attempt":2,"status":"completed","conclusion":"success"}]}"#])
