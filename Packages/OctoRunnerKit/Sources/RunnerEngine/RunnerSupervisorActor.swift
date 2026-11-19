@@ -103,6 +103,11 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
         runners.mapValues(\.phase)
     }
 
+    public func consoleLogs(for runnerID: UUID) async -> AsyncStream<RunnerLogSnapshot> {
+        guard !removedOrReserved.contains(runnerID) else { return AsyncStream { $0.finish() } }
+        return await processes.consoleLogs(for: runnerID)
+    }
+
     /// One app-lifetime consumer. Events carry lifecycle metadata only.
     public func recoveryEvents() -> AsyncStream<RunnerRecoveryEvent> { recoverySource.stream }
 
@@ -327,9 +332,13 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
         return true
     }
 
-    public func finishRemoval(runnerID: UUID, removed: Bool) {
-        if removed { runners.removeValue(forKey: runnerID) }
-        else { removedOrReserved.remove(runnerID) }
+    public func finishRemoval(runnerID: UUID, removed: Bool) async {
+        if removed {
+            runners.removeValue(forKey: runnerID)
+            await processes.discardConsoleLogs(for: runnerID)
+        } else {
+            removedOrReserved.remove(runnerID)
+        }
     }
 
     public func reserveIdleDirectories(roots: [URL]) -> Set<String> {

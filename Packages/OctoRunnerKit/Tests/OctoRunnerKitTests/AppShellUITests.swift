@@ -266,12 +266,22 @@ struct AppShellUITests {
         #expect(configSheetHost.bounds.size == CGSize(width: 660, height: 580))
 
         // Step 4 Dialog 5: RunnerConsoleLogSheet
-        let consoleSheetHost = NSHostingView(
-            rootView: RunnerConsoleLogSheet(runner: sampleRunner).modelContainer(container)
-        )
-        consoleSheetHost.frame = NSRect(x: 0, y: 0, width: 820, height: 600)
-        consoleSheetHost.layoutSubtreeIfNeeded()
-        #expect(consoleSheetHost.bounds.size == CGSize(width: 820, height: 600))
+        for (width, language, scheme): (CGFloat, String, ColorScheme) in
+            [(620, "de", .dark), (960, "en", .light)] {
+            let view = RunnerConsoleLogSheet(runner: sampleRunner)
+                .modelContainer(container)
+                .environment(\.locale, Locale(identifier: language))
+                .preferredColorScheme(scheme)
+            let viewport = CGSize(width: width, height: 600)
+            let consoleSheetHost = NSHostingView(
+                rootView: view
+            )
+            consoleSheetHost.frame = NSRect(origin: .zero, size: viewport)
+            consoleSheetHost.layoutSubtreeIfNeeded()
+            #expect(consoleSheetHost.bounds.size == viewport)
+            let measured = NSHostingController(rootView: view).sizeThatFits(in: viewport)
+            #expect(measured.width <= viewport.width && measured.height <= viewport.height)
+        }
 
         // Step 4 Dialog 6: MenuBarStatusView
         let menuServices = AppServices()

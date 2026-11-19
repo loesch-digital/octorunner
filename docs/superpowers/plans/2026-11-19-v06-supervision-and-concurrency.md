@@ -66,7 +66,7 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 - [x] Die Vertragsgrenze in [Einstellungen, Telemetrie und Jobs](../../07-step-05-settings-telemetry-and-jobs.md) dokumentieren. Das Limit gilt für direkt verwaltete Runner. Die Workflow-Zuweisung liegt bei GitHub.
 - [x] Regressionstests für gleichzeitige Starts, fehlgeschlagene Starts, Absenken und Anheben des Limits, Generationen beim Abbrechen und Reservierungen nach dem Stromsparmodus.
 - [x] Den gespeicherten Wert mit Supervisor und Ausfallsicherung verbinden. Das Limit und den Wartestatus in der Oberfläche anzeigen.
-- [ ] Vollständige PR- und main-CI für das Parallelitätslimit abwarten.
+- [x] Vollständige PR- und main-CI für das Parallelitätslimit abwarten ([PR #37](https://github.com/loesch-digital/octorunner/pull/37), [main-CI](https://github.com/loesch-digital/octorunner/actions/runs/44629969576)).
 
 ### Task 4: Live-Logs und Dialog 05
 
@@ -74,8 +74,9 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Interfaces:** Begrenzter AsyncStream von Logzeilen; direkter Modus aus Pipes, Headless-Modus aus ereignisgesteuerter Datei-Beobachtung. Bisherige Log-Level-/Zeitstempelmodelle weiterverwenden.
 
-- [ ] Screenshot 05 erneut ansehen. Rote Tests für geteilte UTF-8-Zeichen, stdout/stderr, begrenzten Puffer mit sichtbarem Verlusthinweis, Rotation/Truncation und Subscriber-Abbruch schreiben.
-- [ ] Polling ersetzen; Suche/Level-Filter, Auto-Scroll/Pause, Kopieren/Export und Retention abgleichen. Keine Geheimnisse ungefiltert in Diagnoseexporte übernehmen.
-- [ ] NSHostingView schmal/breit und Cancellation prüfen; lokale Tests, Review, Commit und CI-Gates. v0.6 noch nicht taggen: Migration und Sync folgen.
+- [x] Screenshot 05 abgleichen. Regressionen für geteilte UTF-8-Zeichen, stdout/stderr, begrenzten Puffer, Rotation/Truncation und Freigabe der Dateideskriptoren abdecken.
+- [x] Den einmaligen Dateiausschnitt durch Live-Quellen ersetzen. Suche, Schweregrad, Auto-Scroll, Pause, Kopieren und Export umsetzen. Erkannte Zugangsdaten vor der Pufferung für den Export maskieren.
+- [x] NSHostingView schmal/breit prüfen. Review-Befunde zu Dateirotation, Exportkontext und Freigabe der Deskriptoren mit Regressionstests beheben.
+- [ ] Vollständige PR- und main-CI für die Live-Logs abwarten. Migration und Sync folgen vor dem v0.6-Tag.
 
 **Technische Grundlage:** [GitHub Self-hosted runner reference](https://docs.github.com/en/actions/reference/runners/self-hosted-runners): Empfehlungen für ephemere Runner und Einschränkungen persistenter Runner beim Herunterfahren. Optionaler Hintergrund-Agent ist ein gesonderter ADR und kein stiller Pflichtbestandteil dieses Plans.

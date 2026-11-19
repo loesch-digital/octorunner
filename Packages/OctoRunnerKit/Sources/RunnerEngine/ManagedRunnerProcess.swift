@@ -7,6 +7,7 @@ public actor ManagedRunnerProcess: RunnerProcessControlling {
     private let managedRoot: URL
     private let stopTimeout: Duration
     private var processes: [UUID: RunnerProcessOperation] = [:]
+    private var consoles: [UUID: RunnerProcessConsole] = [:]
 
     public init(managedRoot: URL? = nil) {
         self.init(managedRoot: managedRoot, stopTimeout: .seconds(5))
@@ -18,7 +19,10 @@ public actor ManagedRunnerProcess: RunnerProcessControlling {
         self.stopTimeout = stopTimeout
     }
 
-    deinit { for process in processes.values { process.signal(force: true) } }
+    deinit {
+        for process in processes.values { process.signal(force: true) }
+        for console in consoles.values { console.finish() }
+    }
 
     public func start(configuration: ManagedRunnerConfiguration, generation: UUID) async throws -> RunnerProcessHandle {
         try Task.checkCancellation()
@@ -35,7 +39,8 @@ public actor ManagedRunnerProcess: RunnerProcessControlling {
         let values = try script.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
         guard values.isRegularFile == true, values.isSymbolicLink != true else { throw RunnerSupervisionError.invalidConfiguration }
         processes = processes.filter { !$0.value.canDiscard }
-        let process = try RunnerProcessOperation.spawn(configuration: configuration, generation: generation)
+        let process = try RunnerProcessOperation.spawn(configuration: configuration, generation: generation,
+            console: console(for: configuration.runnerID))
         processes[generation] = process
         // Once the child exists, transfer its handle even if startup has been
         // cancelled. The supervisor retains ownership through any cleanup error.
@@ -58,5 +63,20 @@ public actor ManagedRunnerProcess: RunnerProcessControlling {
     public func activity(for handle: RunnerProcessHandle, listenerPID: Int32?, workerPID: Int32?) -> RunnerActivity {
         guard let process = processes[handle.generation], process.handle == handle else { return .unknown }
         return process.activity(listenerPID: listenerPID, workerPID: workerPID)
+    }
+
+    public func consoleLogs(for runnerID: UUID) async -> AsyncStream<RunnerLogSnapshot> {
+        console(for: runnerID).subscribe()
+    }
+
+    public func discardConsoleLogs(for runnerID: UUID) async {
+        consoles.removeValue(forKey: runnerID)?.finish()
+    }
+
+    private func console(for id: UUID) -> RunnerProcessConsole {
+        if let console = consoles[id] { return console }
+        let console = RunnerProcessConsole()
+        consoles[id] = console
+        return console
     }
 }

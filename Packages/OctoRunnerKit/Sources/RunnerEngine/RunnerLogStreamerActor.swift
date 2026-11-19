@@ -4,6 +4,33 @@ import Foundation
 public actor RunnerLogStreamerActor {
     public init() {}
 
+    public func followFileLogs(forRunnerRoot root: URL, source: RunnerFileLogSource,
+                               maxLines: Int = 200) -> AsyncStream<RunnerLogSnapshot> {
+        let (stream, sink) = AsyncStream<RunnerLogSnapshot>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let changes = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let reader = Task {
+            defer {
+                changes.continuation.finish()
+                sink.finish()
+            }
+            var tail = RunnerLogFileTail(rootURL: root, source: source, maxLines: maxLines,
+                notifications: changes.continuation)
+            var last = tail.scan()
+            sink.yield(last)
+            guard tail.canFollow else { return }
+            for await _ in changes.stream {
+                guard !Task.isCancelled else { return }
+                let snapshot = tail.scan()
+                if snapshot != last {
+                    last = snapshot
+                    sink.yield(snapshot)
+                }
+            }
+        }
+        sink.onTermination = { _ in reader.cancel() }
+        return stream
+    }
+
     /// Reads the most recent diagnostic log lines from `<runnerRoot>/_diag/Runner_*.log` or `Worker_*.log`.
     public func readRecentLogLines(
         forRunnerRoot runnerRoot: URL,
