@@ -21,8 +21,11 @@ public struct WorkflowJobHistoryView: View {
     @State private var cacheLoadFailed = false
     @State private var operationID: UUID?
     @State private var isRefreshing = false
+    @State private var selectedRun: WorkflowHistoryEntry?
+    private let rateBudget: WorkflowHistoryRateBudget
 
     public init(rateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget()) {
+        self.rateBudget = rateBudget
         _model = State(initialValue: WorkflowHistoryViewModel(rateBudget: rateBudget))
     }
 
@@ -36,15 +39,24 @@ public struct WorkflowJobHistoryView: View {
                 isLoading: isRefreshing, errorMessage: errorMessage(account: request.account), lastRefresh: model.lastRefresh,
                 rateLimitRemaining: model.rateLimit?.remaining, canLoadOlder: request.sources.count == 1 && !selectedRepository.isEmpty && model.nextPage != nil,
                 refresh: { loadOlderSource = nil; refreshTicket = UUID() },
-                loadOlder: { loadOlderSource = request.sources.first; refreshTicket = UUID() })
+                loadOlder: { loadOlderSource = request.sources.first; refreshTicket = UUID() },
+                openDetails: { selectedRun = $0 })
         }
         .onChange(of: selectedRepository) { repositoryAccountID = accountSelection?.accountID }
         .onChange(of: accountSelection?.accountID) {
+            selectedRun = nil
             selectedRepository = ""
             repositoryAccountID = accountSelection?.accountID
             filter = WorkflowHistoryFilter()
             repositoryInput = ""
             sourceInputError = false
+        }
+        .sheet(item: $selectedRun) { run in
+            if let account = accountSelection,
+               let selection = WorkflowRunDetailSelection(entry: run, source: .init(accountID: account.accountID,
+                keychainAccountKey: account.keychainAccountKey, repository: run.repository)) {
+                WorkflowRunDetailView(entry: run, selection: selection, rateBudget: rateBudget)
+            }
         }
         .task(id: request) { await observe(request) }
         .onDisappear { model.invalidate() }

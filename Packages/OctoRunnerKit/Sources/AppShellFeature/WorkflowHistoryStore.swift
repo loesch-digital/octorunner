@@ -13,7 +13,7 @@ public enum WorkflowHistoryStore {
         try Task.checkCancellation()
         let repository = try canonicalRepository(repository)
         guard accountID > 0, run.id > 0, run.runAttempt.map({ $0 > 0 }) ?? true,
-              jobs.allSatisfy({ $0.runID == run.id && $0.id > 0 }),
+              jobs.allSatisfy({ $0.runID == run.id && $0.id > 0 && $0.hasValidStepIdentities }),
               Set(jobs.map(\.id)).count == jobs.count,
               jobs.isEmpty || run.runAttempt != nil else { throw WorkflowHistoryError.inconsistentPayload }
 
@@ -39,6 +39,7 @@ public enum WorkflowHistoryStore {
             entity.recordKindRaw = "job"
             entity.githubJobId = job.id
             entity.jobName = job.name
+            entity.jobStepsData = try job.steps.map { try JSONEncoder().encode($0.map(\.snapshot)) }
             entity.statusRaw = job.status
             entity.conclusion = job.conclusion
             entity.createdAt = job.createdAt

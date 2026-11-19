@@ -23,7 +23,7 @@ public actor GitHubActionsClient {
         let path = try repositoryPath(repository) + "/actions/runs/\(runID)/attempts/\(attempt)/jobs"
         let (data, next, rate) = try await load(path: path, page: page, token: token)
         let result = try Self.decoder().decode(GitHubWorkflowJobsResponse.self, from: data)
-        guard result.jobs.allSatisfy({ $0.runID == runID }) else { throw GitHubActionsError.invalidResponse }
+        guard result.jobs.allSatisfy({ $0.runID == runID && $0.id > 0 && $0.hasValidStepIdentities }) else { throw GitHubActionsError.invalidResponse }
         return GitHubActionsPage(items: result.jobs, nextPage: next, totalCount: result.totalCount, rateLimit: rate)
     }
 

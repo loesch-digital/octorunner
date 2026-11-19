@@ -17,13 +17,14 @@ public struct WorkflowHistoryContent: View {
     let canLoadOlder: Bool
     let refresh: () -> Void
     let loadOlder: () -> Void
+    let openDetails: (WorkflowHistoryEntry) -> Void
 
-    public init(entries: [WorkflowHistoryEntry], repositories: [String], repository: Binding<String>, filter: Binding<WorkflowHistoryFilter>, durationTarget: Binding<Int?>, isLoading: Bool, errorMessage: String?, lastRefresh: Date?, rateLimitRemaining: Int?, canLoadOlder: Bool, refresh: @escaping () -> Void, loadOlder: @escaping () -> Void) {
+    public init(entries: [WorkflowHistoryEntry], repositories: [String], repository: Binding<String>, filter: Binding<WorkflowHistoryFilter>, durationTarget: Binding<Int?>, isLoading: Bool, errorMessage: String?, lastRefresh: Date?, rateLimitRemaining: Int?, canLoadOlder: Bool, refresh: @escaping () -> Void, loadOlder: @escaping () -> Void, openDetails: @escaping (WorkflowHistoryEntry) -> Void = { _ in }) {
         self.entries = entries; self.repositories = repositories
         _repository = repository; _filter = filter; _durationTarget = durationTarget
         self.isLoading = isLoading; self.errorMessage = errorMessage; self.lastRefresh = lastRefresh
         self.rateLimitRemaining = rateLimitRemaining; self.canLoadOlder = canLoadOlder
-        self.refresh = refresh; self.loadOlder = loadOlder
+        self.refresh = refresh; self.loadOlder = loadOlder; self.openDetails = openDetails
     }
 
     public var body: some View {
@@ -84,7 +85,7 @@ public struct WorkflowHistoryContent: View {
                         ForEach(rows) { entry in
                             WorkflowRunHistoryRow(entry: entry, jobs: entries.filter {
                                 $0.recordKind == "job" && $0.accountID == entry.accountID && $0.repository == entry.repository && $0.githubRunID == entry.githubRunID && $0.attempt == entry.attempt
-                            }.sorted { ($0.githubJobID ?? 0) < ($1.githubJobID ?? 0) }, now: now)
+                            }.sorted { ($0.githubJobID ?? 0) < ($1.githubJobID ?? 0) }, now: now, openDetails: { openDetails(entry) })
                         }
                     }
                 }
