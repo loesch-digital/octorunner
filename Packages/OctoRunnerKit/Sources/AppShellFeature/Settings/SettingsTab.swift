@@ -58,6 +58,7 @@ extension SettingsTab {
       [
         "Autostart & Background", "Launch at macOS login", "Runner SHELL environment",
         "Inherit OctoRunner's PATH", "Runner LaunchAgents", "View launchd plist",
+        "Runner capacity", "Maximum directly managed runners",
       ]
     case .failover:
       ["Failover", "Restart policy", "Restart delay (seconds)", "Failures before quarantine", "Low Power Mode"]

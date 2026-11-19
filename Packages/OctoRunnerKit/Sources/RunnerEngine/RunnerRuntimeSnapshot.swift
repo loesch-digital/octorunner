@@ -3,7 +3,7 @@ import Foundation
 
 public enum RunnerRuntimePhase: String, Sendable {
     case stopped, starting, running, draining, drainTimedOut, stopping, faulted
-    case waitingToRestart, waitingForPower, quarantined
+    case waitingToRestart, waitingForPower, waitingForCapacity, quarantined
 }
 public enum RunnerActivity: String, Sendable { case unknown, idle, busy }
 

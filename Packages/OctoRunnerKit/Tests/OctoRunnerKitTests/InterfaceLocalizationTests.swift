@@ -8,6 +8,14 @@ import RunnerEngine
 import Testing
 
 struct InterfaceLocalizationTests {
+    @Test("The runner limit and waiting status are findable in German")
+    func capacityLocalization() {
+        let locale = Locale(identifier: "de")
+        #expect(SettingsTab.matching("Runner-Parallelität", locale: locale) == [.background])
+        #expect(AppLocalization.string("Waiting for a free runner slot.", locale: locale)
+            == "Wartet auf einen freien Runner-Platz.")
+    }
+
     @Test("Recovery controls and their search terms are localized")
     func recoveryLocalization() {
         let locale = Locale(identifier: "de")

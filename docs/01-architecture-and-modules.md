@@ -145,6 +145,8 @@ In den Stitch-Entwürfen und dem ersten Spec-Draft standen einige Konzepte, die 
 
 Für direkt verwaltete Runner gilt die Ausfallsicherung, solange die App läuft. Sie bindet Wiederanlauf und Stopp an die konkrete Prozessgeneration. Ein im Stromsparmodus aufgeschobener Start behält seine Anforderung, bis der Energiesparmodus endet oder der Start abgebrochen wird. Die Quarantäne begrenzt Wiederanlaufversuche je App-Sitzung. Installierte LaunchAgents behalten ihre eigene `launchd`-Richtlinie.
 
+Der Supervisor reserviert für jeden direkt verwalteten Start einen Platz für genau eine Prozessgeneration. Startbereite Wartende erhalten freie Plätze in Warteschlangenreihenfolge. Eine Limitänderung beeinflusst künftige Reservierungen. Bestehende Reservierungen enden bei einem fehlgeschlagenen Start oder beim Prozessende. GitHub weist Workflow-Jobs zu. Externe Runner und LaunchAgents verwalten ihre Prozesse unabhängig.
+
 ### ADR-02: Native macOS Window-Chrome statt HTML-nachgebauter Traffic Lights
 - **Was in den Stitch-HTML-Exports steckt:** Eigene gezeichnete rote/gelbe/grüne Fenster-Buttons (`×`, `−`, `+`) und ein künstlicher Header-Balken im Content-Bereich.
 - **Warum man das in SwiftUI NICHT nachbaut:** Würde man in einer echten macOS-App eigene Traffic-Lights rendern, hätte man entweder doppelte Fenster-Buttons oder verlöre native macOS-Features (Vollbild-Tile-Menü beim Hover auf Grün, Stage Manager, Mission Control).
