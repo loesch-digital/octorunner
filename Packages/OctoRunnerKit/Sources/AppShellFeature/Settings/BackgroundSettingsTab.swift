@@ -28,6 +28,28 @@ public struct BackgroundSettingsTab: View {
           "The app login item is independent of installed runner LaunchAgents.", bundle: .module)
         .font(.callout).foregroundStyle(OctoTheme.secondaryText)
       }
+      SettingsCard(
+        "Runner capacity", symbol: "gauge.with.dots.needle.50percent",
+        subtitle: "Limit how many directly managed runners can run at once."
+      ) {
+        Stepper(value: $preferences.maxConcurrentRunners, in: 1...64) {
+          LabeledContent {
+            Text(preferences.maxConcurrentRunners, format: .number).monospacedDigit()
+          } label: {
+            Text("Maximum directly managed runners", bundle: .module)
+          }
+        }
+        .accessibilityLabel(Text("Maximum directly managed runners", bundle: .module))
+        .accessibilityValue(Text(preferences.maxConcurrentRunners, format: .number))
+        .accessibilityHint(Text("Changes how many directly managed runners can run at once.", bundle: .module))
+
+        Text(
+          "Running runners keep their slots until they stop. LaunchAgents and external runners operate independently.",
+          bundle: .module
+        )
+        .fixedSize(horizontal: false, vertical: true)
+        .font(.callout).foregroundStyle(OctoTheme.secondaryText)
+      }
       if let launchAgents {
         RunnerLaunchAgentsCard(inspector: launchAgents)
       }

@@ -54,7 +54,7 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 - [x] Battery Saver mit `ProcessInfo.isLowPowerModeEnabled` verdrahten. Neue Starts warten auf das Ende des Stromsparmodus. Laufende Jobs können weiterlaufen. Eine aufgeschobene Startanforderung lässt sich abbrechen.
 - [x] Die Richtlinien auf direkt verwaltete Runner anwenden. Crash und Quarantäne erzeugen Audit-Ereignisse und verwenden die vorhandene, abschaltbare Runner-Fehlermeldung in den macOS-Mitteilungen.
 - [x] Quarantäne und aufgeschobene Starts in den Runner-Details anzeigen. Das letzte Workflow-Ergebnis bleibt als eigene Information sichtbar.
-- [ ] Vollständige PR- und main-CI für Recovery abwarten.
+- [x] Vollständige PR- und main-CI für Recovery abwarten ([PR #36](https://github.com/loesch-digital/octorunner/pull/36), [main-CI](https://github.com/loesch-digital/octorunner/actions/runs/44623341585)).
 
 ### Task 3: Globales Parallelitätslimit
 
@@ -62,10 +62,11 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Interfaces:** `RunnerAdmissionController` verwaltet reservierte/aktive Slots anhand stabiler Runner-IDs; Start kann nur mit gültiger Reservierung stattfinden. FIFO wartender eigener Runner, bereits aktive Jobs behalten ihren Slot bis zum sicheren Ende.
 
-- [ ] Vor Produktionscode Architekturprobe mit zwei isolierten Test-Runnern planen: persistente Listener können zwischen Drain-Anfrage und Stop neue GitHub-Jobs erhalten. GitHub dokumentiert hierfür keine atomare Pause. Kein undokumentiertes `--once` als garantierte API behandeln.
-- [ ] Vertragsgrenze explizit dokumentieren: Zahl gleichzeitig von OctoRunner gestarteter/zugelassener Runner, externe und eigenständig laufende Legacy-LaunchAgents separat anzeigen. Falls eine streng jobweise Zulassung/Headless-Garantie nur mit ephemerer Registrierung oder neuem Agenten möglich ist, konkrete ADR-Entscheidung vor diesem Teil beim Nutzer klären.
-- [ ] Rote Tests: Limit 1 bei zwei gleichzeitigen Starts; fehlgeschlagener Start gibt Slot frei; Reduktion 2→1 beendet keinen aktiven Job und verhindert neue Starts; Neustart/Abbruch dupliziert keine Reservierung; wartender Runner wird nach Freigabe zugelassen.
-- [ ] Admission mit Task 1/2 verbinden, gespeicherten Wert erst jetzt als wirksam anbieten. Grün, Commit und CI-Gates.
+- [x] Die Starts und Freigaben mit zwei isolierten Prozess-Fixtures prüfen. Die GitHub-Referenz unten beschreibt Risiken persistenter Runner beim Herunterfahren und empfiehlt ephemere Runner für Autoskalierung.
+- [x] Die Vertragsgrenze in [Einstellungen, Telemetrie und Jobs](../../07-step-05-settings-telemetry-and-jobs.md) dokumentieren. Das Limit gilt für direkt verwaltete Runner. Die Workflow-Zuweisung liegt bei GitHub.
+- [x] Regressionstests für gleichzeitige Starts, fehlgeschlagene Starts, Absenken und Anheben des Limits, Generationen beim Abbrechen und Reservierungen nach dem Stromsparmodus.
+- [x] Den gespeicherten Wert mit Supervisor und Ausfallsicherung verbinden. Das Limit und den Wartestatus in der Oberfläche anzeigen.
+- [ ] Vollständige PR- und main-CI für das Parallelitätslimit abwarten.
 
 ### Task 4: Live-Logs und Dialog 05
 

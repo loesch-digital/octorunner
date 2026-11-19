@@ -28,10 +28,6 @@ Vervollständigung aller verbleibenden Screens aus deinem Stitch-Design:
   - `Show icon in macOS Menu Bar` & `Hide dock icon when window is closed (NSApp.setActivationPolicy(.accessory))`.
 - **Sprachauswahl (`AppLanguage`):** `System Default (macOS)`, `English (United States)`, `Deutsch (Deutschland)` via String Catalog (`Localizable.xcstrings`).
 - **Update Channel & Engine Info:** Anzeige der App-Version + installierten GitHub Actions Runner Engine Version + Button `Check Now`.
-- **Global Runner Concurrency & Shell:**
-  - Stepper für maximale parallele Runner (passend zur Apple Silicon Kernanzahl).
-  - Standard-Shell (`/bin/zsh`, `/bin/bash`, `/opt/homebrew/bin/bash`) + Toggle `Inherit host PATH and Homebrew binaries (/opt/homebrew/bin)`.
-  - Log-Retention (`7`, `14`, `30`, `90` Tage).
 
 ### Tab 7: Autostart & Background (`BackgroundSettingsTab.swift`)
 
@@ -41,6 +37,11 @@ Vervollständigung aller verbleibenden Screens aus deinem Stitch-Design:
   - „Dienst laden“ lädt einen entladenen, verifizierten LaunchAgent. Dafür prüft OctoRunner das verwaltete Verzeichnis und ob dort bereits ein Listener läuft. Ein bereits geladener Dienst kann laufende Jobs weiter ausführen.
 - **`launchd`-Plist-Inspektor:**
   - Zeigt die installierte, zugeordnete Plist als kopierbares XML. Fehlende, syntaktisch ungültige oder nicht zuordenbare Dateien haben eigene Statusmeldungen.
+- **Runner-Parallelität (ab v0.6):**
+  - Der Stepper begrenzt direkt verwaltete Runner auf 1 bis 64 (Standard 4). Ein Platz bleibt ab dem Startversuch bis zum Prozessende belegt und wird bei einem fehlgeschlagenen Start freigegeben.
+  - Bei einem niedrigeren Limit laufen gestartete Runner weiter. Anstehende Starts warten in der Reihenfolge der Warteschlange und lassen sich in den Runner-Details abbrechen.
+  - LaunchAgents und externe Runner verwalten ihre Prozesse unabhängig. GitHub weist die Workflow-Jobs weiterhin online verfügbaren Runnern zu.
+- **Umgebung für neue Runner:** Standard-Shell und Übernahme des Host-`PATH` inklusive Homebrew-Werkzeugen.
 - **Failure Recovery & KeepAlive Policies** sind im eigenen Bereich „Ausfallsicherung“ geplant.
 
 ### Tab 7b: Cache & Storage (`StoragePruningTab.swift`)

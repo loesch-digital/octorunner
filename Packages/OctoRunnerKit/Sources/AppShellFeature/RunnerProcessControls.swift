@@ -14,7 +14,7 @@ enum RunnerProcessControlAction: String, Identifiable {
         case .stopped, .faulted: [.start]
         case .running: activity == .idle ? [.drain, .restart] : [.drain]
         case .drainTimedOut: [.drain, .forceStop]
-        case .waitingToRestart, .waitingForPower: [.cancelRestart]
+        case .waitingToRestart, .waitingForPower, .waitingForCapacity: [.cancelRestart]
         case .quarantined: [.releaseQuarantine]
         case .starting, .stopping, .draining: []
         }
@@ -79,6 +79,9 @@ struct RunnerProcessControls: View {
                     .foregroundStyle(OctoTheme.warningOrange)
             } else if snapshot?.phase == .waitingForPower {
                 Text(AppLocalization.string("Start is deferred until Low Power Mode ends.", locale: locale))
+                    .foregroundStyle(OctoTheme.warningOrange)
+            } else if snapshot?.phase == .waitingForCapacity {
+                Text(AppLocalization.string("Waiting for a free runner slot.", locale: locale))
                     .foregroundStyle(OctoTheme.warningOrange)
             } else if snapshot?.phase == .quarantined {
                 Text(AppLocalization.string("Quarantined after repeated process failures.", locale: locale))

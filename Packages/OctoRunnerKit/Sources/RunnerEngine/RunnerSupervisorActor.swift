@@ -15,7 +15,8 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
         var deadline: Duration?
         var recoveryHistory = RunnerRestartHistory()
         var recoveryStartedAt: ContinuousClock.Instant?
-        var automaticPowerStart = false
+        var automaticPendingStart = false
+        var startOrder: UInt64 = 0
 
         func hasFreshIdleObservation(at now: ContinuousClock.Instant) -> Bool {
             guard activity == .idle, let activityObservedAt, activityObservedAt <= now else { return false }
@@ -28,6 +29,8 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
     private let recoverySleep: @Sendable (Duration) async throws -> Void
     private let lowPowerMode: @Sendable () -> Bool
     private var recoveryPolicy: RunnerRuntimePolicy?
+    private var admission: RunnerAdmissionController
+    private var nextStartOrder: UInt64 = 0
     private let origin = ContinuousClock.now
     private var runners: [UUID: Runtime] = [:]
     private var startingWaiters: [UUID: [CheckedContinuation<Void, any Error>]] = [:]
@@ -46,7 +49,8 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
         activitySample: (@Sendable (URL) async throws -> (listenerPID: Int32?, workerPID: Int32?))? = nil,
         recoveryPolicy: RunnerRuntimePolicy? = nil,
         lowPowerMode: @escaping @Sendable () -> Bool = { false },
-        recoverySleep: @escaping @Sendable (Duration) async throws -> Void = { try await ContinuousClock().sleep(for: $0) }
+        recoverySleep: @escaping @Sendable (Duration) async throws -> Void = { try await ContinuousClock().sleep(for: $0) },
+        maximumConcurrentRunners: Int = 64
     ) {
         self.processes = processes
         self.startCheck = startCheck
@@ -54,6 +58,7 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
         self.recoveryPolicy = recoveryPolicy?.validated()
         self.recoverySleep = recoverySleep
         self.lowPowerMode = lowPowerMode
+        admission = RunnerAdmissionController(limit: maximumConcurrentRunners)
     }
     deinit {
         for task in monitors.values { task.cancel() }
@@ -69,7 +74,13 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
             if runtime.configuration == configuration { return }
             guard runtime.handle == nil, runtime.phase != .starting else { throw RunnerSupervisionError.operationInProgress }
         }
-        recoveryTimers.removeValue(forKey: configuration.runnerID)?.cancel()
+        if configuration.mode == .direct, runners.values.contains(where: { runtime in
+            runtime.configuration.runnerID != configuration.runnerID && runtime.configuration.mode == .direct
+                && runtime.configuration.rootDirectory.standardizedFileURL.path == configuration.rootDirectory.standardizedFileURL.path
+        }) {
+            throw RunnerSupervisionError.notManaged
+        }
+        cancelScheduledRestart(runnerID: configuration.runnerID)
         runners[configuration.runnerID] = Runtime(configuration: configuration)
     }
 
@@ -111,6 +122,8 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
     private func start(runnerID: UUID, automatic: Bool) async throws {
         try Task.checkCancellation()
         guard !isQuitting else { throw RunnerSupervisionError.operationInProgress }
+        enqueuePowerDeferredStarts()
+        fillCapacity()
         guard !removedOrReserved.contains(runnerID) else { throw RunnerSupervisionError.notManaged }
         guard let runtime = runners[runnerID], runtime.configuration.mode == .direct else { throw RunnerSupervisionError.notManaged }
         guard !reservedPaths.contains(runtime.configuration.rootDirectory.standardizedFileURL.path) else {
@@ -123,26 +136,51 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
         }
         if runtime.phase == .stopping { throw RunnerSupervisionError.operationInProgress }
         if runtime.handle != nil { return }
+        if runtime.phase == .waitingForCapacity { return }
         if !automatic {
             recoveryTimers.removeValue(forKey: runnerID)?.cancel()
             runners[runnerID]?.recoveryHistory = RunnerRestartHistory()
         }
-        let generation = UUID()
+        let generation = runtime.phase == .waitingForPower ? runtime.generation ?? UUID() : UUID()
+        if runtime.phase != .waitingForPower {
+            nextStartOrder &+= 1
+            runners[runnerID]?.startOrder = nextStartOrder
+        }
+        let ticket = RunnerAdmissionTicket(runnerID: runnerID, generation: generation)
         runners[runnerID]?.generation = generation
-        if deferForPower(runnerID: runnerID, automatic: automatic) { return }
+        if deferForPower(runnerID: runnerID, automatic: automatic) {
+            return
+        }
+        guard admission.request(ticket) == .admitted else {
+            runners[runnerID]?.automaticPendingStart = automatic
+            runners[runnerID]?.phase = .waitingForCapacity
+            return
+        }
+        markStarting(runnerID)
+        try await launch(runtime.configuration, ticket: ticket, automatic: automatic)
+    }
+
+    private func markStarting(_ runnerID: UUID) {
         runners[runnerID]?.phase = .starting
         runners[runnerID]?.cancelStart = false
+    }
+
+    private func launch(_ configuration: ManagedRunnerConfiguration, ticket: RunnerAdmissionTicket,
+                        automatic: Bool) async throws {
+        let runnerID = ticket.runnerID
+        let generation = ticket.generation
         do {
-            try await startCheck(runtime.configuration)
+            try await startCheck(configuration)
             try Task.checkCancellation()
             if runners[runnerID]?.cancelStart == true { throw CancellationError() }
-            if automatic, !allowsRecovery(status: runtime.lastExitStatus) { throw CancellationError() }
+            if automatic, !allowsRecovery(status: runners[runnerID]?.lastExitStatus) { throw CancellationError() }
             if deferForPower(runnerID: runnerID, automatic: automatic) {
+                releaseCapacity(ticket)
                 finishStart(generation, result: .success(()))
                 return
             }
             runners[runnerID]?.lastExitStatus = nil
-            let handle = try await processes.start(configuration: runtime.configuration, generation: generation)
+            let handle = try await processes.start(configuration: configuration, generation: generation)
             runners[runnerID]?.handle = handle
             runners[runnerID]?.phase = .running
             runners[runnerID]?.activity = .unknown
@@ -161,6 +199,7 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
             finishStart(generation, result: .success(()))
         } catch {
             if runners[runnerID]?.generation == generation, runners[runnerID]?.phase == .starting {
+                releaseCapacity(ticket)
                 if Task.isCancelled || runners[runnerID]?.cancelStart == true || error is CancellationError {
                     runners[runnerID]?.phase = .stopped
                     let cancellation = CancellationError()
@@ -191,23 +230,59 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
 
     public func cancelPendingStart(runnerID: UUID, expectedGeneration: UUID) throws {
         guard let runtime = runners[runnerID], runtime.generation == expectedGeneration,
-              runtime.phase == .waitingToRestart || runtime.phase == .waitingForPower else {
+              [.waitingToRestart, .waitingForPower, .waitingForCapacity].contains(runtime.phase) else {
             throw RunnerSupervisionError.operationInProgress
         }
         cancelScheduledRestart(runnerID: runnerID)
     }
 
-    public func updateRecoveryPolicy(_ settings: RunnerRuntimePolicy) async {
+    public func updateRecoveryPolicy(_ settings: RunnerRuntimePolicy, maximumConcurrentRunners: Int? = nil) async {
         guard !Task.isCancelled else { return }
         let settings = settings.validated()
         recoveryPolicy = settings
+        if let maximumConcurrentRunners { admission.setLimit(maximumConcurrentRunners) }
         for (id, runtime) in runners where runtime.phase == .waitingToRestart
-            || (runtime.phase == .waitingForPower && runtime.automaticPowerStart) {
+            || ([.waitingForPower, .waitingForCapacity].contains(runtime.phase) && runtime.automaticPendingStart) {
             if !allowsRecovery(status: runtime.lastExitStatus) {
                 cancelScheduledRestart(runnerID: id)
             }
         }
         await powerStateChanged()
+    }
+
+    private func releaseCapacity(_ ticket: RunnerAdmissionTicket) {
+        admission.release(ticket)
+        scheduleCapacityReview()
+    }
+
+    private func scheduleCapacityReview() {
+        guard !isQuitting, admission.hasCapacity, admission.nextWaiting != nil else { return }
+        Task { [weak self] in _ = await self?.fillCapacity() }
+    }
+
+    @discardableResult
+    private func fillCapacity() -> [Task<Void, Never>] {
+        var pendingLaunches: [Task<Void, Never>] = []
+        while !isQuitting, admission.hasCapacity, let ticket = admission.nextWaiting {
+            guard let runtime = runners[ticket.runnerID], runtime.phase == .waitingForCapacity,
+                  runtime.generation == ticket.generation else {
+                admission.cancel(ticket)
+                continue
+            }
+            guard !reservedPaths.contains(runtime.configuration.rootDirectory.standardizedFileURL.path) else { break }
+            if deferForPower(runnerID: ticket.runnerID, automatic: runtime.automaticPendingStart) {
+                admission.cancel(ticket)
+                continue
+            }
+            guard admission.request(ticket) == .admitted else { break }
+            markStarting(ticket.runnerID)
+            let configuration = runtime.configuration
+            let automatic = runtime.automaticPendingStart
+            pendingLaunches.append(Task { [weak self] in
+                try? await self?.launch(configuration, ticket: ticket, automatic: automatic)
+            })
+        }
+        return pendingLaunches
     }
 
     private func allowsRecovery(status: Int32?) -> Bool {
@@ -220,25 +295,28 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
 
     private func deferForPower(runnerID: UUID, automatic: Bool) -> Bool {
         guard recoveryPolicy?.batterySaverEnabled == true, lowPowerMode() else { return false }
-        runners[runnerID]?.automaticPowerStart = automatic
+        runners[runnerID]?.automaticPendingStart = automatic
         runners[runnerID]?.phase = .waitingForPower
         return true
     }
 
     public func powerStateChanged() async {
-        guard !Task.isCancelled, !isQuitting,
-              recoveryPolicy?.batterySaverEnabled != true || !lowPowerMode() else { return }
+        guard !Task.isCancelled, !isQuitting else { return }
         // A released start belongs to the supervisor. Replacing a preferences
         // observer task must not revoke an already accepted start.
-        await Task { await resumePowerStarts() }.value
+        enqueuePowerDeferredStarts()
+        for launch in fillCapacity() { await launch.value }
     }
 
-    private func resumePowerStarts() async {
+    private func enqueuePowerDeferredStarts() {
+        guard recoveryPolicy?.batterySaverEnabled != true || !lowPowerMode() else { return }
         let pending = runners.filter { $0.value.phase == .waitingForPower }
+            .sorted { $0.value.startOrder < $1.value.startOrder }
         for (id, runtime) in pending {
-            guard !Task.isCancelled else { return }
-            guard runners[id]?.phase == .waitingForPower, runners[id]?.generation == runtime.generation else { continue }
-            try? await start(runnerID: id, automatic: runtime.automaticPowerStart)
+            guard let generation = runtime.generation,
+                  !reservedPaths.contains(runtime.configuration.rootDirectory.standardizedFileURL.path) else { continue }
+            admission.enqueue(.init(runnerID: id, generation: generation))
+            runners[id]?.phase = .waitingForCapacity
         }
     }
 
@@ -266,6 +344,7 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
 
     public func releaseDirectories(paths: Set<String>) async {
         reservedPaths.subtract(paths)
+        scheduleCapacityReview()
         await powerStateChanged()
     }
 
@@ -291,6 +370,7 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
             for id in Array(runners.keys) { cancelScheduledRestart(runnerID: id) }
         } catch {
             isQuitting = false
+            scheduleCapacityReview()
             await powerStateChanged()
             throw error
         }
@@ -374,6 +454,7 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
         runners[id]?.recoveryStartedAt = nil
         drainTimers.removeValue(forKey: id)?.cancel()
         monitors.removeValue(forKey: id)?.cancel()
+        releaseCapacity(.init(runnerID: id, generation: exit.handle.generation))
         let intendedStop = stopChecks[id] == exit.handle || [.stopping, .draining, .drainTimedOut].contains(runtime.phase)
         let uptime = runtime.recoveryStartedAt?.duration(to: .now) ?? .zero
         considerRecovery(runnerID: id, generation: exit.handle.generation, status: exit.status, uptime: uptime, intentional: intendedStop)
@@ -423,7 +504,12 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
 
     private func cancelScheduledRestart(runnerID: UUID) {
         recoveryTimers.removeValue(forKey: runnerID)?.cancel()
-        if let phase = runners[runnerID]?.phase, phase == .waitingToRestart || phase == .waitingForPower {
+        if let runtime = runners[runnerID],
+           [.waitingToRestart, .waitingForPower, .waitingForCapacity].contains(runtime.phase) {
+            if let generation = runtime.generation {
+                admission.cancel(.init(runnerID: runnerID, generation: generation))
+                scheduleCapacityReview()
+            }
             runners[runnerID]?.phase = .stopped
             runners[runnerID]?.recoveryHistory = RunnerRestartHistory()
         }

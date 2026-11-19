@@ -1,6 +1,108 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Runner capacity": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Parallelität"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner capacity"
+          }
+        }
+      }
+    },
+    "Limit how many directly managed runners can run at once.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begrenzt, wie viele direkt verwaltete Runner gleichzeitig laufen können."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limit how many directly managed runners can run at once."
+          }
+        }
+      }
+    },
+    "Maximum directly managed runners": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximal direkt verwaltete Runner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum directly managed runners"
+          }
+        }
+      }
+    },
+    "Changes how many directly managed runners can run at once.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ändert, wie viele direkt verwaltete Runner gleichzeitig laufen können."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes how many directly managed runners can run at once."
+          }
+        }
+      }
+    },
+    "Running runners keep their slots until they stop. LaunchAgents and external runners operate independently.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laufende Runner behalten ihren Platz bis zum Stopp. LaunchAgents und externe Runner arbeiten unabhängig davon."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running runners keep their slots until they stop. LaunchAgents and external runners operate independently."
+          }
+        }
+      }
+    },
+    "Waiting for a free runner slot.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wartet auf einen freien Runner-Platz."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for a free runner slot."
+          }
+        }
+      }
+    },
     "Cancel pending start": {
       "extractionState": "manual",
       "localizations": {

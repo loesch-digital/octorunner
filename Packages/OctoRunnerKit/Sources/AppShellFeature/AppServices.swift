@@ -43,7 +43,9 @@ public final class AppServices {
             let processes = try await sampler.sample()
             let root = LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: rootDirectory)
             return (processes[root]?.listenerPID, processes[root]?.workerPID)
-        }, recoveryPolicy: preferences.runtimePolicy, lowPowerMode: { ProcessInfo.processInfo.isLowPowerModeEnabled })
+        }, recoveryPolicy: preferences.runtimePolicy,
+            lowPowerMode: { ProcessInfo.processInfo.isLowPowerModeEnabled },
+            maximumConcurrentRunners: preferences.maxConcurrentRunners)
         launchAgents = RunnerLaunchAgentInspector(supervisor: supervisor) { rootDirectory in
             let processes = try await sampler.sample()
             let root = LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: rootDirectory)
@@ -103,13 +105,17 @@ public final class AppServices {
     }
 
     private func observePolicy() {
-        let policy = withObservationTracking { preferences.runtimePolicy } onChange: { [weak self] in
+        let (policy, maximum) = withObservationTracking {
+            (preferences.runtimePolicy, preferences.maxConcurrentRunners)
+        } onChange: { [weak self] in
             Task { @MainActor in
                 guard let self, self.recoveryMonitoring?.isCancelled == false else { return }
                 self.observePolicy()
             }
         }
         policyUpdate?.cancel()
-        policyUpdate = Task { [supervisor] in await supervisor.updateRecoveryPolicy(policy) }
+        policyUpdate = Task { [supervisor] in
+            await supervisor.updateRecoveryPolicy(policy, maximumConcurrentRunners: maximum)
+        }
     }
 }
