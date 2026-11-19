@@ -1,6 +1,7 @@
 import AppShellFeature
 import CoreModels
 import Foundation
+import RunnerEngine
 import SwiftData
 import SyncKit
 import Testing
@@ -8,6 +9,68 @@ import Testing
 @MainActor
 struct RunnerHealthMonitorTests {
     private static var retainedContainers: [ModelContainer] = []
+
+    @Test("A confirmed nonzero managed exit appears as faulted in fleet health")
+    func directlyManagedFault() async throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
+            .appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        let runnerRoot = root.appending(path: "runner", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: runnerRoot, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data("exit 7\n".utf8).write(to: runnerRoot.appending(path: "run.sh"))
+        let supervisor = RunnerSupervisorActor(processes: ManagedRunnerProcess(managedRoot: root))
+        let context = container.mainContext
+        let runner = RunnerEntity(name: "Managed", scopeUrl: URL(string: "https://github.com/example/repo")!,
+            status: .offline, workDirectory: runnerRoot.appending(path: "_work"),
+            rootDirectoryPath: runnerRoot.path, executionMode: .direct)
+        context.insert(runner)
+        try context.save()
+        let id = runner.id
+        try await supervisor.configure(.init(runnerID: id, name: "Managed", rootDirectory: runnerRoot, mode: .direct))
+        try await supervisor.start(runnerID: id)
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while await supervisor.snapshot(runnerID: id)?.phase != .faulted, .now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(await supervisor.snapshot(runnerID: id)?.lastExitStatus == 7)
+        let notifications = AppNotificationsController(preferences: AppPreferencesStore(), client: HealthNotificationClient())
+        let monitor = RunnerHealthMonitor(notifications: notifications, sampler: HealthProcessSampler(), supervisor: supervisor)
+        await monitor.refresh(in: context)
+        #expect(runner.status == .faulted)
+        #expect(monitor.observations.first?.status == .faulted)
+    }
+
+    @Test("Health sampling updates the directly managed runner and invalidates failed measurements")
+    func directlyManagedActivity() async throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
+            .appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        let runnerRoot = root.appending(path: "runner", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: runnerRoot, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data("exec /bin/sleep 15\n".utf8).write(to: runnerRoot.appending(path: "run.sh"))
+        let supervisor = RunnerSupervisorActor(processes: ManagedRunnerProcess(managedRoot: root))
+        let id = UUID()
+        try await supervisor.configure(.init(runnerID: id, name: "Managed", rootDirectory: runnerRoot, mode: .direct))
+        try await supervisor.start(runnerID: id)
+        let pid = try #require(await supervisor.snapshot(runnerID: id)?.pid)
+        do {
+            let notifications = AppNotificationsController(preferences: AppPreferencesStore(), client: HealthNotificationClient())
+            let sampler = HealthProcessSampler()
+            let monitor = RunnerHealthMonitor(notifications: notifications, sampler: sampler, supervisor: supervisor)
+            await sampler.set([runnerRoot.path: RunnerProcessPresence(listenerPID: pid)])
+            await monitor.refresh(in: container.mainContext)
+            #expect(await supervisor.snapshot(runnerID: id)?.activity == .idle)
+            await sampler.fail()
+            await monitor.refresh(in: container.mainContext)
+            #expect(await supervisor.snapshot(runnerID: id)?.activity == .unknown)
+            try await supervisor.forceStop(runnerID: id)
+        } catch {
+            try? await supervisor.forceStop(runnerID: id)
+            throw error
+        }
+    }
 
     @Test("Late process results after stop or cancellation cannot update SwiftData", arguments: [true, false])
     func lateResultIsDiscarded(stopMonitor: Bool) async throws {

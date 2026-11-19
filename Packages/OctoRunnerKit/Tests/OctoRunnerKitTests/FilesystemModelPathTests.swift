@@ -9,6 +9,30 @@ import Testing
 struct FilesystemModelPathTests {
     private static var retainedContainers: [ModelContainer] = []
 
+    @Test("Discovery never reassigns an owned runner to another folder", arguments: [RunnerExecutionMode.direct, .launchAgent])
+    func discoveryPreservesOwnedRoot(mode: RunnerExecutionMode) throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let context = container.mainContext
+        let expectedRoot = URL(filePath: "/tmp/managed/runner")
+        let otherRoot = URL(filePath: "/tmp/other/runner")
+        let scope = try #require(URL(string: "https://github.com/example/repo"))
+        let runner = RunnerEntity(name: "Runner", scopeUrl: scope,
+            workDirectory: expectedRoot.appending(path: "_work"), rootDirectoryPath: expectedRoot.path, executionMode: mode)
+        runner.githubRunnerId = 42
+        context.insert(runner)
+        try context.save()
+        let discovered = DiscoveredLocalRunner(rootDirectory: otherRoot,
+            config: .init(agentId: 42, agentName: runner.name, gitHubUrl: scope),
+            workDirectory: otherRoot.appending(path: "_work"), runnerVersion: nil, listenerPID: 123, isWorkerActive: false)
+
+        MainShellView.upsertDiscoveredRunners([discovered], into: context)
+        let rows = try context.fetch(FetchDescriptor<RunnerEntity>())
+        #expect(runner.executionMode == mode)
+        #expect(runner.rootDirectoryPath == expectedRoot.path)
+        #expect(runner.pid == nil)
+        #expect(rows.contains { $0.executionMode == .external && $0.rootDirectoryPath == otherRoot.path })
+    }
+
     @Test("Runner models store filesystem paths with spaces and literal percent sequences")
     func modelPaths() throws {
         let work = "/tmp/100%20literal/Runner Fleet/_work"

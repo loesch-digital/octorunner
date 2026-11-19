@@ -48,21 +48,25 @@ public final class AddRunnerWizardViewModel {
 
     public var isLoadingTargets: Bool = false
     public var isProvisioning: Bool = false
+    public private(set) var provisioningCompleted = false
     public var provisioningProgressMessage: RunnerProvisioningProgress?
     public var errorMessage: AppErrorMessage?
 
     private let provisioningClient: any RunnerTargetLoading
     private let provisionerActor: any RunnerProvisioning
     private let vault: KeychainVaultActor
+    private let supervisor: RunnerSupervisorActor
 
     public init(
         provisioningClient: any RunnerTargetLoading = GitHubRunnerProvisioningClient(),
         provisionerActor: any RunnerProvisioning = RunnerProvisionerActor(),
-        vault: KeychainVaultActor = KeychainVaultActor()
+        vault: KeychainVaultActor = KeychainVaultActor(),
+        supervisor: RunnerSupervisorActor = RunnerSupervisorActor()
     ) {
         self.provisioningClient = provisioningClient
         self.provisionerActor = provisionerActor
         self.vault = vault
+        self.supervisor = supervisor
     }
 
     public var previewInstanceNames: [String] {
@@ -216,7 +220,7 @@ public final class AddRunnerWizardViewModel {
         modelContext: ModelContext,
         configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration()
     ) async -> Bool {
-        guard !isProvisioning, !Task.isCancelled else { return false }
+        guard !isProvisioning, !provisioningCompleted, !Task.isCancelled else { return false }
         errorMessage = nil
         guard let login = accountLogin, let key = keychainAccountKey, !key.isEmpty else {
             errorMessage = .key("Please sign in with GitHub before provisioning a runner.")
@@ -242,6 +246,7 @@ public final class AddRunnerWizardViewModel {
         do {
             let token = try await provisioningClient.readToken(for: key)
             try Task.checkCancellation()
+            var directRunners: [ManagedRunnerConfiguration] = []
 
             for target in targets {
                 try Task.checkCancellation()
@@ -262,37 +267,69 @@ public final class AddRunnerWizardViewModel {
                 }
 
                 try Task.checkCancellation()
-                for summary in provisionedList {
-                    let entity = RunnerEntity(
-                        name: summary.name,
-                        scopeType: summary.scopeType,
-                        scopeUrl: summary.scopeURL,
-                        status: .idle,
-                        labels: summary.labels,
-                        workDirectory: summary.workDirectory,
-                        rootDirectoryPath: summary.rootDirectory.path(percentEncoded: false),
-                        runnerVersion: summary.runnerVersion,
-                        isImportedLocal: false,
-                        pid: summary.pid
-                    )
-                    if let label = summary.launchdLabel {
-                        entity.serviceLabel = label
+                try modelContext.transaction {
+                    for summary in provisionedList {
+                        let id = UUID()
+                        let mode: RunnerExecutionMode? = launchAgent
+                            ? summary.launchdLabel.map { _ in .launchAgent } : .direct
+                        let entity = RunnerEntity(
+                            id: id,
+                            name: summary.name,
+                            scopeType: summary.scopeType,
+                            scopeUrl: summary.scopeURL,
+                            status: .offline,
+                            labels: summary.labels,
+                            workDirectory: summary.workDirectory,
+                            rootDirectoryPath: summary.rootDirectory.path(percentEncoded: false),
+                            runnerVersion: summary.runnerVersion,
+                            pid: summary.pid,
+                            executionMode: mode
+                        )
+                        if let label = summary.launchdLabel {
+                            entity.serviceLabel = label
+                        }
+                        modelContext.insert(entity)
+                        modelContext.insert(AuditLogEntity(
+                            category: .runnerLifecycle,
+                            title: "Runner Provisioned",
+                            summary: "Provisioned \(summary.name) (\(summary.scopeURL.absoluteString), v\(summary.runnerVersion))",
+                            actorAccountLogin: login,
+                            targetRunnerName: summary.name,
+                            newValue: summary.labels.joined(separator: ",")
+                        ))
+                        if mode == .direct {
+                            directRunners.append(.init(runnerID: id, name: summary.name, rootDirectory: summary.rootDirectory,
+                                mode: .direct, launch: configuration))
+                        }
                     }
-                    modelContext.insert(entity)
-
+                }
+            }
+            var startFailures: [String] = []
+            for runner in directRunners {
+                try Task.checkCancellation()
+                do {
+                    try await supervisor.configure(runner)
+                    try await supervisor.start(runnerID: runner.runnerID)
+                } catch is CancellationError {
+                    return false
+                } catch {
+                    try Task.checkCancellation()
+                    startFailures.append(runner.name)
                     AuditLogRecorder.record(
                         in: modelContext,
                         category: .runnerLifecycle,
-                        severity: .info,
-                        title: "Runner Provisioned",
-                        summary: "Provisioned \(summary.name) (\(summary.scopeURL.absoluteString), v\(summary.runnerVersion))",
+                        severity: .warning,
+                        title: "Runner Start Failed",
+                        summary: "Could not start \(runner.name) (\(runner.runnerID.uuidString)).",
                         actorAccountLogin: login,
-                        targetRunnerName: summary.name,
-                        newValue: summary.labels.joined(separator: ",")
+                        targetRunnerName: runner.name
                     )
                 }
             }
-            try modelContext.save()
+            provisioningCompleted = true
+            if !startFailures.isEmpty {
+                errorMessage = .key("Registered but could not start: \(startFailures.joined(separator: ", ")). Open Runner Settings to retry.")
+            }
             return true
         } catch is CancellationError {
             return false

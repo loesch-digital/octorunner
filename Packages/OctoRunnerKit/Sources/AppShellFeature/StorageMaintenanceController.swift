@@ -17,12 +17,15 @@ public final class StorageMaintenanceController {
     @ObservationIgnored private let preferences: AppPreferencesStore
     @ObservationIgnored private let cleaner: WorkspaceCleanerActor
     @ObservationIgnored private let stateChecker: (any StorageRunnerStateChecking)?
+    @ObservationIgnored private let supervisor: RunnerSupervisorActor?
     @ObservationIgnored private let capacity = SystemVolumeCapacitySampler()
     @ObservationIgnored private var task: Task<Void, Never>?
 
-    public init(preferences: AppPreferencesStore, cleaner: WorkspaceCleanerActor = WorkspaceCleanerActor(), stateChecker: (any StorageRunnerStateChecking)? = nil) {
+    public init(preferences: AppPreferencesStore, cleaner: WorkspaceCleanerActor = WorkspaceCleanerActor(),
+                stateChecker: (any StorageRunnerStateChecking)? = nil, supervisor: RunnerSupervisorActor? = nil) {
         self.preferences = preferences; self.cleaner = cleaner
         self.stateChecker = stateChecker
+        self.supervisor = supervisor
     }
 
     isolated deinit { task?.cancel() }
@@ -70,14 +73,24 @@ public final class StorageMaintenanceController {
         self.snapshot = nil; volume = nil
         defer { isBusy = false }
         do {
-            let roots = try managedRunners(in: context)
+            var roots = try managedRunners(in: context)
+            let candidateIDs = Set(snapshot.candidates.map(\.runnerID))
+            let candidateRoots = roots.filter { candidateIDs.contains($0.id) }.map(\.root)
+            let reserved = await supervisor?.reserveStorage(roots: candidateRoots)
+            defer {
+                if let supervisor, let reserved, !reserved.isEmpty {
+                    Task { await supervisor.releaseStorage(paths: reserved) }
+                }
+            }
+            try Task.checkCancellation()
+            if let reserved { roots = roots.filter { reserved.contains($0.root.standardizedFileURL.path) } }
             if !snapshot.candidates.isEmpty {
                 // Persist intent before any deletion. Cancellation may prevent a
                 // completion record, and must never access models after teardown.
                 context.insert(AuditLogEntity(category: .system, title: "Storage cleanup started", summary: "Reviewing \(snapshot.candidates.count) old managed items. An interrupted attempt may be partial; only a completion entry confirms the final counts."))
                 try context.save()
             }
-            let gate = ManagedStorageRunnerGate(context: context, isAuthorized: { [preferences] in
+            let gate = ManagedStorageRunnerGate(context: context, services: LaunchAgentServiceStateReader(), isAuthorized: { [preferences] in
                 preferences.storagePolicy == policy && preferences.pruneWorkspacesOlderThanDays == workspaceAge
             })
             let report = try await cleaner.clean(snapshot.candidates, runners: roots, checker: stateChecker ?? gate,

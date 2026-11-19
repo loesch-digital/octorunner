@@ -8,6 +8,57 @@ import Testing
 
 @MainActor
 struct RunnerWizardProvisioningTests {
+    @Test("Wizard persists direct ownership before starting through the shared supervisor")
+    func directRunnerStartsAfterSave() async throws {
+        let gate = WizardGate()
+        let processes = WizardProcesses(gate: gate)
+        let supervisor = RunnerSupervisorActor(processes: processes)
+        let engine = WizardProvisioner()
+        let vm = AddRunnerWizardViewModel(provisioningClient: WizardTargetClient(),
+            provisionerActor: engine, supervisor: supervisor)
+        vm.manualTargetInput = "owner/repository"
+        vm.registerLaunchAgent = false
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let task = Task {
+            await vm.provisionAndPersistRunners(accountLogin: "fixture", keychainAccountKey: "github-user:7",
+                modelContext: container.mainContext)
+        }
+        await gate.waitUntilEntered()
+        let saved = try #require(ModelContext(container).fetch(FetchDescriptor<RunnerEntity>()).first)
+        let start = await processes.configuration
+        #expect(saved.executionMode == .direct)
+        #expect(saved.status == .offline)
+        #expect(start?.runnerID == saved.id)
+        #expect(start?.rootDirectory.path == saved.rootDirectoryPath)
+        await gate.release()
+        #expect(await task.value)
+        #expect(await supervisor.snapshot(runnerID: saved.id)?.pid == 123)
+    }
+
+    @Test("Failed direct start retains the registered runner and records a failure")
+    func failedDirectStart() async throws {
+        let supervisor = RunnerSupervisorActor(processes: WizardProcesses(fails: true))
+        let vm = AddRunnerWizardViewModel(provisioningClient: WizardTargetClient(),
+            provisionerActor: WizardProvisioner(), supervisor: supervisor)
+        vm.manualTargetInput = "owner/repository"
+        vm.registerLaunchAgent = false
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let context = container.mainContext
+        #expect(await vm.provisionAndPersistRunners(accountLogin: "fixture", keychainAccountKey: "github-user:7",
+            modelContext: context))
+        let saved = try #require(context.fetch(FetchDescriptor<RunnerEntity>()).first)
+        #expect(saved.executionMode == .direct)
+        #expect(saved.pid == nil)
+        #expect(vm.provisioningCompleted)
+        #expect(vm.errorMessage != nil)
+        #expect(!(await vm.provisionAndPersistRunners(accountLogin: "fixture", keychainAccountKey: "github-user:7",
+            modelContext: context)))
+        #expect(await supervisor.snapshot(runnerID: saved.id)?.phase == .faulted)
+        #expect(try context.fetch(FetchDescriptor<AuditLogEntity>()).contains {
+            $0.severity == .warning && $0.targetRunnerName == saved.name && $0.summary.contains(saved.id.uuidString)
+        })
+    }
+
     @Test("Wizard preserves launch settings and form values across token loading")
     func launchSnapshot() async throws {
         let gate = WizardGate()
@@ -61,6 +112,35 @@ struct RunnerWizardProvisioningTests {
         #expect(vm.errorMessage == nil)
         #expect(!vm.isProvisioning)
         #expect(await engine.calls == 1)
+    }
+}
+
+private actor WizardProcesses: RunnerProcessControlling {
+    let gate: WizardGate?
+    let fails: Bool
+    private(set) var configuration: ManagedRunnerConfiguration?
+
+    init(gate: WizardGate? = nil, fails: Bool = false) {
+        self.gate = gate
+        self.fails = fails
+    }
+
+    func start(configuration: ManagedRunnerConfiguration, generation: UUID) async throws -> RunnerProcessHandle {
+        self.configuration = configuration
+        if let gate { await gate.enter() }
+        if fails { throw RunnerSupervisionError.invalidConfiguration }
+        return .init(runnerID: configuration.runnerID, generation: generation, pid: 123, startedAt: .now)
+    }
+
+    func stop(_ handle: RunnerProcessHandle, force: Bool) async throws -> RunnerProcessExit {
+        .init(handle: handle, status: 0)
+    }
+
+    func exits(for handle: RunnerProcessHandle) async -> AsyncStream<RunnerProcessExit> {
+        AsyncStream { $0.finish() }
+    }
+    func activity(for handle: RunnerProcessHandle, listenerPID: Int32?, workerPID: Int32?) -> RunnerActivity {
+        .unknown
     }
 }
 

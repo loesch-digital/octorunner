@@ -9610,19 +9610,512 @@
         }
       }
     },
-    "OctoRunner and its menu bar item will close. Installed runner LaunchAgents continue running through launchd.\n\nImported runners that have not been migrated remain under their previous process manager. OctoRunner cannot guarantee that they continue running or are supervised after quitting.": {
+    "OctoRunner and its menu bar item will close. Directly managed runners must be idle before OctoRunner can stop them and quit. Installed runner LaunchAgents continue running through launchd.\n\nImported runners stay under their existing process manager.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "OctoRunner and its menu bar item will close. Installed runner LaunchAgents continue running through launchd.\n\nImported runners that have not been migrated remain under their previous process manager. OctoRunner cannot guarantee that they continue running or are supervised after quitting."
+            "value": "OctoRunner and its menu bar item will close. Directly managed runners must be idle before OctoRunner can stop them and quit. Installed runner LaunchAgents continue running through launchd.\n\nImported runners stay under their existing process manager."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "OctoRunner und sein Menüleistensymbol werden geschlossen. Installierte Runner-LaunchAgents laufen über launchd weiter.\n\nImportierte Runner, die noch nicht migriert wurden, bleiben unter ihrer bisherigen Prozessverwaltung. OctoRunner kann nicht garantieren, dass sie nach dem Beenden weiterlaufen oder überwacht werden."
+            "value": "OctoRunner und sein Menüleistensymbol werden geschlossen. Direkt verwaltete Runner müssen im Leerlauf sein, damit OctoRunner sie stoppen und sich beenden kann. Installierte Runner-LaunchAgents laufen über launchd weiter.\n\nImportierte Runner bleiben unter ihrer bisherigen Prozessverwaltung."
+          }
+        }
+      }
+    },
+    "OctoRunner is still open": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner bleibt geöffnet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner is still open"
+          }
+        }
+      }
+    },
+    "A directly managed runner is processing a job. Try quitting after the job finishes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein direkt verwalteter Runner führt gerade einen Job aus. Versuche es nach Abschluss des Jobs erneut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A directly managed runner is processing a job. Try quitting after the job finishes."
+          }
+        }
+      }
+    },
+    "OctoRunner is waiting for a runner status. Try quitting again shortly.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner wartet auf den Status eines Runners. Versuche es gleich erneut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner is waiting for a runner status. Try quitting again shortly."
+          }
+        }
+      }
+    },
+    "A runner could not be stopped. Check its status before quitting again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Runner konnte nicht gestoppt werden. Prüfe seinen Status, bevor du OctoRunner erneut beendest."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A runner could not be stopped. Check its status before quitting again."
+          }
+        }
+      }
+    },
+    "Start runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner starten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start runner"
+          }
+        }
+      }
+    },
+    "Stop after current job": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach aktuellem Job stoppen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop after current job"
+          }
+        }
+      }
+    },
+    "Restart runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner neu starten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart runner"
+          }
+        }
+      }
+    },
+    "Force stop": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopp erzwingen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Force stop"
+          }
+        }
+      }
+    },
+    "Starts the runner under OctoRunner’s supervision.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startet den Runner unter der Prozessaufsicht von OctoRunner."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts the runner under OctoRunner’s supervision."
+          }
+        }
+      }
+    },
+    "Stops the runner after a recent check confirms it is idle.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoppt den Runner, sobald eine aktuelle Prüfung den Leerlauf bestätigt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stops the runner after a recent check confirms it is idle."
+          }
+        }
+      }
+    },
+    "Restarts an idle runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startet einen Runner im Leerlauf neu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restarts an idle runner."
+          }
+        }
+      }
+    },
+    "May cancel a running job. Requires confirmation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kann einen laufenden Job abbrechen. Erfordert eine Bestätigung."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "May cancel a running job. Requires confirmation."
+          }
+        }
+      }
+    },
+    "Directly managed by OctoRunner": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Direkt von OctoRunner verwaltet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directly managed by OctoRunner"
+          }
+        }
+      }
+    },
+    "Waiting for the runner to become idle.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wartet auf den Leerlauf des Runners."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for the runner to become idle."
+          }
+        }
+      }
+    },
+    "The wait ended. The runner is still active.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Wartezeit ist abgelaufen. Der Runner ist weiterhin aktiv."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The wait ended. The runner is still active."
+          }
+        }
+      }
+    },
+    "Force stop this runner?": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopp für diesen Runner erzwingen?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Force stop this runner?"
+          }
+        }
+      }
+    },
+    "A runner process is already using this directory.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Runner-Prozess verwendet diesen Ordner bereits."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A runner process is already using this directory."
+          }
+        }
+      }
+    },
+    "The runner is processing a job.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Runner führt gerade einen Job aus."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The runner is processing a job."
+          }
+        }
+      }
+    },
+    "The runner status has not been confirmed. Try again shortly.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Runner-Status ist noch ungeklärt. Versuche es gleich erneut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The runner status has not been confirmed. Try again shortly."
+          }
+        }
+      }
+    },
+    "Another runner action is in progress.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für den Runner läuft gerade eine andere Aktion."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another runner action is in progress."
+          }
+        }
+      }
+    },
+    "The runner action could not be completed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Runner-Aktion konnte nicht abgeschlossen werden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The runner action could not be completed."
+          }
+        }
+      }
+    },
+    "Stop this runner before removing it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoppe diesen Runner, bevor du ihn entfernst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop this runner before removing it."
+          }
+        }
+      }
+    },
+    "The runner could not be removed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Runner konnte nicht entfernt werden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The runner could not be removed."
+          }
+        }
+      }
+    },
+    "This runner could not be verified for direct control.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die direkte Verwaltung dieses Runners konnte nicht bestätigt werden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This runner could not be verified for direct control."
+          }
+        }
+      }
+    },
+    "Process group PID: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PID der Prozessgruppe: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Process group PID: %@"
+          }
+        }
+      }
+    },
+    "Uptime": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laufzeit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uptime"
+          }
+        }
+      }
+    },
+    "Runner exit status: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exit-Status des Runners: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner exit status: %@"
+          }
+        }
+      }
+    },
+    "The runner could not start.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Runner konnte nicht gestartet werden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The runner could not start."
+          }
+        }
+      }
+    },
+    "Registered but could not start: %@. Open Runner Settings to retry.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registriert, aber Start fehlgeschlagen: %@. Öffne die Runner-Einstellungen für einen neuen Startversuch."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registered but could not start: %@. Open Runner Settings to retry."
           }
         }
       }
