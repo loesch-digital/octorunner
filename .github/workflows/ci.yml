@@ -32,7 +32,7 @@ jobs:
           swift --version
 
       - name: Run OctoRunnerKit Unit Tests (TDD Suite)
-        run: swift test --package-path Packages/OctoRunnerKit --no-parallel --enable-code-coverage
+        run: python3 scripts/run-swift-tests.py -- swift test --package-path Packages/OctoRunnerKit --no-parallel --enable-code-coverage
 
       - name: Preserve Swift Coverage Report
         if: always()
@@ -41,6 +41,14 @@ jobs:
           name: swift-coverage-xcode-27
           path: Packages/OctoRunnerKit/.build/**/codecov/*.json
           include-hidden-files: true
+          retention-days: 14
+
+      - name: Preserve Swift Test Diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: swift-test-diagnostics
+          path: DerivedData/SwiftTestDiagnostics
           retention-days: 14
 
       - name: Test Release Signing Pipeline

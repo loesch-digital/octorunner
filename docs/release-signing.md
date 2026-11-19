@@ -51,6 +51,29 @@ CI jobs have an explicit 20-minute execution limit. Release jobs have a
 limit. These limits apply after a runner starts the job; queue time is separate.
 When a watch stops updating, check the run's current status and step directly
 instead of treating an open local watch as evidence that GitHub is still busy.
+Swift test commands in CI and releases run through `scripts/run-swift-tests.py`.
+It preserves the original exit status and streams output into
+`DerivedData/SwiftTestDiagnostics/swift-tests.log`. Once tests have started,
+120 seconds without output triggers stack sampling of up to eight processes in
+the wrapper's private POSIX session (including SwiftPM's separate child groups), followed by a failed exit (124). A separate
+10-minute total deadline also bounds compilation. Compilation does not use the
+short test-idle deadline. Sampling is best-effort and bounded; only this command's
+private session is terminated after freshly checking session/group membership. No existing runner or app is signalled,
+and no process arguments or environment dumps are collected. The diagnostics
+artifact is uploaded on failure as well as success. These are diagnostic limits,
+not retries or skipped tests.
+
+On 2026-11-14, main run `43579538373` hit the job limit after the existing
+`Acknowledgement persists across restarts ...` test began. The same test passed
+in PR run `43578763517` and locally with coverage. The underlying intermittent
+hang recurred in PR run `44462124714` on 2026-11-19 and was bounded by the
+watchdog. The first artifact contained only the waiting SwiftPM parent: its
+test helper starts a separate process group. The launcher therefore follows its
+new private session and rechecks membership before sampling or signalling.
+Processes that leave that session are excluded. The actual test-hang cause is
+still unknown; another diagnostic run is needed rather than an application fix
+based only on the name of the last printed test.
+
 The additional `xcode-27` label is registered in `.github/actionlint.yaml` for
 local validation because actionlint's built-in label list does not include it.
 
