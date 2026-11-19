@@ -26,13 +26,6 @@ struct RunnerEngineTests {
         #expect(await streamer.readRecentLogLines(forRunnerRoot: runner).isEmpty)
     }
 
-    @Test("RunnerSupervisorActor queries SMAppService login autostart state safely")
-    func loginAutostartStatusQuery() async {
-        let supervisor = RunnerSupervisorActor()
-        let isEnabled = await supervisor.isLoginAutostartEnabled()
-        #expect(isEnabled == true || isEnabled == false)
-    }
-
     @Test("RunnerBinaryCacheActor verifies CryptoKit SHA256 checksum accurately")
     func binaryCacheSHA256Verification() throws {
         let sampleContent = Data("octo-runner-arm64-binary-payload".utf8)

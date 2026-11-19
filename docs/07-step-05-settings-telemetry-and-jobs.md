@@ -1,5 +1,7 @@
 # 07 — Step 5: Settings Suite (7a–7e), Jobs & Workflow Runs (8) & Host Telemetry (9) (`v0.5.0`)
 
+> **Umfang aktualisiert am 19.11.2026:** Auf Nutzerentscheidung kommt das globale Parallelitätslimit erst in v0.6. Frühere Zuordnungen zu v0.5 in diesem Dokument sind damit überholt. Aktueller Arbeitsstand und konkrete Folgepläne: [Restliche Umsetzung](./18-remaining-delivery-plan.md).
+
 **Ziel von Step 5 (`v0.5.0`):**  
 Vervollständigung aller verbleibenden Screens aus deinem Stitch-Design:
 - **Dialoge 7a–7e:** Das 6-Tab macOS Settings-Fenster (`General`, `launchd Daemon`, `Failover`, `Cache & Storage`, `Auth & Tokens`, `Notifications`).

@@ -169,6 +169,9 @@ def main():
                         tests_started = tests_started or b"Test run started" in output or b"Test Suite 'All tests' started" in output
                         recent = output[-4096:]
                         continue
+                    # EOF remains permanently readable. Remove it so select waits
+                    # for the next deadline tick while the command is still alive.
+                    selector.unregister(process.stdout)
                     if process.poll() is not None:
                         return process.returncode if process.returncode >= 0 else 128 - process.returncode
                 elif process.poll() is not None:

@@ -2,6 +2,7 @@
 import os
 import importlib.util
 import select
+import pstats
 import signal
 import textwrap
 from pathlib import Path
@@ -17,6 +18,49 @@ SCRIPT = ROOT / "scripts/run-swift-tests.py"
 
 
 class SwiftTestWatchdogTests(unittest.TestCase):
+    def test_closed_output_waits_without_busy_polling_and_preserves_exit_status(self):
+        with tempfile.TemporaryDirectory() as name:
+            directory = Path(name)
+            profile = directory / "watchdog.profile"
+            source = "import os, time; os.close(1); os.close(2); time.sleep(0.8); raise SystemExit(7)"
+            profiler = textwrap.dedent(f"""
+                import cProfile, runpy, sys
+                sys.argv = sys.argv[1:]
+                profile = cProfile.Profile()
+                try:
+                    profile.runcall(runpy.run_path, sys.argv[0], run_name="__main__")
+                finally:
+                    profile.dump_stats({str(profile)!r})
+            """)
+            result = subprocess.run(
+                [sys.executable, "-c", profiler, str(SCRIPT),
+                 "--diagnostics", str(directory / "diagnostics"), "--timeout", "3",
+                 "--", sys.executable, "-c", source],
+                capture_output=True, text=True, timeout=8,
+            )
+            self.assertEqual(result.returncode, 7, result.stdout + result.stderr)
+            # Measure real selector activity rather than wall-time CPU assumptions:
+            # EOF must not turn an idle 0.8s child into thousands of ready polls.
+            polls = sum(calls[1]
+                        for key, value in pstats.Stats(str(profile)).stats.items()
+                        if key[0].endswith("selectors.py") and key[2] == "select"
+                        for caller, calls in value[4].items()
+                        if caller[0] == str(SCRIPT) and caller[2] == "main")
+            self.assertGreater(polls, 0)
+            self.assertLess(polls, 30, f"Busy-polling closed stdout: {polls} selects")
+
+    def test_closed_output_still_obeys_test_idle_and_total_deadlines(self):
+        for marker, reason in (("", "total deadline"), ("Test run started.", "no test output")):
+            with self.subTest(reason=reason), tempfile.TemporaryDirectory() as name:
+                directory = Path(name)
+                sample = directory / "sample"
+                sample.write_text('#!/bin/sh\necho fixture > "$4"\n')
+                sample.chmod(0o755)
+                source = f"import os, time; print({marker!r}, flush=True); os.close(1); os.close(2); time.sleep(10)"
+                result = self.invoke(source, directory, idle="0.3", total="0.6")
+                self.assertEqual(result.returncode, 124, result.stdout + result.stderr)
+                self.assertIn(reason, result.stdout)
+
     def test_start_marker_in_large_output_still_arms_idle_deadline(self):
         with tempfile.TemporaryDirectory() as name:
             directory = Path(name)

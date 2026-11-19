@@ -1,5 +1,7 @@
 # Host-Telemetrie
 
+> **Umfang aktualisiert am 19.11.2026:** Auf Nutzerentscheidung kommt das globale Parallelitätslimit erst in v0.6. Frühere Zuordnungen zu v0.5 in diesem Dokument sind damit überholt. Aktueller Arbeitsstand und konkrete Folgepläne: [Restliche Umsetzung](./18-remaining-delivery-plan.md).
+
 **Host-Telemetrie** in der Seitenleiste zeigt die verfügbaren lokalen Messwerte. Die Ansicht aktualisiert sich bei geöffnetem Bildschirm alle 1, 5 oder 15 Sekunden; **Telemetrie aktualisieren** fordert eine neue Messung an. Beim Verlassen endet die periodische Messung dieser Ansicht.
 
 - **CPU:** Gesamtauslastung aus zwei Mach-Zählerständen sowie erkannte Performance-/Effizienz-Kernanzahlen. Die erste Messung benötigt einen zweiten Zählerstand. Eine Auslastung je Kerntyp wird ohne verifizierbare Zuordnung der CPU-Indizes nicht behauptet.
@@ -31,7 +33,7 @@ Ein Audit-Intent wird vor der Anfrage explizit gespeichert. Danach folgt entwede
 
 Die Hauptfunktionen der Prozessliste sind vorhanden, mit umbruchfähigen nativen Zeilen statt einer breiten, fest dimensionierten Tabelle. Ein `CoreSimulatorService` wird nur dann gezeigt, wenn seine wirkliche Elternkette die Zuordnung belegt; Namensähnlichkeit reicht nicht. Wieder unter `launchd` eingeordnete Dienste lassen sich dadurch gegebenenfalls nicht zuordnen. Einen erfundenen 60-Hz-IPC-Watchdog, simulierte P-/E-Lastwerte oder angebliche RAM-Kategorien für Dateicaches zeigt die App nicht. Prozessmetadaten und Signale verwenden die öffentlichen libproc-/Darwin-Schnittstellen und benötigen keine zusätzlichen GitHub-Rechte.
 
-Noch offen für v0.5: die tatsächlich durchgesetzte globale Runner-Concurrency. Die vollständige Prozessaufsicht mit Start/Stop/Restart und Crash-/KeepAlive-Policies bleibt v0.6 vorbehalten.
+Die tatsächlich durchgesetzte globale Runner-Concurrency gehört nach Nutzerentscheidung vom 19.11.2026 gemeinsam mit Start/Stop/Restart und Crash-/KeepAlive-Policies zu v0.6. Der v0.5-Abschluss folgt dem neuen Abnahmeplan.
 
 ### Technische Quellen und Prüfung
 

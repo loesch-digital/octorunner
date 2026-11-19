@@ -70,9 +70,16 @@ hang recurred in PR run `44462124714` on 2026-11-19 and was bounded by the
 watchdog. The first artifact contained only the waiting SwiftPM parent: its
 test helper starts a separate process group. The launcher therefore follows its
 new private session and rechecks membership before sampling or signalling.
-Processes that leave that session are excluded. The actual test-hang cause is
-still unknown; another diagnostic run is needed rather than an application fix
-based only on the name of the last printed test.
+Processes that leave that session are excluded. A subsequent local three-repetition run reproduced the stall. Sampling the actual
+test helper showed synchronous `Process.waitUntilExit()` in HTTP test-server
+cleanup. PR #28 replaced that fixture with asynchronously observed termination
+and added lifecycle regressions. Its main run then exposed an independent native
+UI launch failure: the app adopted accessory activation policy before its first
+window. PR #29 adds a startup-policy regression and preserves regular activation
+until a window has appeared. PR and main run `44470817545` passed, including
+native UI tests. This evidence fixes two demonstrated defects; it does not infer
+the original CI stack from its last buffered test line. A further EOF regression
+removes watchdog busy-polling when output closes before the child exits.
 
 The additional `xcode-27` label is registered in `.github/actionlint.yaml` for
 local validation because actionlint's built-in label list does not include it.
