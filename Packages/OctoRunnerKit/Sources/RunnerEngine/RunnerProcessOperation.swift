@@ -19,17 +19,19 @@ final class RunnerProcessOperation: Sendable {
     }
     let handle: RunnerProcessHandle
     let rootPath: String
+    private let outputReaders: [RunnerProcessLogPipe.Reader]
     private let state = Mutex(State())
     private let terminal = AsyncStream<RunnerProcessExit>.makeStream(bufferingPolicy: .bufferingNewest(1))
     var hasExited: Bool { state.withLock { $0.exit != nil } }
     var canDiscard: Bool { state.withLock { $0.exit != nil && $0.subscribed } }
 
-    private init(handle: RunnerProcessHandle, rootDirectory: URL) {
+    private init(handle: RunnerProcessHandle, rootDirectory: URL, outputReaders: [RunnerProcessLogPipe.Reader]) {
         self.handle = handle
         self.rootPath = rootDirectory.standardizedFileURL.path
+        self.outputReaders = outputReaders
     }
 
-    static func spawn(configuration: ManagedRunnerConfiguration, generation: UUID) throws -> RunnerProcessOperation {
+    static func spawn(configuration: ManagedRunnerConfiguration, generation: UUID, console: RunnerProcessConsole) throws -> RunnerProcessOperation {
         var actions: posix_spawn_file_actions_t?
         var attributes: posix_spawnattr_t?
         try check(posix_spawn_file_actions_init(&actions))
@@ -45,9 +47,10 @@ final class RunnerProcessOperation: Sendable {
         try check(posix_spawnattr_setflags(&attributes, Int16(POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF)))
         try check(posix_spawn_file_actions_addchdir_np(&actions, configuration.rootDirectory.path))
         try check(posix_spawn_file_actions_addopen(&actions, STDIN_FILENO, "/dev/null", O_RDONLY, 0))
-        for descriptor in [STDOUT_FILENO, STDERR_FILENO] {
-            try check(posix_spawn_file_actions_addopen(&actions, descriptor, "/dev/null", O_WRONLY, 0))
-        }
+        let stdout = try RunnerProcessLogPipe(console: console, standardError: false)
+        let stderr = try RunnerProcessLogPipe(console: console, standardError: true)
+        try check(posix_spawn_file_actions_adddup2(&actions, stdout.writer.fd, STDOUT_FILENO))
+        try check(posix_spawn_file_actions_adddup2(&actions, stderr.writer.fd, STDERR_FILENO))
         let environment = ProcessInfo.processInfo.environment.merging(configuration.launch.environment) { _, configured in configured }
         let arguments = ["/bin/bash", configuration.rootDirectory.appending(path: "run.sh").path]
         let argv = arguments.map { strdup($0) } + [nil]
@@ -55,15 +58,18 @@ final class RunnerProcessOperation: Sendable {
         defer { argv.forEach { free($0) }; envp.forEach { free($0) } }
         guard argv.dropLast().allSatisfy({ $0 != nil }), envp.dropLast().allSatisfy({ $0 != nil }) else { throw POSIXError(.ENOMEM) }
         var pid: pid_t = 0
-        let result = argv.withUnsafeBufferPointer { args in
-            envp.withUnsafeBufferPointer { env in
-                posix_spawn(&pid, "/bin/bash", &actions, &attributes,
-                    UnsafeMutablePointer(mutating: args.baseAddress!), UnsafeMutablePointer(mutating: env.baseAddress!))
+        let result = withExtendedLifetime((stdout.writer, stderr.writer)) {
+            argv.withUnsafeBufferPointer { args in
+                envp.withUnsafeBufferPointer { env in
+                    posix_spawn(&pid, "/bin/bash", &actions, &attributes,
+                        UnsafeMutablePointer(mutating: args.baseAddress!), UnsafeMutablePointer(mutating: env.baseAddress!))
+                }
             }
         }
         try check(result)
         let operation = RunnerProcessOperation(handle: .init(runnerID: configuration.runnerID,
-            generation: generation, pid: pid, startedAt: .now), rootDirectory: configuration.rootDirectory)
+            generation: generation, pid: pid, startedAt: .now), rootDirectory: configuration.rootDirectory,
+            outputReaders: [stdout.reader, stderr.reader])
         operation.beginMonitoring()
         return operation
     }
@@ -165,6 +171,7 @@ final class RunnerProcessOperation: Sendable {
         guard let (exit, waiters, source, timer) = completion else { return }
         source?.cancel()
         timer?.cancel()
+        for reader in outputReaders { reader.finish() }
         terminal.continuation.yield(exit); terminal.continuation.finish()
         for waiter in waiters {
             waiter.timer.cancel()

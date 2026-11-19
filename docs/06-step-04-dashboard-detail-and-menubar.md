@@ -55,14 +55,15 @@ Wird über das Zahnrad-Icon (`⚙️`) eines Runners geöffnet:
 Wird durch Doppelklick auf einen Runner oder Klick auf **"View Live Log"** geöffnet:
 - **Runner Header Card:**
   - Name (`mac-runner-2`), Status-Pill (`Busy`), Laufzeit-Timer (`03m:42s`), CPU/RAM des Runner-Prozesses, verknüpfter Workflow-Run + Branch/Commit-Hash (`(main) @ b93dfa1`).
-  - **Quick-Buttons:** `Open in GitHub` (öffnet den Workflow-Run im Browser), `View Diagnostic Logs` (öffnet `_diag` Ordner) und **`⊗ Cancel Workflow`** (sendet `POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel`).
-- **4 Log-Ansichts-Tabs:**
-  - `• Live Job Output` (mit ausklappbaren Workflow-Steps wie `Set up job`, `Run actions/checkout@v4`, `Run Fastlane Build & Tests`)
-  - `launchd Daemon Log` (`stdout.log` / `stderr.log` des Daemons)
-  - `Environment Variables` (injizierte Variablen wie `PATH`, `DEVELOPER_DIR`, `RUNNER_WORKSPACE`)
-  - `Runner Diagnostics` (`Runner_*.log` und `Worker_*.log` aus `_diag/`)
-- **Echtzeit Log-Streaming via `AsyncStream` (`swift-concurrency-pro`):**
-  - `LogFileTailActor` überwacht die Logdateien effizient über `DispatchSource.makeFileSystemObjectSource` (Event-basiert, 0% CPU-Last im Idle) und streamt neue Zeilen inkl. ANSI-Farbcode-Highlighting an die UI.
+  - **Aktionen im Logdialog:** „Auf GitHub öffnen“ öffnet den zugeordneten Repository- oder Organisationsbereich. „Diagnoseordner“ öffnet den lokalen Ordner auf Anforderung. Konkrete Workflow-Läufe lassen sich über ihre Laufdetails in „Jobs & Workflow-Läufe“ in GitHub öffnen.
+- **Vier Ansichten ab v0.6:**
+  - **Live-Ausgabe des Runners** folgt den Prozess-Pipes direkt verwalteter Runner. Bei LaunchAgents folgt sie den Service-Logs, bei extern verwalteten Runnern den lokalen Diagnosedateien.
+  - **Hintergrunddienst-Log** folgt `_diag/launchd.stdout.log` und `_diag/launchd.stderr.log`.
+  - **Umgebungsvariablen** zeigt die in OctoRunner bekannten Runner-Werte und den konfigurierten Arbeitsordner.
+  - **Runner-Diagnose** zeigt die Zusammenfassung und folgt der jeweils neuesten `Runner_*.log`- und `Worker_*.log`-Datei.
+- **Live-Anzeige:** Dateisystemereignisse aktualisieren die Ansicht bei Schreibvorgängen und Rotation. Suche, Schweregrad, Pause, Auto-Scroll und Leeren steuern den sichtbaren Ausschnitt. Der Puffer behält bis zu 200 Einträge. Die App weist auf ausgelassene Inhalte hin.
+- **Kopieren und Export:** Die Exportaktionen verwenden die gefilterte Ansicht mit maskierten erkannten Zugangsdaten. Beginnt ein Ausschnitt mitten in einer Datei ohne vorherigen Kontext, hält der Export deren Text zurück.
+- **Workflow-Steps und Job-Logs:** „Jobs & Workflow-Läufe“ zeigt die von GitHub gemeldeten Steps und lädt die verfügbaren Job-Logs. GitHub dokumentiert einen separaten Download für Job- und Step-Logs. [GitHub REST API](https://docs.github.com/en/rest/actions/workflow-jobs)
 
 ---
 

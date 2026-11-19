@@ -5,6 +5,30 @@ import Foundation
 import Testing
 
 struct ManagedRunnerProcessTests {
+    @Test("Direct supervision delivers stdout and stderr even from a short-lived listener")
+    func liveProcessOutput() async throws {
+        let fixture = try makeFixture(script: """
+        printf 'visible stdout\n'
+        printf 'visible stderr\n' >&2
+        """)
+        defer { try? FileManager.default.removeItem(at: fixture.base) }
+        let backend = ManagedRunnerProcess(managedRoot: fixture.base)
+        let id = fixture.configuration.runnerID
+        let stream = await backend.consoleLogs(for: id)
+        var entries = stream.makeAsyncIterator()
+        let initial = try #require(await entries.next())
+        #expect(initial.lines.isEmpty)
+        let handle = try await backend.start(configuration: fixture.configuration, generation: UUID())
+        let exits = await backend.exits(for: handle)
+        for await exit in exits { #expect(exit.status == 0) }
+        await backend.discardConsoleLogs(for: id)
+
+        var last = initial
+        while let snapshot = await entries.next() { last = snapshot }
+        #expect(last.lines.contains { $0.message == "visible stdout" && $0.level == .info })
+        #expect(last.lines.contains { $0.message == "visible stderr" && $0.level == .error })
+    }
+
     @Test("A short-lived owned process reports its real exit without blocking", .timeLimit(.minutes(1)))
     func naturalExit() async throws {
         let fixture = try makeFixture(script: "exit 7\n")

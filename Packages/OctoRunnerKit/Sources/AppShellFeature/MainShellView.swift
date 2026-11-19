@@ -107,7 +107,7 @@ public struct MainShellView: View {
                 launchAgents: launchAgents)
         }
         .sheet(item: $activeConsoleRunner) { runner in
-            RunnerConsoleLogSheet(runner: runner)
+            RunnerConsoleLogSheet(runner: runner, supervisor: supervisor)
         }
         .task {
             let initialKey = accounts.first(where: { $0.isActive })?.keychainAccountKey
