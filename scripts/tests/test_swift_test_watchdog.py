@@ -1,6 +1,7 @@
 """Exercise the watchdog with private subprocess fixtures, never existing runners."""
 import os
 import importlib.util
+import io
 import select
 import pstats
 import signal
@@ -11,7 +12,7 @@ import sys
 import tempfile
 import time
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts/run-swift-tests.py"
@@ -290,8 +291,37 @@ class SwiftTestWatchdogTests(unittest.TestCase):
             self.assertEqual(result.returncode, 124, result.stdout + result.stderr)
             self.assertIn("total deadline", result.stdout)
 
-    def test_progress_resets_idle_deadline_instead_of_timing_out_a_live_suite(self):
+    def test_readable_progress_at_idle_deadline_prevents_a_false_timeout(self):
         with tempfile.TemporaryDirectory() as name:
-            source = "import time; print('◇ Test run started.', flush=True)\nfor _ in range(5):\n time.sleep(0.15); print('progress', flush=True)"
-            result = self.invoke(source, Path(name))
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            spec = importlib.util.spec_from_file_location("watchdog", SCRIPT)
+            watchdog = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(watchdog)
+            directory = Path(name)
+            process = Mock(stdout=MagicMock(), returncode=0)
+            process.poll.side_effect = [None, 0]
+            selector = MagicMock()
+            selector.__enter__.return_value = selector
+            selector.select.side_effect = [[True], [], [True], [True]]
+            clock = Mock()
+            clock.monotonic.side_effect = [0, 0, 0, 0, 0.5, 0.5, 0.6]
+            output = io.BytesIO()
+            arguments = [str(SCRIPT), "--diagnostics", name, "--idle-timeout", "0.4", "--", "fixture"]
+            # The selector's first wait ends just before output becomes readable.
+            # Simulate resuming the watchdog after the idle deadline, with progress
+            # already waiting in the pipe.
+            with (
+                patch.object(watchdog, "time", clock),
+                patch.object(watchdog.sys, "argv", arguments),
+                patch.object(watchdog.sys, "stdout", Mock(buffer=output)),
+                patch.object(watchdog.subprocess, "Popen", return_value=process),
+                patch.object(watchdog.selectors, "DefaultSelector", return_value=selector),
+                patch.object(watchdog.os, "set_blocking"),
+                patch.object(watchdog.os, "read", side_effect=[b"Test run started.\n", b"progress\n", b""]),
+                patch.object(watchdog.signal, "signal"),
+                patch.object(watchdog, "diagnose") as diagnose,
+                patch.object(watchdog, "stop_session"),
+            ):
+                status = watchdog.main()
+            self.assertEqual(status, 0, output.getvalue())
+            self.assertEqual((directory / "swift-tests.log").read_bytes(), b"Test run started.\nprogress\n")
+            diagnose.assert_not_called()
