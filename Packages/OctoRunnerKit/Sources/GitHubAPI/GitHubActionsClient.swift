@@ -27,6 +27,17 @@ public actor GitHubActionsClient {
         return GitHubActionsPage(items: result.jobs, nextPage: next, totalCount: result.totalCount, rateLimit: rate)
     }
 
+    public func pullRequests(repository: String, commitSHA: String, token: String, page: URL? = nil) async throws -> GitHubActionsPage<GitHubWorkflowPullRequestDTO> {
+        guard [40, 64].contains(commitSHA.utf8.count),
+              commitSHA.utf8.allSatisfy({ (48...57).contains($0) || (65...70).contains($0) || (97...102).contains($0) }) else {
+            throw GitHubActionsError.invalidResponse
+        }
+        let path = try repositoryPath(repository) + "/commits/\(commitSHA)/pulls"
+        let (data, next, rate) = try await load(path: path, page: page, token: token)
+        let items = try Self.decoder().decode([GitHubWorkflowPullRequestDTO].self, from: data)
+        return GitHubActionsPage(items: items, nextPage: next, totalCount: items.count, rateLimit: rate)
+    }
+
     private func load(path: String, page: URL?, token: String) async throws -> (Data, URL?, GitHubRateLimitSnapshot?) {
         try Task.checkCancellation()
         guard !token.isEmpty, token.utf8.allSatisfy({ (33...126).contains($0) }) else { throw GitHubActionsError.invalidToken }

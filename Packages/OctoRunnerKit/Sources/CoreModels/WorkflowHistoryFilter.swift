@@ -26,7 +26,8 @@ public struct WorkflowHistoryFilter: Sendable {
                 }
                 guard assigned else { return false }
             }
-            return query.isEmpty || [entry.workflowName, entry.repository, entry.branch, entry.commitSHA, String(entry.githubRunID)]
+            return query.isEmpty || ([entry.workflowName, entry.repository, entry.branch, entry.commitSHA, String(entry.githubRunID)]
+                + (entry.pullRequests ?? []).map { "PR #\($0.number)" })
                 .contains { $0.localizedStandardContains(query) }
         }.sorted {
             let left = $0.createdAt ?? $0.startedAt ?? $0.completedAt ?? .distantPast

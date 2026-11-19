@@ -120,10 +120,10 @@ public struct WorkflowHistoryContent: View {
             } label: { Text("Runner", bundle: .module) }
             .accessibilityLabel(Text("Assigned runner", bundle: .module))
             .accessibilityHint(Text("Filters runs containing a job assigned to this runner", bundle: .module))
-            TextField(text: $filter.search) { Text("Workflow, branch or commit", bundle: .module) }
+            TextField(text: $filter.search) { Text("Workflow, branch, commit or PR", bundle: .module) }
                 .textFieldStyle(.roundedBorder)
                 .accessibilityLabel(Text("Search workflow history", bundle: .module))
-                .accessibilityHint(Text("Filters loaded workflow names, repositories, branches and commits", bundle: .module))
+                .accessibilityHint(Text("Filters loaded workflow names, repositories, branches, commits and pull request numbers", bundle: .module))
             Picker(selection: $durationTarget) {
                 Text("Not configured", bundle: .module).tag(Int?.none)
                 ForEach(Array(Set([60, 300, 600, 1800, 3600] + (durationTarget.map { [$0] } ?? []))).sorted(), id: \.self) { seconds in

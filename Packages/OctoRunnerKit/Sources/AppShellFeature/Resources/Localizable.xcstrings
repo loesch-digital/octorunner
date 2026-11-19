@@ -6659,6 +6659,92 @@
           }
         }
       }
+    },
+    "Pull request details unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pull request details unavailable"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pull-Request-Details nicht verfügbar"
+          }
+        }
+      }
+    },
+    "Open pull request #%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open pull request #%lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pull Request #%lld öffnen"
+          }
+        }
+      },
+      "comment": "The placeholder is the associated pull request number."
+    },
+    "Opens the associated pull request on GitHub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the associated pull request on GitHub"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet den zugehörigen Pull Request auf GitHub"
+          }
+        }
+      }
+    },
+    "Workflow, branch, commit or PR": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow, branch, commit or PR"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workflow, Branch, Commit oder PR"
+          }
+        }
+      }
+    },
+    "Filters loaded workflow names, repositories, branches, commits and pull request numbers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filters loaded workflow names, repositories, branches, commits and pull request numbers"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtert geladene Workflow-Namen, Repositorys, Branches, Commits und Pull-Request-Nummern"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

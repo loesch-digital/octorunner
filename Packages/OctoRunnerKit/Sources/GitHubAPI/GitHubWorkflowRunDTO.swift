@@ -13,8 +13,10 @@ public struct GitHubWorkflowRunDTO: Codable, Sendable, Equatable, Identifiable {
     public let updatedAt: Date?
     public let event: String?
     public let htmlURL: URL?
+    public var pullRequests: [GitHubWorkflowPullRequestDTO]?
 
     enum CodingKeys: String, CodingKey {
+        case pullRequests = "pull_requests"
         case id, name, status, conclusion, event
         case headBranch = "head_branch", headSHA = "head_sha", runAttempt = "run_attempt"
         case createdAt = "created_at", startedAt = "run_started_at", updatedAt = "updated_at", htmlURL = "html_url"

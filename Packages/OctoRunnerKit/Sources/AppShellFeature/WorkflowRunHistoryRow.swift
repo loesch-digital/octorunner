@@ -41,6 +41,7 @@ struct WorkflowRunHistoryRow: View {
                 Spacer()
                 if let event = entry.event { Text(event).lineLimit(1).help(event) }
             }.font(.caption)
+            WorkflowPullRequestLinksView(entry: entry)
             if let observed = entry.observedAt {
                 HStack {
                     Text("Observed", bundle: .module)
