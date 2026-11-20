@@ -1,5 +1,5 @@
 import AppKit
-import AppShellFeature
+@testable import AppShellFeature
 import CoreModels
 import DesignSystem
 import Foundation
@@ -62,31 +62,21 @@ struct AppShellUITests {
     @MainActor
     func mainShellViewPreviewRendersInHostingView() async throws {
         do {
-            let container = try Self.makePreviewContainer()
-            let account = GitHubAccountEntity(
-                githubUserId: 1001,
-                login: "loesch-digital",
-                displayName: "Frank",
-                scopes: ["repo", "workflow", "admin:org"],
-                keychainAccountKey: "loesch-digital"
-            )
-            let runner = RunnerEntity(
-                name: "mac-studio-m4-runner-1",
-                scopeType: .repository,
-                scopeUrl: URL(string: "https://github.com/loesch-digital/octorunner")!,
-                status: .idle,
-                labels: ["self-hosted", "macos", "arm64"],
-                workDirectory: URL(fileURLWithPath: "/tmp/octorunner-preview")
-            )
-            container.mainContext.insert(account)
-            container.mainContext.insert(runner)
-            try container.mainContext.save()
+            let container = try DashboardPreview.makeContainer()
+            Self.previewContainers.append(container)
+            #expect(container.configurations.allSatisfy { $0.isStoredInMemoryOnly })
+            let accounts = try container.mainContext.fetch(FetchDescriptor<GitHubAccountEntity>())
+            #expect(accounts.map(\.login) == ["build-example"])
+            #expect(accounts.allSatisfy { $0.keychainAccountKey.isEmpty })
+            let runners = try container.mainContext.fetch(FetchDescriptor<RunnerEntity>())
+            #expect(Set(runners.map(\.status)) == [.idle, .busy, .offline])
 
-            let rootView = MainShellView()
-                .modelContainer(container)
+            let rootView = DashboardPreview(container: container, language: .english)
                 .frame(width: 1120, height: 740)
+                .preferredColorScheme(.dark)
 
             let hostingView = NSHostingView(rootView: AnyView(rootView))
+            hostingView.appearance = NSAppearance(named: .darkAqua)
             hostingView.frame = NSRect(x: 0, y: 0, width: 1120, height: 740)
             hostingView.layoutSubtreeIfNeeded()
 
@@ -94,10 +84,14 @@ struct AppShellUITests {
             #expect(hostingView.bounds.height == 740)
             #expect(!hostingView.subviews.isEmpty)
 
-            let bitmap = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds)
-            #expect(bitmap != nil)
-            #expect(bitmap?.pixelsWide ?? 0 >= 1120)
-            #expect(bitmap?.pixelsHigh ?? 0 >= 740)
+            let bitmap = try #require(hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds))
+            #expect(bitmap.pixelsWide >= 1120)
+            #expect(bitmap.pixelsHigh >= 740)
+            if let path = ProcessInfo.processInfo.environment["OCTORUNNER_LAYOUT_CAPTURE_DIR"] {
+                hostingView.cacheDisplay(in: hostingView.bounds, to: bitmap)
+                let url = URL(filePath: path).appending(path: "dashboard-en-dark.png")
+                try #require(bitmap.representation(using: .png, properties: [:])).write(to: url)
+            }
 
             // Tear down the view and container before suspended startup work resumes.
             hostingView.rootView = AnyView(EmptyView())

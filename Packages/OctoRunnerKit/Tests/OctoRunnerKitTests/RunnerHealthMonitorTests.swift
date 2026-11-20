@@ -141,6 +141,8 @@ struct RunnerHealthMonitorTests {
         runner.status = .faulted
         await monitor.refresh(in: container.mainContext)
         #expect(await client.events.map(\.kind) == [.runnerOffline, .runnerOnline, .runnerError])
+        await monitor.refresh(in: container.mainContext)
+        #expect(await client.events.count == 3)
         #expect(await client.permissionRequests == 0)
         let audit = try container.mainContext.fetch(FetchDescriptor<AuditLogEntity>())
         #expect(audit.filter { $0.category == .runnerLifecycle }.count == 3)
