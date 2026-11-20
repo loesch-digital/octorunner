@@ -14,6 +14,7 @@ public final class AppServices {
     public let historyRateBudget = WorkflowHistoryRateBudget()
     public let accounts = AccountSessionController()
     public let healthMonitor: RunnerHealthMonitor
+    public let remoteSyncMonitor = RunnerRemoteSyncMonitor()
     public let storageMaintenance: StorageMaintenanceController
     public let diskMonitor: DiskSpaceMonitor
     public let jobFailureMonitor: LocalJobFailureMonitor

@@ -52,7 +52,7 @@ public struct GitHubRegistrationTokenDTO: Codable, Sendable, Equatable {
 
 public enum GitHubProvisioningError: LocalizedError, Sendable {
     case missingAuthToken
-    case invalidScopeURL(String)
+    case invalidScopeURL
     case httpError(Int, String)
     case noArm64RunnerPackageFound
 
@@ -60,8 +60,8 @@ public enum GitHubProvisioningError: LocalizedError, Sendable {
         switch self {
         case .missingAuthToken:
             return "No active GitHub authentication token found in Keychain."
-        case .invalidScopeURL(let url):
-            return "Invalid GitHub scope URL: \(url)"
+        case .invalidScopeURL:
+            return "Invalid GitHub runner scope URL."
         case .httpError(let status, let detail):
             return "GitHub API returned HTTP \(status): \(detail)"
         case .noArm64RunnerPackageFound:
@@ -72,14 +72,18 @@ public enum GitHubProvisioningError: LocalizedError, Sendable {
 
 public actor GitHubRunnerProvisioningClient {
     private let keychain: KeychainVaultActor
-    private let urlSession: URLSession
+    private let transport: any GitHubActionsTransport
 
     public init(
         keychain: KeychainVaultActor = KeychainVaultActor(),
-        urlSession: URLSession = .shared
+        transport: any GitHubActionsTransport = GitHubActionsURLSessionTransport()
     ) {
         self.keychain = keychain
-        self.urlSession = urlSession
+        self.transport = transport
+    }
+
+    public init(keychain: KeychainVaultActor = KeychainVaultActor(), urlSession: URLSession) {
+        self.init(keychain: keychain, transport: GitHubActionsURLSessionTransport(session: urlSession))
     }
 
     public func readToken(for accountLogin: String) async throws -> String {
@@ -91,13 +95,13 @@ public actor GitHubRunnerProvisioningClient {
 
     public func fetchUserRepositories(token: String) async throws -> [GitHubRepositorySummaryDTO] {
         let url = URL(string: "https://api.github.com/user/repos?affiliation=owner,collaborator,organization_member&sort=updated&per_page=100")!
-        let data = try await performGET(url: url, token: token)
+        let data = try await sendRequest(url: url, token: token, method: "GET")
         return try JSONDecoder().decode([GitHubRepositorySummaryDTO].self, from: data)
     }
 
     public func fetchUserOrganizations(token: String) async throws -> [GitHubOrganizationSummaryDTO] {
         let url = URL(string: "https://api.github.com/user/orgs?per_page=100")!
-        let data = try await performGET(url: url, token: token)
+        let data = try await sendRequest(url: url, token: token, method: "GET")
         return try JSONDecoder().decode([GitHubOrganizationSummaryDTO].self, from: data)
     }
 
@@ -113,7 +117,7 @@ public actor GitHubRunnerProvisioningClient {
             endpointURL = URL(string: "https://api.github.com/orgs/\(owner)/actions/runners/downloads")!
         }
 
-        let data = try await performGET(url: endpointURL, token: token)
+        let data = try await sendRequest(url: endpointURL, token: token, method: "GET")
         let packages = try JSONDecoder().decode([GitHubRunnerDownloadDTO].self, from: data)
         guard let match = packages.first(where: { $0.os == "osx" && $0.architecture == "arm64" }) else {
             throw GitHubProvisioningError.noArm64RunnerPackageFound
@@ -133,21 +137,7 @@ public actor GitHubRunnerProvisioningClient {
             endpointURL = URL(string: "https://api.github.com/orgs/\(owner)/actions/runners/registration-token")!
         }
 
-        var request = URLRequest(url: endpointURL)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-        request.timeoutInterval = 15
-
-        let (data, response) = try await urlSession.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw GitHubProvisioningError.httpError(0, "Non-HTTP response")
-        }
-        guard (200..<300).contains(http.statusCode) else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw GitHubProvisioningError.httpError(http.statusCode, body)
-        }
+        let data = try await sendRequest(url: endpointURL, token: token, method: "POST")
         return try JSONDecoder().decode(GitHubRegistrationTokenDTO.self, from: data)
     }
 
@@ -165,47 +155,55 @@ public actor GitHubRunnerProvisioningClient {
             endpointURL = URL(string: "https://api.github.com/orgs/\(owner)/actions/runners/\(runnerId)/labels")!
         }
 
-        var request = URLRequest(url: endpointURL)
-        request.httpMethod = "PUT"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-        request.httpBody = try JSONSerialization.data(withJSONObject: ["labels": labels])
-
-        let (data, response) = try await urlSession.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw GitHubProvisioningError.httpError(status, body)
-        }
+        let body = try JSONSerialization.data(withJSONObject: ["labels": labels])
+        _ = try await sendRequest(url: endpointURL, token: token, method: "PUT", body: body)
         return labels
     }
 
-    public static func parseOwnerAndRepo(from scopeURL: URL) throws -> (owner: String, repo: String?) {
-        let parts = scopeURL.pathComponents.filter { $0 != "/" && !$0.isEmpty }
-        guard let owner = parts.first else {
-            throw GitHubProvisioningError.invalidScopeURL(scopeURL.absoluteString)
-        }
-        let repo = parts.count >= 2 ? parts[1] : nil
-        return (owner, repo)
+    public static func isValidScope(_ url: URL) -> Bool {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              components.scheme?.lowercased() == "https", components.host?.lowercased() == "github.com",
+              components.user == nil, components.password == nil, components.port == nil,
+              components.query == nil, components.fragment == nil else { return false }
+        let path = components.percentEncodedPath
+        guard path.hasPrefix("/") else { return false }
+        var segments = path.dropFirst().split(separator: "/", omittingEmptySubsequences: false)
+        if segments.last == "" { segments.removeLast() }
+        guard (1...2).contains(segments.count),
+              segments[0].wholeMatch(of: /[a-zA-Z0-9][a-zA-Z0-9-]*/) != nil else { return false }
+        return segments.count == 1 || (
+            segments[1] != "." && segments[1] != ".."
+                && segments[1].wholeMatch(of: /[a-zA-Z0-9_.-]+/) != nil
+        )
     }
 
-    private func performGET(url: URL, token: String) async throws -> Data {
-        var request = URLRequest(url: url)
+    public static func parseOwnerAndRepo(from scopeURL: URL) throws -> (owner: String, repo: String?) {
+        guard isValidScope(scopeURL) else { throw GitHubProvisioningError.invalidScopeURL }
+        let parts = scopeURL.pathComponents.filter { $0 != "/" && !$0.isEmpty }
+        return (parts[0], parts.count == 2 ? parts[1] : nil)
+    }
+
+    private func sendRequest(url: URL, token: String, method: String, body: Data? = nil) async throws -> Data {
+        try Task.checkCancellation()
+        guard !token.isEmpty, token.utf8.allSatisfy({ (33...126).contains($0) }) else {
+            throw GitHubProvisioningError.missingAuthToken
+        }
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
+        request.httpMethod = method
+        request.httpShouldHandleCookies = false
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-        request.timeoutInterval = 15
+        request.setValue("2026-03-10", forHTTPHeaderField: "X-GitHub-Api-Version")
+        if let body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = body
+        }
 
-        let (data, response) = try await urlSession.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw GitHubProvisioningError.httpError(0, "Non-HTTP response")
+        let response = try await transport.send(request)
+        try Task.checkCancellation()
+        guard (200..<300).contains(response.statusCode) else {
+            throw GitHubProvisioningError.httpError(response.statusCode, "Runner API request failed.")
         }
-        guard (200..<300).contains(http.statusCode) else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw GitHubProvisioningError.httpError(http.statusCode, body)
-        }
-        return data
+        return response.data
     }
 }

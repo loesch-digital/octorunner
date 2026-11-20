@@ -84,7 +84,7 @@ public actor RunnerProvisionerActor {
     ) async throws {
         guard configuration.mode == .direct || configuration.mode == .launchAgent,
               configuration.rootDirectory.deletingLastPathComponent().standardizedFileURL.path == baseRunnersDirectory.standardizedFileURL.path,
-              RunnerMigrationSource.isGitHubScope(scope) else {
+              LocalDotRunnerConfig.isGitHubScope(scope) else {
             throw RunnerMigrationError.recoveryRequired
         }
         let client = provisioningClient

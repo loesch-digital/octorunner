@@ -17,6 +17,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
         UNUserNotificationCenter.current().delegate = notificationPresenter
         services.startRecoveryMonitoring(container: modelContainer)
         services.healthMonitor.start(container: modelContainer)
+        services.remoteSyncMonitor.start(container: modelContainer)
         services.diskMonitor.start()
         services.storageMaintenance.start(container: modelContainer)
         services.jobFailureMonitor.start(container: modelContainer)
@@ -25,6 +26,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     public func applicationWillTerminate(_ notification: Notification) {
         services.stopRecoveryMonitoring()
         services.healthMonitor.stop()
+        services.remoteSyncMonitor.stop()
         services.diskMonitor.stop()
         services.storageMaintenance.stop()
         services.jobFailureMonitor.stop()

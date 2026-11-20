@@ -584,7 +584,7 @@ public struct MainShellView: View {
         into modelContext: ModelContext,
         excludingPaths: Set<String> = []
     ) -> Int {
-        let existingRunners = (try? modelContext.fetch(FetchDescriptor<RunnerEntity>())) ?? []
+        guard var existingRunners = try? modelContext.fetch(FetchDescriptor<RunnerEntity>()) else { return 0 }
         var importedOrUpdated = 0
 
         for item in discoveredList {
@@ -602,9 +602,21 @@ public struct MainShellView: View {
                 guard let root = runner.rootDirectoryPath else { return false }
                 return LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: URL(filePath: root)) == path
             }
+            func sameScope(_ runner: RunnerEntity) -> Bool {
+                let recorded = URL(string: runner.scopeUrlString)
+                let discovered = item.config.gitHubUrl
+                return recorded?.scheme?.lowercased() == discovered.scheme?.lowercased()
+                    && recorded?.host?.lowercased() == discovered.host?.lowercased()
+                    && recorded?.port == discovered.port
+                    && recorded?.path.lowercased() == discovered.path.lowercased()
+            }
+            if let pathMatch {
+                guard sameScope(pathMatch),
+                      pathMatch.githubRunnerId == nil || pathMatch.githubRunnerId == item.config.agentId else { continue }
+            }
             let legacyMatch = existingRunners.first { runner in
                 guard runner.executionMode != .direct, runner.executionMode != .launchAgent else { return false }
-                return runner.githubRunnerId == item.config.agentId || runner.name == item.config.agentName
+                return runner.githubRunnerId == item.config.agentId && sameScope(runner)
             }
             if let existing = pathMatch ?? legacyMatch {
                 existing.githubRunnerId = item.config.agentId
@@ -614,7 +626,6 @@ public struct MainShellView: View {
                 existing.workDirectoryPath = item.workDirectory.path(percentEncoded: false)
                 existing.rootDirectoryPath = item.rootDirectory.path(percentEncoded: false)
                 existing.runnerVersion = item.runnerVersion
-                existing.labels = item.labels
                 existing.pid = item.listenerPID
                 existing.status = item.localStatus
                 existing.lastHeartbeat = .now
@@ -633,6 +644,7 @@ public struct MainShellView: View {
                 )
                 entity.githubRunnerId = item.config.agentId
                 modelContext.insert(entity)
+                existingRunners.append(entity)
 
                 AuditLogRecorder.record(
                     in: modelContext,

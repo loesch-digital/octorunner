@@ -1,20 +1,27 @@
 import CoreModels
 import Foundation
+import GitHubAPI
 import SecurityKit
 
 public actor GitHubRunnerSyncActor {
     private let discoveryActor: LocalRunnerDiscoveryActor
     private let keychain: KeychainVaultActor
-    private let urlSession: URLSession
+    private let transport: any GitHubActionsTransport
 
     public init(
         discoveryActor: LocalRunnerDiscoveryActor = LocalRunnerDiscoveryActor(),
         keychain: KeychainVaultActor = KeychainVaultActor(),
-        urlSession: URLSession = .shared
+        transport: any GitHubActionsTransport = GitHubActionsURLSessionTransport()
     ) {
         self.discoveryActor = discoveryActor
         self.keychain = keychain
-        self.urlSession = urlSession
+        self.transport = transport
+    }
+
+    public init(discoveryActor: LocalRunnerDiscoveryActor = LocalRunnerDiscoveryActor(),
+                keychain: KeychainVaultActor = KeychainVaultActor(), urlSession: URLSession) {
+        self.init(discoveryActor: discoveryActor, keychain: keychain,
+                  transport: GitHubActionsURLSessionTransport(session: urlSession))
     }
 
     public func discoverAndReconcileRunners(
@@ -66,24 +73,69 @@ public actor GitHubRunnerSyncActor {
         for config: LocalDotRunnerConfig,
         token: String
     ) async throws -> GitHubRemoteRunnerDTO? {
-        guard let target = config.ownerAndRepo else { return nil }
-        let endpointURL: URL
-        if let repo = target.repo {
-            endpointURL = URL(string: "https://api.github.com/repos/\(target.owner)/\(repo)/actions/runners/\(config.agentId)")!
-        } else {
-            endpointURL = URL(string: "https://api.github.com/orgs/\(target.owner)/actions/runners/\(config.agentId)")!
+        guard case .found(let runner, _) = try await lookupRunner(for: config, token: token) else { return nil }
+        return runner
+    }
+
+    public func lookupRunner(
+        for config: LocalDotRunnerConfig,
+        token: String,
+        eTag: String? = nil,
+        now: Date? = nil
+    ) async throws -> RunnerLookupResult {
+        try Task.checkCancellation()
+        guard !token.isEmpty, token.utf8.allSatisfy({ (33...126).contains($0) }) else {
+            return .unauthorized
+        }
+        guard config.agentId > 0, LocalDotRunnerConfig.isGitHubScope(config.gitHubUrl),
+              let target = config.ownerAndRepo else { return .unavailable }
+        let scope = target.repo.map { "repos/\(target.owner)/\($0)" } ?? "orgs/\(target.owner)"
+        guard let url = URL(string: "https://api.github.com/\(scope)/actions/runners/\(config.agentId)") else {
+            return .unavailable
         }
 
-        var request = URLRequest(url: endpointURL)
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 12)
+        request.httpMethod = "GET"
+        request.httpShouldHandleCookies = false
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-        request.timeoutInterval = 12
+        request.setValue("2026-03-10", forHTTPHeaderField: "X-GitHub-Api-Version")
+        request.setValue(eTag, forHTTPHeaderField: "If-None-Match")
 
-        let (data, response) = try await urlSession.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            return nil
+        let response: GitHubActionsHTTPResponse
+        do {
+            response = try await transport.send(request)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            try Task.checkCancellation()
+            return .unavailable
         }
-        return try JSONDecoder().decode(GitHubRemoteRunnerDTO.self, from: data)
+        try Task.checkCancellation()
+        switch response.statusCode {
+        case 200:
+            guard let runner = try? JSONDecoder().decode(GitHubRemoteRunnerDTO.self, from: response.data),
+                  runner.id == config.agentId else { return .unavailable }
+            return .found(runner, eTag: response.headers["etag"])
+        case 304:
+            return eTag == nil ? .unavailable : .notModified
+        case 401:
+            return .unauthorized
+        case 403, 429:
+            let observedAt = now ?? .now
+            let rate = GitHubRateLimitSnapshot(headers: response.headers, observedAt: observedAt)
+            if let seconds = rate.retryAfterSeconds {
+                return .rateLimited(retryAt: observedAt.addingTimeInterval(seconds))
+            }
+            if rate.remaining == 0 || response.statusCode == 429 {
+                let validReset = rate.resetAt.flatMap { $0 > observedAt ? $0 : nil }
+                return .rateLimited(retryAt: validReset ?? observedAt.addingTimeInterval(60))
+            }
+            return .forbidden
+        case 404:
+            return .notFound
+        default:
+            return .unavailable
+        }
     }
 }

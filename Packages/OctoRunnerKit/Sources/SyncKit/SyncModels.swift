@@ -1,5 +1,6 @@
 import CoreModels
 import Foundation
+import GitHubAPI
 
 public struct LocalDotRunnerConfig: Codable, Sendable, Equatable {
     public let agentId: Int64
@@ -44,6 +45,10 @@ public struct LocalDotRunnerConfig: Codable, Sendable, Equatable {
             cleanData = rawData
         }
         return try JSONDecoder().decode(LocalDotRunnerConfig.self, from: cleanData)
+    }
+
+    public static func isGitHubScope(_ url: URL) -> Bool {
+        GitHubRunnerProvisioningClient.isValidScope(url)
     }
 
     public var inferredScopeType: RunnerScopeType {
@@ -123,4 +128,15 @@ public struct GitHubRemoteRunnerDTO: Codable, Sendable, Equatable {
     public var labelNames: [String] {
         labels.map(\.name)
     }
+}
+
+public enum RunnerLookupResult: Sendable, Equatable {
+    case found(GitHubRemoteRunnerDTO, eTag: String?)
+    case notModified
+    case unauthorized
+    case forbidden
+    /// GitHub can also hide inaccessible resources behind a 404.
+    case notFound
+    case rateLimited(retryAt: Date)
+    case unavailable
 }

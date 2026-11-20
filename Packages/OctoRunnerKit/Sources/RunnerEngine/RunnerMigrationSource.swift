@@ -57,7 +57,7 @@ struct RunnerMigrationSource: Equatable, Sendable {
               beforeRead.st_ctimespec.tv_nsec == afterRead.st_ctimespec.tv_nsec,
               let configuration = try? LocalDotRunnerConfig.decode(from: content),
               configuration.agentId > 0, !configuration.agentName.isEmpty,
-              isGitHubScope(configuration.gitHubUrl) else {
+              LocalDotRunnerConfig.isGitHubScope(configuration.gitHubUrl) else {
             throw RunnerMigrationError.unverifiedSource
         }
         guard configuration.ephemeral != true, configuration.disableUpdate != true else {
@@ -90,23 +90,6 @@ struct RunnerMigrationSource: Equatable, Sendable {
             throw RunnerMigrationError.unverifiedSource
         }
         return result
-    }
-
-    static func isGitHubScope(_ url: URL) -> Bool {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              components.scheme?.lowercased() == "https", components.host?.lowercased() == "github.com",
-              components.user == nil, components.password == nil, components.port == nil,
-              components.query == nil, components.fragment == nil else { return false }
-        let path = components.percentEncodedPath
-        guard path.hasPrefix("/") else { return false }
-        var segments = path.dropFirst().split(separator: "/", omittingEmptySubsequences: false)
-        if segments.last == "" { segments.removeLast() }
-        guard (1...2).contains(segments.count),
-              segments[0].wholeMatch(of: /[a-zA-Z0-9][a-zA-Z0-9-]*/) != nil else { return false }
-        return segments.count == 1 || (
-            segments[1] != "." && segments[1] != ".."
-                && segments[1].wholeMatch(of: /[a-zA-Z0-9_.-]+/) != nil
-        )
     }
 
     private struct FileIdentity: Equatable, Sendable {

@@ -36,10 +36,12 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Interfaces:** Typisierte Ergebnisse für found/notFound/unauthorized/forbidden/rateLimited/unavailable; Snapshot trägt Account-ID, Generation und Messzeit. Keine `try?`-Zusammenfassung aller Fehler zu nil.
 
-- [ ] Transport-/Decoding-Tests für `GitHubRunnerProvisioningAPI.swift` ergänzen: Repository-/Org-Endpoints, kurzlebiges Registrierungstoken, fehlende Rechte, Fehler ohne Response-Body-/Secret-Ausgabe. Die bisherige niedrige Coverage nicht durch reine DTO-Konstruktion kaschieren.
+- [x] Transport-/Decoding-Tests für `GitHubRunnerProvisioningAPI.swift` ergänzen: Repository-/Org-Endpoints, kurzlebiges Registrierungstoken, fehlende Rechte, Fehler ohne Response-Body-/Secret-Ausgabe. Die bisherige niedrige Coverage nicht durch reine DTO-Konstruktion kaschieren.
 - [ ] Rote URLProtocol-/Fake-Uhr-Tests für 200/304/401/403/404/429, Pagination, Retry-After, Abbruch und Kontowechsel schreiben.
 - [ ] Gemeinsamen bestehenden GitHub-Transport verwenden; aktuelle API-Version offiziell prüfen. Bedingte Requests, begrenzte Parallelität und Rate-Limit-Backoff; keine Endlosschleifen pro View.
 - [ ] Scheduler im App-Lebenszyklus starten/stoppen; GUI-Ende bedeutet ohne separaten Agenten Ende dieses Abgleichs. Grün, Commit und CI-Gates.
+
+**Umsetzungsstand:** Der Runner-Einzelabruf verwendet den gemeinsamen GitHub-Transport und API-Version 2026-03-10. ETag-Cache und Rate-Limit-Backoff sind kontogetrennt. Der App-Dienst startet und stoppt mit der GUI und verwirft Snapshots, wenn sich Auswahl oder Runner-Registrierung während der Anfrage ändern. Paginierte Scope- und Gruppenlisten, vollständige Konfliktanzeige und deren explizite Aktionen folgen in den nächsten Aufgaben.
 
 ### Task 2: Konflikte statt Überschreiben
 
