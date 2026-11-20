@@ -1,8 +1,8 @@
 # OctoRunner
 
-OctoRunner is a native macOS app for managing self-hosted GitHub Actions runners on Apple Silicon. Use it to register and import runners, see which workflows they are running, and investigate failures from the dashboard or menu bar.
+Run your GitHub Actions workflows on your own Apple Silicon Mac. OctoRunner gives you one place to set up runners, see which ones are available or busy, and find out why a build failed. Check availability from the menu bar or open a workflow to see its pull request, jobs, steps, and logs.
 
-[Download](https://github.com/loesch-digital/octorunner/releases/latest) · [Documentation](docs/README.md) · [Report an issue](https://github.com/loesch-digital/octorunner/issues) · [Apache 2.0 license](LICENSE)
+[Download](https://github.com/loesch-digital/octorunner/releases/latest) · [User guide](docs/user-guide.md) · [Report an issue](https://github.com/loesch-digital/octorunner/issues/new) · [Apache 2.0 license](LICENSE)
 
 [![CI](https://github.com/loesch-digital/octorunner/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/loesch-digital/octorunner/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/loesch-digital/octorunner?label=release&sort=semver)](https://github.com/loesch-digital/octorunner/releases/latest)
@@ -35,8 +35,6 @@ brew update
 brew upgrade --cask loesch-digital/tap/octorunner
 ```
 
-If you installed OctoRunner from `loesch-digital/octorunner`, follow the [one-time tap migration](https://github.com/loesch-digital/homebrew-tap#migrate-from-the-previous-tap).
-
 ### Signed download
 
 Download `OctoRunner-<version>-arm64.zip` from the latest GitHub release, extract it, and move **OctoRunner.app** to **Applications**. Open it from Finder. Published Mac builds are signed with Developer ID and notarized by Apple. [Latest release](https://github.com/loesch-digital/octorunner/releases/latest)
@@ -65,7 +63,18 @@ spctl --assess --type execute -vv /Applications/OctoRunner.app
 
 ### GitHub permissions
 
-Grant access to the repositories and organizations you plan to manage. For a fine-grained token, use **Actions: Read** for run history and job logs, with **Pull requests: Read** if you want related PR lookups. Repository runner management requires **Administration: Write**. For organization runner management, use the organization's **Self-hosted runners: Write** permission. Use the corresponding read permission for runner inventory and status. Organization policies and runner group access still apply. [GitHub runner permissions](https://docs.github.com/en/rest/actions/self-hosted-runners?apiVersion=2026-03-10) · [GitHub workflow run permissions](https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2026-03-10)
+If you sign in with a fine-grained personal access token, grant access to the repositories or organization you plan to use. Select the permissions for the features you need.
+
+| To use this feature | Scope | Token permission |
+| --- | --- | --- |
+| View workflow runs, jobs, and job logs | Repository | **Actions** · Read |
+| Look up pull requests related to workflow runs | Repository | **Pull requests** · Read |
+| View repository runner inventory and status | Repository | **Administration** · Read |
+| Register or remove repository runners | Repository | **Administration** · Write |
+| View organization runner inventory and status | Organization | **Self-hosted runners** · Read |
+| Register or remove organization runners | Organization | **Self-hosted runners** · Write |
+
+Your GitHub account needs the corresponding access. Organization policies and runner group access still apply. [GitHub runner permissions](https://docs.github.com/en/rest/actions/self-hosted-runners?apiVersion=2026-03-10) · [GitHub workflow run permissions](https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2026-03-10)
 
 ## What you can do
 
@@ -77,7 +86,7 @@ Grant access to the repositories and organizations you plan to manage. For a fin
 
 ## Screenshots
 
-These screens use example data.
+These screens use example data. OctoRunner follows the macOS appearance setting and supports Light and Dark Mode.
 
 | Runner setup | Host telemetry |
 | --- | --- |
@@ -93,12 +102,18 @@ xcodegen generate
 open OctoRunner.xcodeproj
 ```
 
-The Debug app uses the same local data and Keychain namespace as the release app. Quit the installed app first and use a separate macOS test account when testing with disposable runners. [Development and acceptance](docs/10-development-and-acceptance.md)
+The Debug app uses the same local data and Keychain namespace as the release app. Quit the installed app first and use a separate macOS test account when testing with disposable runners. [Development and acceptance](docs/10-development-and-acceptance.md) · [Architecture](docs/ARCHITECTURE.md) · [Interface design](docs/DESIGN.md)
 
 ```sh
 swift test --package-path Packages/OctoRunnerKit --no-parallel
 python3 -m unittest discover -s scripts/tests
 ```
+
+## Feedback and contributions
+
+Found a bug? [Open an issue](https://github.com/loesch-digital/octorunner/issues/new) with your OctoRunner and macOS versions, steps to reproduce it, and what you expected to happen. Remove credentials and private repository details from screenshots or logs before posting.
+
+Pull requests are welcome. Fork the repository, create a branch in your fork, and open a pull request against `main`. The repository owner reviews and merges changes after CI passes.
 
 ## License
 
