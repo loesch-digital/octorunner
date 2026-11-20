@@ -5,6 +5,7 @@ public enum RunnerRemotePresence: Sendable, Equatable {
     case reported(RunnerStatus)
     case differentRegistration
     case notFound
+    case missingFromScope
     case unauthorized
     case forbidden
     case rateLimited(retryAt: Date)
@@ -44,6 +45,7 @@ public enum RunnerReconciler {
                 hasLabelConflict: Set(localLabels.map { $0.lowercased() }) != Set(remote.labelNames.map { $0.lowercased() })
             )
         case .notFound: return observation(.notFound)
+        case .missingFromScope: return observation(.missingFromScope)
         case .unauthorized: return observation(.unauthorized)
         case .forbidden: return observation(.forbidden)
         case .rateLimited(let retryAt): return observation(.rateLimited(retryAt: retryAt))

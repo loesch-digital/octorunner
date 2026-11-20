@@ -23,6 +23,10 @@ public struct RunnerSyncSnapshot: Sendable {
 
 public actor RunnerSyncScheduler {
     private typealias Observation = (configuration: LocalDotRunnerConfig, runner: GitHubRemoteRunnerDTO, eTag: String)
+    public typealias Inventory = @Sendable (
+        URL, RunnerSyncAccount, @Sendable () async -> Bool
+    ) async throws -> RunnerScopeInventory
+    private let inventory: Inventory?
     private let lookup: @Sendable (LocalDotRunnerConfig, RunnerSyncAccount, String?, Date) async throws -> RunnerLookupResult
     private var currentAccount: RunnerSyncAccount?
     private var activeOperation: UUID?
@@ -30,8 +34,10 @@ public actor RunnerSyncScheduler {
     private var rateLimits: [UUID: Date] = [:]
 
     public init(
+        inventory: Inventory? = nil,
         lookup: @escaping @Sendable (LocalDotRunnerConfig, RunnerSyncAccount, String?, Date) async throws -> RunnerLookupResult
     ) {
+        self.inventory = inventory
         self.lookup = lookup
     }
 
@@ -62,6 +68,7 @@ public actor RunnerSyncScheduler {
         rateLimits = rateLimits.filter { $0.value > now }
         observations = observations.filter { runners[$0.key] == $0.value.configuration }
         var results: [UUID: RunnerLookupResult] = [:]
+        var missingByScope: [URL: [UUID]] = [:]
         for (id, configuration) in runners.sorted(by: { $0.key.uuidString < $1.key.uuidString }) {
             guard !Task.isCancelled, await isCurrent(), !Task.isCancelled, activeOperation == operation else { return nil }
             if let retryAt = rateLimits[account.id], now < retryAt {
@@ -87,13 +94,59 @@ public actor RunnerSyncScheduler {
                 results[id] = result
             case .notModified:
                 results[id] = observation.map { .found($0.runner, eTag: $0.eTag) } ?? .unavailable
-            case .notFound, .forbidden, .unauthorized:
+            case .notFound:
+                missingByScope[configuration.gitHubUrl, default: []].append(id)
+                observations[id] = nil
+                results[id] = result
+            case .missingFromScope, .forbidden, .unauthorized:
                 observations[id] = nil
                 results[id] = result
             case .rateLimited, .unavailable:
                 results[id] = result
             }
         }
+        if let inventory {
+            for (scope, missingIDs) in missingByScope.sorted(by: { $0.key.absoluteString < $1.key.absoluteString }) {
+                guard !Task.isCancelled, await isCurrent(), activeOperation == operation else { return nil }
+                let listing: RunnerScopeInventory
+                if let retryAt = rateLimits[account.id], now < retryAt {
+                    listing = .rateLimited(retryAt: retryAt)
+                } else {
+                    do {
+                        listing = try await inventory(scope, account) {
+                            guard !Task.isCancelled, await isCurrent() else { return false }
+                            return await self.isActive(operation)
+                        }
+                    } catch is CancellationError {
+                        return nil
+                    } catch {
+                        listing = .unavailable
+                    }
+                }
+                if let retryAt = listing.retryDeadline {
+                    rateLimits[account.id] = max(retryAt, rateLimits[account.id] ?? .distantPast)
+                }
+                guard !Task.isCancelled, await isCurrent(), activeOperation == operation else { return nil }
+                for id in missingIDs {
+                    guard let configuration = runners[id] else { continue }
+                    results[id] = Self.resolveMissing(configuration.agentId, in: listing)
+                }
+            }
+        }
         return RunnerSyncSnapshot(account: account, observedAt: now, configurations: runners, results: results)
+    }
+
+    private func isActive(_ operation: UUID) -> Bool { activeOperation == operation }
+
+    private static func resolveMissing(_ runnerID: Int64, in inventory: RunnerScopeInventory) -> RunnerLookupResult {
+        switch inventory {
+        case .available(let remote, let singlePage, _):
+            if let runner = remote.first(where: { $0.id == runnerID }) { return .found(runner, eTag: nil) }
+            return singlePage ? .missingFromScope : .notFound
+        case .unauthorized: return .unauthorized
+        case .forbidden: return .forbidden
+        case .rateLimited(let retryAt): return .rateLimited(retryAt: retryAt)
+        case .unavailable: return .notFound
+        }
     }
 }

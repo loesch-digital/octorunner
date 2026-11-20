@@ -22,7 +22,14 @@ public final class RunnerRemoteSyncMonitor {
     public convenience init() {
         let auth = GitHubRunnerProvisioningClient()
         let sync = GitHubRunnerSyncActor()
-        self.init(scheduler: RunnerSyncScheduler { configuration, account, eTag, _ in
+        self.init(scheduler: RunnerSyncScheduler(inventory: { scope, account, isCurrent in
+            do {
+                let token = try await auth.readToken(for: account.credentialKey)
+                return try await sync.inventory(for: scope, token: token, isCurrent: isCurrent)
+            } catch GitHubProvisioningError.missingAuthToken {
+                return .unauthorized
+            }
+        }) { configuration, account, eTag, _ in
             do {
                 let token = try await auth.readToken(for: account.credentialKey)
                 guard await GitHubAccountStore.selectionRevision == account.selectionRevision else {

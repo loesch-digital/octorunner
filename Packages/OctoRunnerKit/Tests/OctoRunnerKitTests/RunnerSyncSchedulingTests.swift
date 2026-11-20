@@ -89,6 +89,101 @@ struct RunnerSyncSchedulingTests {
         #expect(try await sync.lookupRunner(for: configuration(url), token: "fixture-token") == .unavailable)
     }
 
+    @Test("Scope inventory follows every page and separates an empty list from insufficient evidence", arguments: [
+        "complete", "duplicate", "changed-count", "denied", "empty", "organization", "exhausted", "continuation", "last-quota"
+    ])
+    func verifiesScopeInventory(_ scenario: String) async throws {
+        let sync = GitHubRunnerSyncActor(transport: RunnerSyncTestTransport { request in
+            let url = try #require(request.url)
+            let expectedPath = scenario == "organization" ? "/orgs/example/actions/runners" : "/repos/example/build/actions/runners"
+            #expect(url.path == expectedPath)
+            #expect(url.query()?.contains("per_page=100") == true)
+            #expect(request.value(forHTTPHeaderField: "If-None-Match") == nil)
+            let second = url.query()?.hasSuffix("page=2") == true
+            if scenario == "continuation" {
+                return .init(statusCode: 200, headers: ["Link": #"<https://api.github.com/other>; rel="next""#],
+                    data: Data(#"{"total_count":0,"runners":[]}"#.utf8))
+            }
+            if scenario == "last-quota" {
+                return .init(statusCode: 200, headers: ["X-RateLimit-Remaining": "0"],
+                    data: Data(#"{"total_count":0,"runners":[]}"#.utf8))
+            }
+            if scenario == "denied", second {
+                return .init(statusCode: 404, headers: [:], data: Data())
+            }
+            let ids = scenario == "empty" ? [] : second
+                ? [scenario == "duplicate" ? 100 : 101]
+                : Array(1...100)
+            if scenario == "exhausted" { #expect(!second) }
+            let total = scenario == "empty" ? 0 : scenario == "changed-count" && second ? 102 : 101
+            let runners = ids.map { id in
+                #"{"id":\#(id),"name":"same-name","os":"macOS","status":"offline","busy":false,"labels":[]}"#
+            }.joined(separator: ",")
+            let headers = scenario == "exhausted" ? ["X-RateLimit-Remaining": "0"] : [:]
+            return .init(statusCode: 200, headers: headers, data: Data(
+                #"{"total_count":\#(total),"runners":[\#(runners)]}"#.utf8))
+        })
+        let config = try scenario == "organization" ? configuration("https://github.com/example/") : configuration()
+        let result = try await sync.inventory(for: config.gitHubUrl, token: "fixture-token")
+        switch result {
+        case .available(let runners, let singlePage, let retryAt):
+            #expect(["complete", "empty", "organization", "continuation", "last-quota"].contains(scenario))
+            #expect(runners.map(\.id) == (["empty", "continuation", "last-quota"].contains(scenario) ? [] : Array(1...101)))
+            #expect(singlePage == ["empty", "last-quota"].contains(scenario))
+            #expect((retryAt != nil) == (scenario == "last-quota"))
+        case .rateLimited:
+            #expect(scenario == "exhausted")
+        default:
+            #expect(!["complete", "empty", "organization", "exhausted", "continuation", "last-quota"].contains(scenario))
+        }
+    }
+
+    @Test("One exact-scope listing runs after both missing lookups, while multiple pages cannot prove absence",
+          arguments: [true, false])
+    func reusesScopeListingForMissingRunners(_ singlePage: Bool) async throws {
+        let remote = try JSONDecoder().decode(GitHubRemoteRunnerDTO.self, from: Data(
+            #"{"id":21,"name":"local","os":"macOS","status":"online","busy":false,"labels":[]}"#.utf8))
+        let requests = RunnerInventoryRequests()
+        let scheduler = RunnerSyncScheduler(inventory: { _, _, _ in
+            await requests.record("list")
+            return .available([remote], singlePage: singlePage)
+        }) { _, _, _, _ in
+            await requests.record("runner")
+            return .notFound
+        }
+        let existing = try configuration()
+        let missing = LocalDotRunnerConfig(agentId: 90, agentName: existing.agentName, gitHubUrl: existing.gitHubUrl)
+        let existingRow = UUID()
+        let missingRow = UUID()
+        let account = RunnerSyncAccount(id: UUID(), credentialKey: "fixture", connectedAt: .distantPast)
+        let snapshot = await scheduler.refresh(account: account, runners: [existingRow: existing, missingRow: missing])
+
+        #expect(snapshot?.results[existingRow] == .found(remote, eTag: nil))
+        #expect(snapshot?.results[missingRow] == (singlePage ? .missingFromScope : .notFound))
+        #expect(await requests.sequence == ["runner", "runner", "list"])
+    }
+
+    @Test("A successful scope listing that exhausts quota prevents requests to the next scope")
+    func preservesQuotaFromSuccessfulInventory() async throws {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let retryAt = now.addingTimeInterval(120)
+        let requests = RunnerInventoryRequests()
+        let scheduler = RunnerSyncScheduler(inventory: { scope, _, _ in
+            await requests.record(scope.path())
+            return .available([], singlePage: true, retryAt: retryAt)
+        }) { _, _, _, _ in .notFound }
+        let firstRow = UUID()
+        let secondRow = UUID()
+        let configs = try [firstRow: configuration(), secondRow: configuration("https://github.com/example/test")]
+        let account = RunnerSyncAccount(id: UUID(), credentialKey: "fixture", connectedAt: .distantPast)
+
+        let snapshot = await scheduler.refresh(account: account, runners: configs, now: now)
+
+        #expect(snapshot?.results[firstRow] == .missingFromScope)
+        #expect(snapshot?.results[secondRow] == .rateLimited(retryAt: retryAt))
+        #expect(await requests.sequence == ["/example/build"])
+    }
+
     @Test("A conditional response reuses only the selected account’s verified snapshot")
     func validatesCacheScope() async throws {
         let fixture = try configuration()
@@ -264,6 +359,11 @@ private actor RunnerRateLimitRequests {
         count += 1
         return count == 1 ? .rateLimited(retryAt: date.addingTimeInterval(30)) : .forbidden
     }
+}
+
+private actor RunnerInventoryRequests {
+    private(set) var sequence: [String] = []
+    func record(_ request: String) { sequence.append(request) }
 }
 
 private actor RunnerLookupGate {

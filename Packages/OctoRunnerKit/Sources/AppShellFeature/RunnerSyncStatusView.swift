@@ -63,6 +63,8 @@ struct RunnerSyncStatusView: View {
             AppLocalization.string("GitHub registration differs", locale: locale)
         case .notFound:
             AppLocalization.string("GitHub cannot confirm this runner", locale: locale)
+        case .missingFromScope:
+            AppLocalization.string("Runner missing from the GitHub scope", locale: locale)
         case .unauthorized:
             AppLocalization.string("Reconnect GitHub to check this runner", locale: locale)
         case .forbidden:

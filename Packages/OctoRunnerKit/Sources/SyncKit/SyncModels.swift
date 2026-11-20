@@ -137,6 +137,24 @@ public enum RunnerLookupResult: Sendable, Equatable {
     case forbidden
     /// GitHub can also hide inaccessible resources behind a 404.
     case notFound
+    /// The runner ID did not appear in the complete single-page response for this scope.
+    case missingFromScope
     case rateLimited(retryAt: Date)
     case unavailable
+}
+
+public enum RunnerScopeInventory: Sendable, Equatable {
+    case available([GitHubRemoteRunnerDTO], singlePage: Bool, retryAt: Date? = nil)
+    case unauthorized
+    case forbidden
+    case rateLimited(retryAt: Date)
+    case unavailable
+
+    var retryDeadline: Date? {
+        switch self {
+        case .available(_, _, let retryAt): retryAt
+        case .rateLimited(let retryAt): retryAt
+        default: nil
+        }
+    }
 }
