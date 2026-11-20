@@ -7,6 +7,7 @@ import RunnerEngine
 import SwiftData
 import SwiftUI
 import Synchronization
+import SyncKit
 import Testing
 
 @MainActor
@@ -158,6 +159,38 @@ struct ResponsiveLayoutTests {
                     }
                 }
             }
+        }
+    }
+
+    @Test("Runner access and group controls fit narrow settings in both languages", arguments: ["de", "en"])
+    func runnerAccessFitsViewport(language: String) throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        Self.retainedContainers.append(container)
+        let scope = try #require(URL(string: "https://github.com/organization-with-a-long-name"))
+        let account = GitHubAccountEntity(githubUserId: 7, login: "fixture", scopes: [], keychainAccountKey: "github-user:7")
+        container.mainContext.insert(account)
+        container.mainContext.insert(RunnerEntity(name: "Fixture", scopeType: .organization, scopeUrl: scope,
+            workDirectory: URL(filePath: "/tmp/layout-fixture/_work")))
+        let configuration = LocalDotRunnerConfig(agentId: 21, agentName: "Fixture", gitHubUrl: scope)
+        let viewport = CGSize(width: 340, height: 520)
+
+        for appearance in [ColorScheme.light, .dark] {
+            let measurement = LayoutMeasurement()
+            let host = NSHostingView(rootView: FixedTestViewport(size: viewport, measurement: measurement) {
+                VStack(alignment: .leading) {
+                    RunnerAccessSettingsCard(account: account)
+                    RunnerGroupStatusView(configuration: configuration, groupID: 3,
+                        groupName: String(repeating: "Long runner group name ", count: 6), account: RunnerSyncAccount(account))
+                }
+            }.modelContainer(container).environment(\.locale, Locale(identifier: language)).preferredColorScheme(appearance))
+            host.appearance = NSAppearance(named: appearance == .dark ? .darkAqua : .aqua)
+            host.frame = CGRect(origin: .zero, size: viewport)
+            host.layoutSubtreeIfNeeded()
+            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            let measured = try #require(measurement.size.withLock { $0 })
+            #expect(measured.width <= viewport.width && measured.height <= viewport.height)
+            #expect(measured.width > 0 && measured.height > 0)
         }
     }
 }

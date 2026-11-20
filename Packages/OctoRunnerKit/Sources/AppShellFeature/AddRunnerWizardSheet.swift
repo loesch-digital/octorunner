@@ -20,6 +20,7 @@ public struct AddRunnerWizardSheet: View {
 
     public var body: some View {
         @Bindable var bindableVM = viewModel
+        let accountKey = accounts.first(where: { $0.isActive })?.keychainAccountKey
 
         VStack(alignment: .leading, spacing: 14) {
             headerSection
@@ -46,10 +47,13 @@ public struct AddRunnerWizardSheet: View {
         .padding(22)
         .frame(minWidth: 560, idealWidth: 680, minHeight: 420, idealHeight: 680)
         .background(OctoTheme.surfaceLowest)
-        .task {
-            let key = accounts.first(where: { $0.isActive })?.keychainAccountKey
-            await viewModel.loadGitHubTargets(forAccountKey: key)
+        .task(id: viewModel.targetAccount(forKey: accountKey)) {
+            await viewModel.loadGitHubTargets(forAccountKey: accountKey)
         }
+        .task(id: viewModel.organizationSelection(forAccountKey: accountKey)) {
+            await viewModel.loadRunnerGroups(forAccountKey: accountKey)
+        }
+        .interactiveDismissDisabled(viewModel.isProvisioning)
         .onDisappear { provisioningTask?.cancel() }
     }
 
@@ -188,11 +192,11 @@ public struct AddRunnerWizardSheet: View {
                     }
                     .frame(maxHeight: 115)
                     .background(OctoTheme.surfaceLowest, in: .rect(cornerRadius: 6))
-                } else {
-                    TextField(AppLocalization.string("Enter owner/repo (e.g. loesch-digital/itemflux-ios-app)", locale: locale), text: $vm.manualTargetInput)
-                        .textFieldStyle(.roundedBorder)
-                        .font(.system(size: 12, design: .monospaced))
                 }
+                TextField(AppLocalization.string("Repositories as owner/repo, separated by commas", locale: locale), text: $vm.manualTargetInput)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12, design: .monospaced))
+                    .accessibilityHint(Text("Creates a separate runner registration for each repository.", bundle: .module))
 
             case .organization:
                 if !vm.organizations.isEmpty {
@@ -206,6 +210,30 @@ public struct AddRunnerWizardSheet: View {
                 TextField(AppLocalization.string("Or enter organization slug (e.g. loesch-digital)", locale: locale), text: $vm.manualTargetInput)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 12, design: .monospaced))
+                Picker(selection: $vm.selectedRunnerGroupID) {
+                    Text("Default group", bundle: .module).tag(nil as Int64?)
+                    ForEach(vm.organizationGroups) { group in
+                        Text(group.name).tag(Optional(group.id))
+                    }
+                } label: {
+                    Text("GitHub runner group", bundle: .module)
+                }
+                .accessibilityHint(Text("Selects the organization group that controls repository access.", bundle: .module))
+                if let lookup = vm.groupLookup {
+                    switch lookup {
+                    case .available:
+                        EmptyView()
+                    case .forbidden:
+                        Text("The selected account cannot list this organization's runner groups.", bundle: .module)
+                            .foregroundStyle(OctoTheme.warningOrange)
+                    case .unauthorized:
+                        Text("Reconnect GitHub to load runner groups.", bundle: .module)
+                            .foregroundStyle(OctoTheme.warningOrange)
+                    case .rateLimited, .unavailable:
+                        Text("GitHub runner groups are currently unavailable.", bundle: .module)
+                            .foregroundStyle(OctoTheme.secondaryText)
+                    }
+                }
             }
         }
         .padding(12)
@@ -260,7 +288,7 @@ public struct AddRunnerWizardSheet: View {
 
             ScrollView(.horizontal) {
                 HStack(spacing: 6) {
-                    ForEach(vm.previewInstanceNames, id: \.self) { name in
+                    ForEach(vm.plannedNameExamples, id: \.self) { name in
                         Text(name)
                             .font(.system(size: 11, weight: .medium, design: .monospaced))
                             .foregroundStyle(OctoTheme.accentBlue)

@@ -5,17 +5,40 @@ import Observation
 import RunnerEngine
 import SecurityKit
 import SwiftData
+import SyncKit
 
 @MainActor
 @Observable
 public final class AddRunnerWizardViewModel {
-    public var selectedScope: RunnerScopeType = .repository
+    struct TargetAccount: Equatable {
+        let key: String
+        let revision: UUID
+    }
+
+    struct OrganizationSelection: Hashable {
+        let key: String
+        let revision: UUID?
+        let scope: URL
+    }
+
+    public var selectedScope: RunnerScopeType = .repository {
+        didSet {
+            if selectedScope != oldValue { manualTargetInput = "" }
+        }
+    }
     public var repositories: [GitHubRepositorySummaryDTO] = []
     public var organizations: [GitHubOrganizationSummaryDTO] = []
     public var selectedRepositoryFullName: String = ""
     public var selectedRepositoryFullNames: Set<String> = []
     public var selectedOrganizationLogin: String = ""
     public var manualTargetInput: String = ""
+    public var selectedRunnerGroupID: Int64?
+    public private(set) var organizationGroups: [GitHubRunnerGroupDTO] = []
+    private(set) var groupLookup: RunnerGroupInventory?
+    @ObservationIgnored private var groupSelection: OrganizationSelection?
+    @ObservationIgnored private var groupLoadID: UUID?
+    @ObservationIgnored private var targetAccount: TargetAccount?
+    @ObservationIgnored private var targetLoadID: UUID?
 
     public var instanceCount: Int = 2
     public var baseNamePrefix: String = {
@@ -56,17 +79,20 @@ public final class AddRunnerWizardViewModel {
     private let provisionerActor: any RunnerProvisioning
     private let vault: KeychainVaultActor
     private let supervisor: RunnerSupervisorActor
+    private let runnerSync: GitHubRunnerSyncActor
 
     public init(
         provisioningClient: any RunnerTargetLoading = GitHubRunnerProvisioningClient(),
         provisionerActor: any RunnerProvisioning = RunnerProvisionerActor(),
         vault: KeychainVaultActor = KeychainVaultActor(),
-        supervisor: RunnerSupervisorActor = RunnerSupervisorActor()
+        supervisor: RunnerSupervisorActor = RunnerSupervisorActor(),
+        runnerSync: GitHubRunnerSyncActor = GitHubRunnerSyncActor()
     ) {
         self.provisioningClient = provisioningClient
         self.provisionerActor = provisionerActor
         self.vault = vault
         self.supervisor = supervisor
+        self.runnerSync = runnerSync
     }
 
     public var previewInstanceNames: [String] {
@@ -83,6 +109,20 @@ public final class AddRunnerWizardViewModel {
 
     public var plannedRunnerCount: Int {
         resolvedTargetSummaries.count * previewInstanceNames.count
+    }
+
+    var plannedNameExamples: [String] {
+        let targets = resolvedTargetSummaries
+        let names = previewInstanceNames
+        guard targets.count > 1 else { return names }
+        return targets.prefix(2).flatMap { target in
+            Self.instanceNames(names, owner: target.owner, repository: target.repo).prefix(3)
+        }
+    }
+
+    private static func instanceNames(_ names: [String], owner: String, repository: String?) -> [String] {
+        guard let repository else { return names }
+        return names.map { "\($0)-\(owner)_\(repository)" }
     }
 
     public var scopeExplanationText: String {
@@ -136,18 +176,42 @@ public final class AddRunnerWizardViewModel {
         customLabelInput = ""
     }
 
+    func targetAccount(forKey key: String?) -> TargetAccount? {
+        guard let key, !key.isEmpty else { return nil }
+        return TargetAccount(key: key, revision: GitHubAccountStore.selectionRevision)
+    }
+
     public func loadGitHubTargets(forAccountKey key: String?) async {
-        guard let key, !key.isEmpty else { return }
+        guard !Task.isCancelled else { return }
+        let requestID = UUID()
+        targetLoadID = requestID
+        let account = targetAccount(forKey: key)
+        if let previous = targetAccount, previous != account {
+            repositories = []
+            organizations = []
+            selectedRepositoryFullName = ""
+            selectedRepositoryFullNames = []
+            selectedOrganizationLogin = ""
+            manualTargetInput = ""
+            selectedRunnerGroupID = nil
+        }
+        targetAccount = account
+        isLoadingTargets = false
+        guard let account else { return }
         isLoadingTargets = true
-        defer { isLoadingTargets = false }
+        defer {
+            if targetLoadID == requestID { isLoadingTargets = false }
+        }
 
         do {
-            let token = try await provisioningClient.readToken(for: key)
+            let token = try await provisioningClient.readToken(for: account.key)
+            guard isCurrentTargetLoad(requestID, account: account) else { return }
             async let reposTask = provisioningClient.fetchUserRepositories(token: token)
             async let orgsTask = provisioningClient.fetchUserOrganizations(token: token)
 
             let fetchedRepos = (try? await reposTask) ?? []
             let fetchedOrgs = (try? await orgsTask) ?? []
+            guard isCurrentTargetLoad(requestID, account: account) else { return }
             self.repositories = fetchedRepos
             self.organizations = fetchedOrgs
 
@@ -161,43 +225,80 @@ public final class AddRunnerWizardViewModel {
                 selectedOrganizationLogin = firstOrg.login
             }
         } catch {
+            guard isCurrentTargetLoad(requestID, account: account) else { return }
             self.errorMessage = .failure(error)
         }
     }
 
+    private func isCurrentTargetLoad(_ requestID: UUID, account: TargetAccount) -> Bool {
+        !Task.isCancelled && targetLoadID == requestID && GitHubAccountStore.selectionRevision == account.revision
+    }
+
+    func organizationSelection(forAccountKey key: String?) -> OrganizationSelection? {
+        guard selectedScope == .organization, let key, !key.isEmpty, let scope = resolvedTargetSummary?.scopeURL else {
+            return nil
+        }
+        return OrganizationSelection(key: key, revision: GitHubAccountStore.selectionRevision, scope: scope)
+    }
+
+    public func loadRunnerGroups(forAccountKey key: String?) async {
+        guard !Task.isCancelled else { return }
+        let requestID = UUID()
+        groupLoadID = requestID
+        let selection = organizationSelection(forAccountKey: key)
+        if groupSelection != selection { selectedRunnerGroupID = nil }
+        groupSelection = nil
+        organizationGroups = []
+        groupLookup = nil
+        guard let selection else { return }
+        do {
+            let token = try await provisioningClient.readToken(for: selection.key)
+            guard !Task.isCancelled, groupLoadID == requestID, organizationSelection(forAccountKey: key) == selection else { return }
+            let result = try await runnerSync.groupInventory(for: selection.scope, token: token) {
+                await self.isCurrentGroupLoad(requestID, selection: selection)
+            }
+            guard !Task.isCancelled, groupLoadID == requestID, organizationSelection(forAccountKey: key) == selection else { return }
+            groupLookup = result
+            if case .available(let groups, _, _) = result {
+                groupSelection = selection
+                organizationGroups = groups.filter { !$0.inherited && !$0.isDefault }
+            }
+        } catch {
+            guard !Task.isCancelled, groupLoadID == requestID, organizationSelection(forAccountKey: key) == selection else { return }
+            groupLookup = .unavailable
+        }
+    }
+
+    private func isCurrentGroupLoad(_ id: UUID, selection: OrganizationSelection) -> Bool {
+        groupLoadID == id && organizationSelection(forAccountKey: selection.key) == selection
+    }
+
     public var resolvedTargetSummaries: [(owner: String, repo: String?, scopeURL: URL)] {
+        let manual = manualTargetInput.trimmingCharacters(in: .whitespacesAndNewlines)
         switch selectedScope {
         case .repository:
-            let candidate = !selectedRepositoryFullName.isEmpty
-                ? selectedRepositoryFullName
-                : manualTargetInput.trimmingCharacters(in: .whitespacesAndNewlines)
+            let candidate = manual.isEmpty ? selectedRepositoryFullName : manual
             guard let parsed = Self.parseRepoTarget(candidate) else { return [] }
             return [parsed]
 
         case .personalMultiRepo:
             var targets: [(owner: String, repo: String?, scopeURL: URL)] = []
-            for fullName in selectedRepositoryFullNames.sorted() {
-                if let parsed = Self.parseRepoTarget(fullName) {
-                    targets.append(parsed)
-                }
-            }
-            if targets.isEmpty {
-                let manual = manualTargetInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                if let parsed = Self.parseRepoTarget(manual) {
+            var seen: Set<String> = []
+            let candidates = selectedRepositoryFullNames.sorted() + manualRepositoryEntries
+            for fullName in candidates {
+                if let parsed = Self.parseRepoTarget(fullName), seen.insert(parsed.scopeURL.absoluteString.lowercased()).inserted {
                     targets.append(parsed)
                 }
             }
             return targets
 
         case .organization:
-            let org = !selectedOrganizationLogin.isEmpty
-                ? selectedOrganizationLogin
-                : manualTargetInput.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !org.isEmpty,
-                  let url = URL(string: "https://github.com/\(org)") else {
+            let org = manual.isEmpty ? selectedOrganizationLogin : manual
+            guard let url = URL(string: "https://github.com/\(org)"),
+                  let target = try? GitHubRunnerProvisioningClient.parseOwnerAndRepo(from: url), target.repo == nil else {
                 return []
             }
-            return [(owner: org, repo: nil, scopeURL: url)]
+            return [(owner: target.owner, repo: nil, scopeURL: url)]
         }
     }
 
@@ -205,13 +306,20 @@ public final class AddRunnerWizardViewModel {
         resolvedTargetSummaries.first
     }
 
+    private var manualRepositoryEntries: [String] {
+        manualTargetInput.components(separatedBy: CharacterSet.newlines.union(CharacterSet(charactersIn: ",")))
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
     private static func parseRepoTarget(_ fullName: String) -> (owner: String, repo: String?, scopeURL: URL)? {
-        let parts = fullName.split(separator: "/").map(String.init)
-        guard parts.count == 2,
-              let url = URL(string: "https://github.com/\(parts[0])/\(parts[1])") else {
+        let trimmed = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: "https://github.com/\(trimmed)"),
+              let target = try? GitHubRunnerProvisioningClient.parseOwnerAndRepo(from: url), let repository = target.repo,
+              let canonicalURL = URL(string: "https://github.com/\(target.owner)/\(repository)") else {
             return nil
         }
-        return (owner: parts[0], repo: parts[1], scopeURL: url)
+        return (owner: target.owner, repo: repository, scopeURL: canonicalURL)
     }
 
     public func provisionAndPersistRunners(
@@ -226,6 +334,11 @@ public final class AddRunnerWizardViewModel {
             errorMessage = .key("Please sign in with GitHub before provisioning a runner.")
             return false
         }
+        if selectedScope == .personalMultiRepo,
+           let invalidTarget = manualRepositoryEntries.first(where: { Self.parseRepoTarget($0) == nil }) {
+            errorMessage = .key("Enter repositories as owner/repo. Invalid entry: \(invalidTarget).")
+            return false
+        }
         let targets = resolvedTargetSummaries
         guard !targets.isEmpty else {
             errorMessage = .key("Please select at least one GitHub Repository or Organization.")
@@ -233,7 +346,19 @@ public final class AddRunnerWizardViewModel {
         }
         // Freeze form input before credential loading suspends this actor.
         let names = previewInstanceNames
-        let scope = selectedScope
+        let scope: RunnerScopeType = selectedScope == .organization ? .organization : .repository
+        let group: GitHubRunnerGroupDTO?
+        if scope == .organization, let selectedRunnerGroupID {
+            guard groupSelection == organizationSelection(forAccountKey: key),
+                  let matched = organizationGroups.first(where: { $0.id == selectedRunnerGroupID }) else {
+                errorMessage = .key("The GitHub runner group is no longer available. Check the organization and select a group again.")
+                return false
+            }
+            group = matched
+        } else {
+            group = nil
+        }
+        let accountRevision = GitHubAccountStore.selectionRevision
         let labels = selectedLabels
         let launchAgent = registerLaunchAgent
 
@@ -247,31 +372,51 @@ public final class AddRunnerWizardViewModel {
             let token = try await provisioningClient.readToken(for: key)
             try Task.checkCancellation()
             var directRunners: [ManagedRunnerConfiguration] = []
+            var failedTargets: [String] = []
+            var startFailures: [String] = []
+            var serviceInstallFailures: [String] = []
+            var savedCount = 0
+            let verifyAccountSelection: @MainActor @Sendable () throws -> Void = {
+                try Task.checkCancellation()
+                guard GitHubAccountStore.selectionRevision == accountRevision else { throw CancellationError() }
+            }
 
             for target in targets {
                 try Task.checkCancellation()
-                let suffix = targets.count > 1 && target.repo != nil ? "-\(target.repo!)" : ""
-                let namesForTarget = names.map { "\($0)\(suffix)" }
+                guard GitHubAccountStore.selectionRevision == accountRevision else { break }
+                let namesForTarget = targets.count > 1
+                    ? Self.instanceNames(names, owner: target.owner, repository: target.repo) : names
 
-                let provisionedList = try await provisionerActor.provisionRunners(
-                    instanceNames: namesForTarget,
-                    scopeType: scope,
-                    scopeURL: target.scopeURL,
-                    labels: labels,
-                    registerLaunchAgent: launchAgent,
-                    accessToken: token,
-                    configuration: configuration
-                ) { [weak self] message in
-                    guard !Task.isCancelled else { return }
-                    self?.provisioningProgressMessage = message
+                let provisionedList: [ProvisionedRunnerSummary]
+                do {
+                    provisionedList = try await provisionerActor.provisionRunners(
+                        instanceNames: namesForTarget, scopeType: scope, scopeURL: target.scopeURL, labels: labels,
+                        registerLaunchAgent: launchAgent, accessToken: token, configuration: configuration, runnerGroup: group,
+                        verifyAccountSelection: verifyAccountSelection
+                    ) { [weak self] message in
+                        guard !Task.isCancelled else { return }
+                        self?.provisioningProgressMessage = message
+                    }
+                } catch is CancellationError {
+                    try Task.checkCancellation()
+                    break
+                } catch RunnerMigrationError.groupChanged {
+                    errorMessage = .key("The GitHub runner group is no longer available. Check the organization and select a group again.")
+                    return false
+                } catch {
+                    guard targets.count > 1 else { throw error }
+                    failedTargets.append(target.scopeURL.path().trimmingCharacters(in: CharacterSet(charactersIn: "/")))
+                    continue
                 }
 
                 try Task.checkCancellation()
+                if provisionedList.count < namesForTarget.count {
+                    failedTargets.append(target.scopeURL.path().trimmingCharacters(in: CharacterSet(charactersIn: "/")))
+                }
                 try modelContext.transaction {
                     for summary in provisionedList {
                         let id = UUID()
-                        let mode: RunnerExecutionMode? = launchAgent
-                            ? summary.launchdLabel.map { _ in .launchAgent } : .direct
+                        let mode: RunnerExecutionMode = summary.launchdLabel == nil ? .direct : .launchAgent
                         let entity = RunnerEntity(
                             id: id,
                             name: summary.name,
@@ -286,6 +431,8 @@ public final class AddRunnerWizardViewModel {
                             executionMode: mode
                         )
                         entity.githubRunnerId = summary.remoteID
+                        entity.githubRunnerGroupID = summary.remoteGroupID
+                        entity.githubRunnerGroupName = summary.remoteGroupName
                         if let label = summary.launchdLabel {
                             entity.serviceLabel = label
                         }
@@ -298,14 +445,30 @@ public final class AddRunnerWizardViewModel {
                             targetRunnerName: summary.name,
                             newValue: summary.labels.joined(separator: ",")
                         ))
-                        if mode == .direct {
+                        if launchAgent && (summary.launchAgentFailed || summary.launchdLabel == nil) {
+                            if mode == .direct {
+                                serviceInstallFailures.append(summary.name)
+                            } else {
+                                startFailures.append(summary.name)
+                            }
+                            modelContext.insert(AuditLogEntity(
+                                category: .runnerLifecycle, severity: .warning, title: "Runner Start Failed",
+                                summary: "Could not start \(summary.name) (\(id.uuidString)).",
+                                actorAccountLogin: login, targetRunnerName: summary.name
+                            ))
+                        } else if mode == .direct {
                             directRunners.append(.init(runnerID: id, name: summary.name, rootDirectory: summary.rootDirectory,
                                 mode: .direct, launch: configuration))
                         }
                     }
                 }
+                savedCount += provisionedList.count
             }
-            var startFailures: [String] = []
+            provisioningCompleted = savedCount > 0
+            guard GitHubAccountStore.selectionRevision == accountRevision else {
+                errorMessage = .key("GitHub account changed during setup. Saved registrations: \(savedCount).")
+                return provisioningCompleted
+            }
             for runner in directRunners {
                 try Task.checkCancellation()
                 do {
@@ -327,11 +490,14 @@ public final class AddRunnerWizardViewModel {
                     )
                 }
             }
-            provisioningCompleted = true
-            if !startFailures.isEmpty {
+            if !failedTargets.isEmpty {
+                errorMessage = .key("Runner setup incomplete for \(failedTargets.joined(separator: ", ")). Saved registrations: \(savedCount).")
+            } else if !serviceInstallFailures.isEmpty {
+                errorMessage = .key("The background service could not be installed for \(serviceInstallFailures.joined(separator: ", ")). Start these runners manually from Runner Settings.")
+            } else if !startFailures.isEmpty {
                 errorMessage = .key("Registered but could not start: \(startFailures.joined(separator: ", ")). Open Runner Settings to retry.")
             }
-            return true
+            return provisioningCompleted
         } catch is CancellationError {
             return false
         } catch {

@@ -137,9 +137,9 @@ public final class LocalJobFailureMonitor {
         guard accounts.count == 1, let account = accounts.first,
               account.githubUserId > 0, !account.keychainAccountKey.isEmpty else { return nil }
         let runners = try context.fetch(FetchDescriptor<RunnerEntity>())
-        guard runners.contains(where: { ($0.githubRunnerId ?? 0) > 0 && $0.scopeType != .personalMultiRepo }) else { return nil }
+        guard runners.contains(where: { ($0.githubRunnerId ?? 0) > 0 }) else { return nil }
         let managed = runners.compactMap { runner -> String? in
-            guard runner.scopeType == .repository else { return nil }
+            guard runner.scopeType != .organization else { return nil }
             return GitHubRepositorySlug(input: runner.scopeUrlString)?.rawValue
         }
         let added = preferences.historyPreferences.validated().additionalRepositoriesByAccount[String(account.githubUserId)] ?? []
@@ -152,7 +152,8 @@ public final class LocalJobFailureMonitor {
     private func matches(_ runner: RunnerEntity, entry: WorkflowHistoryEntry) -> Bool {
         guard let id = runner.githubRunnerId, id > 0, entry.runnerID == id else { return false }
         switch runner.scopeType {
-        case .repository: return GitHubRepositorySlug(input: runner.scopeUrlString)?.rawValue == entry.repository
+        case .repository, .personalMultiRepo:
+            return GitHubRepositorySlug(input: runner.scopeUrlString)?.rawValue == entry.repository
         case .organization:
             guard let url = URLComponents(string: runner.scopeUrlString), url.scheme == "https", url.host?.lowercased() == "github.com",
                   url.port == nil || url.port == 443, url.user == nil, url.password == nil, url.query == nil, url.fragment == nil,
@@ -161,7 +162,6 @@ public final class LocalJobFailureMonitor {
             guard parts.count == 1, let owner = parts.first,
                   url.percentEncodedPath == "/\(owner)" || url.percentEncodedPath == "/\(owner)/" else { return false }
             return owner.lowercased() == entry.repository.split(separator: "/").first?.lowercased()
-        case .personalMultiRepo: return false // Requires the consistent identity model from Step 6.
         }
     }
 }

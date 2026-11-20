@@ -229,6 +229,13 @@ public struct RunnerConfigDetailSheet: View {
                 RunnerSyncStatusView(observation: observation, showsDetails: true)
             }
 
+            if let configuration = LocalDotRunnerConfig(runner), configuration.inferredScopeType == .organization,
+               let groupID = runner.githubRunnerGroupID {
+                RunnerGroupStatusView(configuration: configuration, groupID: groupID, groupName: runner.githubRunnerGroupName,
+                    account: accounts.first(where: { $0.isActive }).map(RunnerSyncAccount.init))
+                    .id("\(configuration.gitHubUrl.absoluteString)/\(configuration.agentId)/\(groupID)")
+            }
+
             if let supervisor, runner.executionMode == .direct,
                let root = runner.rootDirectoryPath, root.hasPrefix("/") {
                 Divider()
@@ -530,7 +537,8 @@ public struct RunnerConfigDetailSheet: View {
                     guard try RunnerMigrationCompletion.apply(
                         runnerID: request.runnerID, expectedSourcePath: review.originalPath, managedRoot: review.plan.destination,
                         context: context, actorLogin: review.accountLogin, launchAgentInstalled: request.launchAgent,
-                        oldRemoteID: request.remoteRunnerID, newRemoteID: registration.remoteID, installedVersion: registration.version
+                        oldRemoteID: request.remoteRunnerID, newRemoteID: registration.remoteID,
+                        installedVersion: registration.version, verifiedGroup: registration.verifiedGroup
                     ) != nil else { throw RunnerMigrationError.runnerIdentityMismatch }
                 }
             try Task.checkCancellation()
@@ -606,7 +614,8 @@ public struct RunnerConfigDetailSheet: View {
                         guard try RunnerMigrationCompletion.apply(
                             runnerID: entry.runnerID, expectedSourcePath: entry.source.path, managedRoot: entry.destination,
                             context: context, actorLogin: accountLogin, launchAgentInstalled: background,
-                            oldRemoteID: entry.oldRemoteID, newRemoteID: registration.remoteID, installedVersion: registration.version
+                            oldRemoteID: entry.oldRemoteID, newRemoteID: registration.remoteID,
+                            installedVersion: registration.version, verifiedGroup: registration.verifiedGroup
                         ) != nil else { throw RunnerMigrationError.runnerIdentityMismatch }
                     }
                 } else {

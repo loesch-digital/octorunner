@@ -64,7 +64,8 @@ public struct LocalJobResults: Sendable {
     private static func matches(_ runner: RunnerEntity, entry: WorkflowHistoryEntry) -> Bool {
         guard let id = runner.githubRunnerId, id > 0, entry.runnerID == id else { return false }
         switch runner.scopeType {
-        case .repository: return GitHubRepositorySlug(input: runner.scopeUrlString)?.rawValue == entry.repository.lowercased()
+        case .repository, .personalMultiRepo:
+            return GitHubRepositorySlug(input: runner.scopeUrlString)?.rawValue == entry.repository.lowercased()
         case .organization:
             guard let url = URLComponents(string: runner.scopeUrlString), url.scheme == "https", url.host?.lowercased() == "github.com",
                   url.port == nil || url.port == 443, url.user == nil, url.password == nil, url.query == nil, url.fragment == nil,
@@ -73,7 +74,6 @@ public struct LocalJobResults: Sendable {
             guard parts.count == 1, let owner = parts.first,
                   url.percentEncodedPath == "/\(owner)" || url.percentEncodedPath == "/\(owner)/" else { return false }
             return owner.lowercased() == entry.repository.split(separator: "/").first?.lowercased()
-        case .personalMultiRepo: return false
         }
     }
 }

@@ -1,6 +1,584 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Local runner group: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local runner group: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokal gespeicherte Runner-Gruppe: %@"
+          }
+        }
+      }
+    },
+    "Check GitHub Group": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check GitHub Group"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Gruppe prüfen"
+          }
+        }
+      }
+    },
+    "Verifies this runner's membership in the configured group.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifies this runner's membership in the configured group."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüft die Mitgliedschaft dieses Runners in der eingerichteten Gruppe."
+          }
+        }
+      }
+    },
+    "Checking GitHub group…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking GitHub group…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Gruppe wird geprüft …"
+          }
+        }
+      }
+    },
+    "GitHub confirms membership in this group.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub confirms membership in this group."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub bestätigt die Mitgliedschaft in dieser Gruppe."
+          }
+        }
+      }
+    },
+    "The runner is missing from the configured GitHub group.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The runner is missing from the configured GitHub group."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Runner fehlt in der eingerichteten GitHub-Gruppe."
+          }
+        }
+      }
+    },
+    "GitHub could not verify group membership.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub could not verify group membership."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub konnte die Gruppenmitgliedschaft nicht bestätigen."
+          }
+        }
+      }
+    },
+    "Runner access": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner access"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Zugriff"
+          }
+        }
+      }
+    },
+    "Check access to GitHub repositories and organizations configured on this Mac.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check access to GitHub repositories and organizations configured on this Mac."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüfe den Zugriff auf GitHub-Repositories und Organisationen, die auf diesem Mac eingerichtet sind."
+          }
+        }
+      }
+    },
+    "Check Runner Permissions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check Runner Permissions"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Berechtigungen abgleichen"
+          }
+        }
+      }
+    },
+    "Reads runner and group access using the selected GitHub account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads runner and group access using the selected GitHub account."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüft den Zugriff auf Runner und Gruppen mit dem ausgewählten GitHub-Konto."
+          }
+        }
+      }
+    },
+    "Checking GitHub runner access…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking GitHub runner access…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Runner-Zugriff wird geprüft …"
+          }
+        }
+      }
+    },
+    "Reconnect GitHub to check runner access.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnect GitHub to check runner access."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinde GitHub erneut, um den Runner-Zugriff zu prüfen."
+          }
+        }
+      }
+    },
+    "Add or import a runner to check access to its GitHub target.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add or import a runner to check access to its GitHub target."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege einen Runner an oder importiere ihn, um den Zugriff auf sein GitHub-Ziel zu prüfen."
+          }
+        }
+      }
+    },
+    "Last checked %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last checked %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuletzt abgeglichen %@"
+          }
+        }
+      }
+    },
+    "Registered runners on GitHub: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registered runners on GitHub: %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bei GitHub registrierte Runner: %lld"
+          }
+        }
+      }
+    },
+    "Runner groups reported by GitHub: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner groups reported by GitHub: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bei GitHub gemeldete Runner-Gruppen: %@"
+          }
+        }
+      }
+    },
+    "GitHub denied access to this list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub denied access to this list."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub hat den Zugriff auf diese Liste verweigert."
+          }
+        }
+      }
+    },
+    "GitHub rate limit reached. Try again later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub rate limit reached. Try again later."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Limit erreicht. Versuche es später erneut."
+          }
+        }
+      }
+    },
+    "GitHub could not verify access to this list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub could not verify access to this list."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub konnte den Zugriff auf diese Liste nicht bestätigen."
+          }
+        }
+      }
+    },
+    "The GitHub runner group is no longer available. Check the organization and select a group again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The GitHub runner group is no longer available. Check the organization and select a group again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die GitHub-Runner-Gruppe ist nicht mehr verfügbar. Prüfe die Organisation und wähle die Gruppe erneut aus."
+          }
+        }
+      }
+    },
+    "Default group": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default group"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standardgruppe"
+          }
+        }
+      }
+    },
+    "GitHub runner group": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub runner group"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Runner-Gruppe"
+          }
+        }
+      }
+    },
+    "Selects the organization group that controls repository access.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selects the organization group that controls repository access."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wählt die Organisationsgruppe aus, die den Repository-Zugriff steuert."
+          }
+        }
+      }
+    },
+    "The selected account cannot list this organization's runner groups.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The selected account cannot list this organization's runner groups."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das ausgewählte Konto kann die Runner-Gruppen dieser Organisation nicht abrufen."
+          }
+        }
+      }
+    },
+    "Reconnect GitHub to load runner groups.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnect GitHub to load runner groups."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinde GitHub erneut, um Runner-Gruppen zu laden."
+          }
+        }
+      }
+    },
+    "GitHub runner groups are currently unavailable.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub runner groups are currently unavailable."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Runner-Gruppen sind derzeit nicht verfügbar."
+          }
+        }
+      }
+    },
+    "Enter repositories as owner/repo. Invalid entry: %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter repositories as owner/repo. Invalid entry: %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib Repositories als owner/repo an. Ungültiger Eintrag: %@."
+          }
+        }
+      }
+    },
+    "GitHub account changed during setup. Saved registrations: %lld.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub account changed during setup. Saved registrations: %lld."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das GitHub-Konto wurde während der Einrichtung gewechselt. Gespeicherte Registrierungen: %lld."
+          }
+        }
+      }
+    },
+    "The background service could not be installed for %@. Start these runners manually from Runner Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The background service could not be installed for %@. Start these runners manually from Runner Settings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für %@ konnte kein Hintergrunddienst eingerichtet werden. Starte diese Runner manuell in den Runner-Einstellungen."
+          }
+        }
+      }
+    },
+    "Verified runners from this Mac: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verified runners from this Mac: %lld"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bestätigte Runner von diesem Mac: %lld"
+          }
+        }
+      }
+    },
+    "Runner setup incomplete for %@. Saved registrations: %lld.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner setup incomplete for %@. Saved registrations: %lld."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Einrichtung für %@ unvollständig. Gespeicherte Registrierungen: %lld."
+          }
+        }
+      }
+    },
+    "Repositories as owner/repo, separated by commas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repositories as owner/repo, separated by commas"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repositories als owner/repo, durch Kommas getrennt"
+          }
+        }
+      }
+    },
+    "Creates a separate runner registration for each repository.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates a separate runner registration for each repository."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registriert eigene Runner für jedes Repository."
+          }
+        }
+      }
+    },
     "Replace Custom Labels on GitHub?": {
       "extractionState": "manual",
       "localizations": {

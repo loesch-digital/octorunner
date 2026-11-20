@@ -117,7 +117,7 @@ public struct GitHubRunnerLabelDTO: Codable, Sendable, Equatable {
     public let type: String?
 }
 
-public struct GitHubRemoteRunnerDTO: Codable, Sendable, Equatable {
+public struct GitHubRemoteRunnerDTO: Codable, Sendable, Equatable, Identifiable {
     public let id: Int64
     public let name: String
     public let os: String
@@ -127,6 +127,19 @@ public struct GitHubRemoteRunnerDTO: Codable, Sendable, Equatable {
 
     public var labelNames: [String] {
         labels.map(\.name)
+    }
+}
+
+public struct GitHubRunnerGroupDTO: Decodable, Sendable, Equatable, Identifiable {
+    public let id: Int64
+    public let name: String
+    public let visibility: String
+    public let inherited: Bool
+    public let isDefault: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, visibility, inherited
+        case isDefault = "default"
     }
 }
 
@@ -143,14 +156,17 @@ public enum RunnerLookupResult: Sendable, Equatable {
     case unavailable
 }
 
-public enum RunnerScopeInventory: Sendable, Equatable {
-    case available([GitHubRemoteRunnerDTO], singlePage: Bool, retryAt: Date? = nil)
+public typealias RunnerScopeInventory = GitHubRunnerInventory<GitHubRemoteRunnerDTO>
+public typealias RunnerGroupInventory = GitHubRunnerInventory<GitHubRunnerGroupDTO>
+
+public enum GitHubRunnerInventory<Item: Sendable & Equatable>: Sendable, Equatable {
+    case available([Item], singlePage: Bool, retryAt: Date? = nil)
     case unauthorized
     case forbidden
     case rateLimited(retryAt: Date)
     case unavailable
 
-    var retryDeadline: Date? {
+    public var retryDeadline: Date? {
         switch self {
         case .available(_, _, let retryAt): retryAt
         case .rateLimited(let retryAt): retryAt

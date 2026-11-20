@@ -45,17 +45,46 @@ public actor GitHubRunnerSyncActor {
 
     public func inventory(
         for scope: URL,
+        groupID: Int64? = nil,
         token: String,
         isCurrent: @Sendable () async -> Bool = { true }
     ) async throws -> RunnerScopeInventory {
+        let path: String?
+        if let groupID {
+            guard groupID > 0 else { return .unavailable }
+            path = Self.groupPath(for: scope).map { "\($0)/\(groupID)/runners" }
+        } else {
+            path = Self.runnerPath(for: scope)
+        }
+        return try await collectInventory(path: path, token: token, isCurrent: isCurrent) { data in
+            let page = try JSONDecoder().decode(InventoryPage.self, from: data)
+            return (page.totalCount, page.runners)
+        }
+    }
+
+    public func groupInventory(
+        for scope: URL, token: String, isCurrent: @Sendable () async -> Bool = { true }
+    ) async throws -> RunnerGroupInventory {
+        try await collectInventory(path: Self.groupPath(for: scope), token: token, isCurrent: isCurrent) { data in
+            let page = try JSONDecoder().decode(GroupPage.self, from: data)
+            return (page.totalCount, page.groups)
+        }
+    }
+
+    private func collectInventory<Item: Sendable & Equatable & Identifiable>(
+        path: String?,
+        token: String,
+        isCurrent: @Sendable () async -> Bool,
+        decode: (Data) throws -> (total: Int, items: [Item])
+    ) async throws -> GitHubRunnerInventory<Item> where Item.ID == Int64 {
         try Task.checkCancellation()
         guard Self.validToken(token) else { return .unauthorized }
-        guard let path = Self.runnerPath(for: scope) else { return .unavailable }
+        guard let path else { return .unavailable }
         let deadline = ContinuousClock.now.advanced(by: .seconds(30))
         let pageSize = 100
         var pageNumber = 1
         var expectedTotal: Int?
-        var runners: [GitHubRemoteRunnerDTO] = []
+        var items: [Item] = []
         var seenIDs: Set<Int64> = []
         while ContinuousClock.now < deadline {
             guard await isCurrent() else { throw CancellationError() }
@@ -72,26 +101,31 @@ public actor GitHubRunnerSyncActor {
             case 200: break
             default: return .unavailable
             }
-            guard let page = try? JSONDecoder().decode(InventoryPage.self, from: response.data),
-                  expectedTotal == nil || expectedTotal == page.totalCount,
-                  page.totalCount >= runners.count,
-                  page.runners.count == min(pageSize, page.totalCount - runners.count) else {
+            guard let page = try? decode(response.data),
+                  expectedTotal == nil || expectedTotal == page.total,
+                  page.total >= items.count,
+                  page.items.count == min(pageSize, page.total - items.count) else {
                 return .unavailable
             }
-            for runner in page.runners {
-                guard runner.id > 0, seenIDs.insert(runner.id).inserted else { return .unavailable }
+            for item in page.items {
+                guard item.id > 0, seenIDs.insert(item.id).inserted else { return .unavailable }
             }
-            runners.append(contentsOf: page.runners)
+            items.append(contentsOf: page.items)
             let retryAt = Self.retryAt(for: response, observedAt: .now)
-            if runners.count == page.totalCount {
+            if items.count == page.total {
                 // A multi-page listing can change between requests, even when its total stays fixed.
-                return .available(runners, singlePage: pageNumber == 1 && response.headers["link"] == nil, retryAt: retryAt)
+                return .available(items, singlePage: pageNumber == 1 && response.headers["link"] == nil, retryAt: retryAt)
             }
             if let retryAt { return .rateLimited(retryAt: retryAt) }
-            expectedTotal = page.totalCount
+            expectedTotal = page.total
             pageNumber += 1
         }
         return .unavailable
+    }
+
+    private static func groupPath(for url: URL) -> String? {
+        guard let target = try? GitHubRunnerProvisioningClient.parseOwnerAndRepo(from: url), target.repo == nil else { return nil }
+        return "orgs/\(target.owner)/actions/runner-groups"
     }
 
     private static func runnerPath(for url: URL) -> String? {
@@ -151,6 +185,16 @@ public actor GitHubRunnerSyncActor {
         enum CodingKeys: String, CodingKey {
             case totalCount = "total_count"
             case runners
+        }
+    }
+
+    private struct GroupPage: Decodable {
+        let totalCount: Int
+        let groups: [GitHubRunnerGroupDTO]
+
+        enum CodingKeys: String, CodingKey {
+            case totalCount = "total_count"
+            case groups = "runner_groups"
         }
     }
 }

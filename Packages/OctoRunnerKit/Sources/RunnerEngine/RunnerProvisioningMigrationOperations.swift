@@ -6,6 +6,7 @@ import SyncKit
 public struct RunnerMigrationRegistration: Sendable {
     public let remoteID: Int64
     public let version: String
+    public let verifiedGroup: RunnerMigrationGroup?
 }
 
 actor RunnerProvisioningMigrationOperations: RunnerMigrationOperations {
@@ -79,7 +80,7 @@ actor RunnerProvisioningMigrationOperations: RunnerMigrationOperations {
         try await RunnerProvisionerActor.runConfigScript(
             in: plan.destination, scopeURL: plan.scope, registrationToken: token,
             runnerName: plan.runnerName, labels: plan.customLabels, configuration: launch,
-            runnerGroup: plan.group?.name
+            runnerGroup: plan.group?.name, replaceExisting: true
         )
         let configured = try RunnerMigrationSource.inspect(plan.destination).configuration
         guard configured.agentName == plan.runnerName,
@@ -108,7 +109,7 @@ actor RunnerProvisioningMigrationOperations: RunnerMigrationOperations {
 
     func commit(newRemoteID: Int64) async throws {
         guard let version else { throw RunnerMigrationError.recoveryRequired }
-        try await apply(.init(remoteID: newRemoteID, version: version))
+        try await apply(.init(remoteID: newRemoteID, version: version, verifiedGroup: plan.group))
     }
 
     func start() async throws {
@@ -167,7 +168,7 @@ enum RunnerMigrationStartup {
         }
     }
 
-    private static func installDefinition(target: RunnerLaunchAgentTarget, launch: RunnerLaunchConfiguration) throws {
+    static func installDefinition(target: RunnerLaunchAgentTarget, launch: RunnerLaunchConfiguration) throws {
         let url = LaunchAgentPlistGenerator.launchAgentPlistURL(for: target.label)
         let plist = try LaunchAgentPlistGenerator.generatePlistData(
             serviceLabel: target.label, runnerRootDirectory: target.rootDirectory, configuration: launch

@@ -1,12 +1,36 @@
 import CoreModels
 import Foundation
 @testable import AppShellFeature
+@testable import RunnerEngine
 import SwiftData
 import SyncKit
 import Testing
 
 @MainActor
 struct RunnerMigrationCompletionTests {
+    @Test("Migration of an older organization runner saves its verified group with the new registration ID")
+    func recordsVerifiedGroup() throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let context = container.mainContext
+        let source = URL(filePath: "/tmp/imported org runner")
+        let runner = RunnerEntity(name: "Org Fixture", scopeType: .organization,
+            scopeUrl: URL(string: "https://github.com/example")!, workDirectory: source, isImportedLocal: true)
+        runner.rootDirectoryPath = source.path
+        runner.githubRunnerId = 21
+        context.insert(runner)
+        try context.save()
+
+        #expect(try RunnerMigrationCompletion.apply(
+            runnerID: runner.id, expectedSourcePath: source.path, managedRoot: URL(filePath: "/tmp/managed org runner"),
+            context: context, actorLogin: nil, oldRemoteID: 21, newRemoteID: 37,
+            installedVersion: "fixture", verifiedGroup: RunnerMigrationGroup(id: 5, name: "Mac Builds")
+        ) == "Org Fixture")
+        let persisted = try #require(ModelContext(container).fetch(FetchDescriptor<RunnerEntity>()).first)
+        #expect(persisted.githubRunnerId == 37)
+        #expect(persisted.githubRunnerGroupID == 5)
+        #expect(persisted.githubRunnerGroupName == "Mac Builds")
+    }
+
     @Test("Migration completion refetches the expected imported runner before writing")
     func completionUsesCurrentIdentity() throws {
         let container = try OctoRunnerPersistence.makeInMemoryContainer()

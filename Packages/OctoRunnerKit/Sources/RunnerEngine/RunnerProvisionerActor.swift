@@ -15,6 +15,9 @@ public struct ProvisionedRunnerSummary: Sendable, Equatable {
     public let launchdLabel: String?
     public let pid: Int32?
     public let remoteID: Int64?
+    public let remoteGroupID: Int64?
+    public let remoteGroupName: String?
+    public let launchAgentFailed: Bool
 
     public init(
         name: String,
@@ -26,7 +29,10 @@ public struct ProvisionedRunnerSummary: Sendable, Equatable {
         runnerVersion: String,
         launchdLabel: String?,
         pid: Int32?,
-        remoteID: Int64? = nil
+        remoteID: Int64? = nil,
+        remoteGroupID: Int64? = nil,
+        remoteGroupName: String? = nil,
+        launchAgentFailed: Bool = false
     ) {
         self.name = name
         self.scopeType = scopeType
@@ -38,6 +44,9 @@ public struct ProvisionedRunnerSummary: Sendable, Equatable {
         self.launchdLabel = launchdLabel
         self.pid = pid
         self.remoteID = remoteID
+        self.remoteGroupID = remoteGroupID
+        self.remoteGroupName = remoteGroupName
+        self.launchAgentFailed = launchAgentFailed
     }
 }
 
@@ -46,14 +55,17 @@ public actor RunnerProvisionerActor {
     private let provisioningClient: GitHubRunnerProvisioningClient
     private let binaryCache: RunnerBinaryCacheActor
     private let baseRunnersDirectory: URL
+    private let runnerSync: GitHubRunnerSyncActor
 
     public init(
         provisioningClient: GitHubRunnerProvisioningClient = GitHubRunnerProvisioningClient(),
         binaryCache: RunnerBinaryCacheActor = RunnerBinaryCacheActor(),
-        baseRunnersDirectory: URL? = nil
+        baseRunnersDirectory: URL? = nil,
+        runnerSync: GitHubRunnerSyncActor = GitHubRunnerSyncActor()
     ) {
         self.provisioningClient = provisioningClient
         self.binaryCache = binaryCache
+        self.runnerSync = runnerSync
         if let baseRunnersDirectory {
             self.baseRunnersDirectory = baseRunnersDirectory
         } else {
@@ -91,7 +103,7 @@ public actor RunnerProvisionerActor {
             throw RunnerMigrationError.recoveryRequired
         }
         let client = provisioningClient
-        let verify: @Sendable (RunnerMigrationRecovery) async throws -> GitHubRemoteRunnerDTO = { entry in
+        let verify: @Sendable (RunnerMigrationRecovery) async throws -> (GitHubRemoteRunnerDTO, RunnerMigrationGroup?) = { entry in
             let loaded = try RunnerMigrationSource.inspect(entry.destination).configuration
             guard loaded.agentName == configuration.name, loaded.agentId == remoteID,
                   loaded.workFolder == "_work", RunnerMigrationPreflight.matchesScope(scope, actual: loaded.gitHubUrl),
@@ -113,17 +125,18 @@ public actor RunnerProvisionerActor {
             if loaded.inferredScopeType == .organization {
                 guard let group = try await checks.group(for: loaded, runnerID: remoteID, token: oauth),
                       group.id == loaded.poolId, group.name == loaded.poolName else { throw RunnerMigrationError.groupChanged }
+                return (remote, group)
             }
-            return remote
+            return (remote, nil)
         }
         let finalize: (@Sendable (RunnerMigrationRecovery) async throws -> Void)?
         if let commit {
             finalize = { entry in
-                let remote = try await verify(entry)
+                let (remote, group) = try await verify(entry)
                 guard let version = entry.version, remote.status == "offline", !remote.busy else {
                     throw RunnerMigrationError.recoveryRequired
                 }
-                try await commit(entry, .init(remoteID: remoteID, version: version))
+                try await commit(entry, .init(remoteID: remoteID, version: version, verifiedGroup: group))
             }
         } else {
             finalize = nil
@@ -131,7 +144,7 @@ public actor RunnerProvisionerActor {
         try await RunnerMigrationCoordinator(journal: migrationJournal).retryStartup(
             for: configuration.runnerID, destination: configuration.rootDirectory, remoteID: remoteID, commit: finalize
         ) { entry in
-            let remote = try await verify(entry)
+            let (remote, _) = try await verify(entry)
             try await RunnerMigrationStartup.start(
                 runnerID: entry.runnerID, name: configuration.name, original: entry.source, destination: entry.destination,
                 launchInBackground: configuration.mode == .launchAgent, launch: configuration.launch,
@@ -189,12 +202,25 @@ public actor RunnerProvisionerActor {
         registerLaunchAgent: Bool,
         accessToken: String,
         configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration(),
+        runnerGroup: GitHubRunnerGroupDTO? = nil,
+        verifyAccountSelection: @escaping @MainActor @Sendable () throws -> Void = { try Task.checkCancellation() },
         onStatusUpdate: @MainActor @Sendable (RunnerProvisioningProgress) -> Void
     ) async throws -> [ProvisionedRunnerSummary] {
         for name in instanceNames {
             try Self.validateRunnerName(name)
         }
+        try await verifyAccountSelection()
+        if let runnerGroup {
+            guard scopeType == .organization,
+                  case .available(let groups, _, _) = try await runnerSync.groupInventory(
+                    for: scopeURL, token: accessToken, isCurrent: { (try? await verifyAccountSelection()) != nil }
+                  ),
+                  groups.contains(where: { $0.id == runnerGroup.id && $0.name == runnerGroup.name && !$0.inherited }) else {
+                throw RunnerMigrationError.groupChanged
+            }
+        }
         await onStatusUpdate(.fetchingMetadata)
+        try await verifyAccountSelection()
         let candidate = try await provisioningClient.fetchArm64RunnerDownload(
             scopeURL: scopeURL,
             token: accessToken
@@ -213,6 +239,7 @@ public actor RunnerProvisionerActor {
         return try await withThrowingTaskGroup(of: ProvisionedRunnerSummary.self) { group in
             for instanceName in instanceNames {
                 group.addTask {
+                    try await verifyAccountSelection()
                     let tokenDTO = try await client.createRegistrationToken(
                         scopeURL: scopeURL,
                         token: accessToken
@@ -224,6 +251,7 @@ public actor RunnerProvisionerActor {
                         try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
                         try FileManager.default.createDirectory(at: diagDir, withIntermediateDirectories: true)
                         try await Self.extractArchive(archiveURL: archiveURL, into: instanceRoot)
+                        try await verifyAccountSelection()
                     } catch {
                         // The registration command has not run, so this newly
                         // reserved directory has no registered listener to preserve.
@@ -236,32 +264,39 @@ public actor RunnerProvisionerActor {
                         registrationToken: tokenDTO.token,
                         runnerName: instanceName,
                         labels: labels,
-                        configuration: configuration
+                        configuration: configuration, runnerGroup: runnerGroup?.name
                     )
 
                     let registered = try RunnerMigrationSource.inspect(instanceRoot).configuration
                     guard registered.agentName == instanceName,
-                          RunnerMigrationPreflight.matchesScope(scopeURL, actual: registered.gitHubUrl) else {
+                          RunnerMigrationPreflight.matchesScope(scopeURL, actual: registered.gitHubUrl),
+                          runnerGroup.map({ Int64(registered.poolId ?? 0) == $0.id }) ?? true else {
                         throw RunnerMigrationError.runnerIdentityMismatch
                     }
                     var launchdLabel: String?
                     var launchedPID: Int32?
+                    var launchAgentFailed = false
 
                     if registerLaunchAgent {
                         let label = RunnerServiceLabel.forRunner(named: instanceName)
-                        let plistData = try LaunchAgentPlistGenerator.generatePlistData(
-                            serviceLabel: label,
-                            runnerRootDirectory: instanceRoot,
-                            configuration: configuration
-                        )
                         let plistURL = LaunchAgentPlistGenerator.launchAgentPlistURL(for: label)
-                        try FileManager.default.createDirectory(
-                            at: plistURL.deletingLastPathComponent(),
-                            withIntermediateDirectories: true
-                        )
-                        try plistData.write(to: plistURL, options: .atomic)
-                        launchdLabel = label
-                        launchedPID = try await Self.bootstrapLaunchAgent(plistURL: plistURL)
+                        do {
+                            try await verifyAccountSelection()
+                            guard try await LaunchAgentServiceStateReader().isUnloaded(label: label) else {
+                                throw RunnerMigrationError.conflictingService
+                            }
+                            try await verifyAccountSelection()
+                            try RunnerMigrationStartup.installDefinition(
+                                target: .init(name: instanceName, rootDirectory: instanceRoot, label: label),
+                                launch: configuration
+                            )
+                            launchdLabel = label
+                            launchedPID = try await Self.bootstrapLaunchAgent(plistURL: plistURL)
+                        } catch {
+                            // The registration has already completed. Keep its identity so
+                            // the user can retry startup without registering again.
+                            launchAgentFailed = true
+                        }
                     }
 
                     return ProvisionedRunnerSummary(
@@ -274,15 +309,25 @@ public actor RunnerProvisionerActor {
                         runnerVersion: version,
                         launchdLabel: launchdLabel,
                         pid: launchedPID,
-                        remoteID: registered.agentId
+                        remoteID: registered.agentId,
+                        remoteGroupID: scopeType == .organization ? registered.poolId.map(Int64.init) : nil,
+                        remoteGroupName: scopeType == .organization ? registered.poolName : nil,
+                        launchAgentFailed: launchAgentFailed
                     )
                 }
             }
 
             var provisioned: [ProvisionedRunnerSummary] = []
-            for try await summary in group {
-                provisioned.append(summary)
+            var firstFailure: (any Error)?
+            while let result = await group.nextResult() {
+                switch result {
+                case .success(let summary): provisioned.append(summary)
+                case .failure(let error):
+                    if firstFailure == nil { firstFailure = error }
+                }
             }
+            try Task.checkCancellation()
+            if provisioned.isEmpty, let firstFailure { throw firstFailure }
             return provisioned.sorted { $0.name < $1.name }
         }
     }
@@ -332,7 +377,8 @@ public actor RunnerProvisionerActor {
         runnerName: String,
         labels: [String],
         configuration: RunnerLaunchConfiguration,
-        runnerGroup: String? = nil
+        runnerGroup: String? = nil,
+        replaceExisting: Bool = false
     ) async throws {
         let configScript = instanceRoot.appending(path: "config.sh")
         let process = Process()
@@ -344,9 +390,9 @@ public actor RunnerProvisionerActor {
             "--url", scopeURL.absoluteString,
             "--name", runnerName,
             "--labels", labels.joined(separator: ","),
-            "--work", "_work",
-            "--replace"
+            "--work", "_work"
         ]
+        if replaceExisting { process.arguments?.append("--replace") }
         var environment = ProcessInfo.processInfo.environment.merging(configuration.environment) { _, configured in configured }
         environment = environment.filter { !$0.key.uppercased().hasPrefix("ACTIONS_RUNNER_INPUT_") }
         environment["ACTIONS_RUNNER_INPUT_TOKEN"] = registrationToken
