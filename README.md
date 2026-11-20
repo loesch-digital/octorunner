@@ -4,7 +4,7 @@
 
 Run GitHub Actions CI/CD on your own Apple Silicon Mac. OctoRunner gives developers and DevOps teams a native macOS app to set up self-hosted runners, check availability from the menu bar, and trace a failed build from the workflow to its pull request, job, step, and log.
 
-[Download](https://github.com/loesch-digital/octorunner/releases/latest) · [User guide](docs/user-guide.md) · [Report an issue](https://github.com/loesch-digital/octorunner/issues/new) · [Apache 2.0 license](LICENSE)
+[Download](https://github.com/loesch-digital/octorunner/releases/latest) · [User guide](docs/user-guide.md) · [Report an issue](https://github.com/loesch-digital/octorunner/issues/new/choose) · [Apache 2.0 license](LICENSE)
 
 [![CI](https://github.com/loesch-digital/octorunner/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/loesch-digital/octorunner/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/loesch-digital/octorunner?label=release&sort=semver)](https://github.com/loesch-digital/octorunner/releases/latest)
@@ -113,7 +113,7 @@ python3 -m unittest discover -s scripts/tests
 
 ## Feedback and contributions
 
-Found a bug? [Open an issue](https://github.com/loesch-digital/octorunner/issues/new) with your OctoRunner and macOS versions, steps to reproduce it, and what you expected to happen. Remove credentials and private repository details from screenshots or logs before posting.
+Found a bug? [Open an issue](https://github.com/loesch-digital/octorunner/issues/new/choose) with your OctoRunner and macOS versions, steps to reproduce it, and what you expected to happen. Remove credentials and private repository details from screenshots or logs before posting.
 
 Pull requests are welcome. Fork the repository, create a branch in your fork, and open a pull request against `main`. The repository owner reviews and merges changes after CI passes.
 
