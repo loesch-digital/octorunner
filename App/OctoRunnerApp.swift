@@ -1,15 +1,19 @@
 import AppKit
 import AppShellFeature
 import CoreModels
+import GitHubAPI
 import SwiftData
 import SwiftUI
 import UserNotifications
 
 @MainActor
-public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
+public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
+    static var updateStartup: (StagedAppUpdate, ModelContainer)?
     let isPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
     let services = AppServices()
+    @Published private(set) var isReadyForActions = OctoRunnerAppDelegate.updateStartup == nil
     lazy var modelContainer: ModelContainer = {
+        if let updateStartup = Self.updateStartup { return updateStartup.1 }
         guard !isPreview else {
             do { return try OctoRunnerPersistence.makeInMemoryContainer() }
             catch { preconditionFailure("Could not initialize the preview store: \(error)") }
@@ -21,6 +25,36 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
         guard !isPreview else { return }
+        if let (update, _) = Self.updateStartup {
+            do {
+                let context = modelContainer.mainContext
+                try AppAuditEvent.updateInstalled.record(in: context)
+                try AppUpdateHandoff.confirmStartup(update)
+            } catch {
+                // Missing acknowledgment makes the installer restore the previous bundle and store.
+                exit(EXIT_FAILURE)
+            }
+            Task {
+                do {
+                    try await AppUpdateHandoff.completeStartup()
+                    Self.updateStartup = nil
+                    isReadyForActions = true
+                    startServices()
+                } catch {
+                    exit(EXIT_FAILURE)
+                }
+            }
+            return
+        }
+        startServices()
+        if let notice = AppUpdateHandoff.takeStartupNotice() {
+            try? AppAuditEvent.updateFailed.record(in: modelContainer.mainContext)
+            let locale = services.preferences.language.locale
+            Task { AppUpdatePresentation.makeAlert(notice, locale: locale).runModal() }
+        }
+    }
+
+    private func startServices() {
         try? AppAuditEvent.started.record(in: modelContainer.mainContext)
         UNUserNotificationCenter.current().delegate = notificationPresenter
         services.startRecoveryMonitoring(container: modelContainer)
@@ -32,7 +66,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
-        guard !isPreview else { return }
+        guard !isPreview, isReadyForActions else { return }
         services.stopRecoveryMonitoring()
         services.healthMonitor.stop()
         services.remoteSyncMonitor.stop()
@@ -43,18 +77,32 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard !isPreview else { return .terminateNow }
+        guard !isPreview, isReadyForActions else { return .terminateNow }
         guard !isQuitRequestPending else { return .terminateLater }
         let locale = services.preferences.language.locale
         let confirmation = AppQuitConfirmation.makeAlert(locale: locale)
-        guard AppQuitConfirmation.shouldTerminate(after: confirmation.runModal()) else { return .terminateCancel }
+        guard AppQuitConfirmation.shouldTerminate(after: confirmation.runModal()) else {
+            AppUpdateHandoff.cancelPending()
+            return .terminateCancel
+        }
         isQuitRequestPending = true
         Task {
             do {
                 try await services.supervisor.shutdownForQuit()
+                do {
+                    try AppUpdateHandoff.approvePending()
+                } catch {
+                    await services.supervisor.resumeAfterAbortedQuit()
+                    isQuitRequestPending = false
+                    AppUpdateHandoff.cancelPending()
+                    sender.reply(toApplicationShouldTerminate: false)
+                    AppUpdatePresentation.makeAlert(.installationFailed, locale: locale).runModal()
+                    return
+                }
                 sender.reply(toApplicationShouldTerminate: true)
             } catch {
                 isQuitRequestPending = false
+                AppUpdateHandoff.cancelPending()
                 sender.reply(toApplicationShouldTerminate: false)
                 AppQuitConfirmation.makeBlockedAlert(error: error, locale: locale).runModal()
             }
@@ -76,6 +124,36 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
+enum OctoRunnerEntry {
+    @MainActor
+    static func main() async {
+        let arguments = Array(CommandLine.arguments.dropFirst())
+        if await AppUpdateHandoff.runInstallerIfRequested(arguments: arguments) { return }
+        if AppUpdateHandoff.isStartupRequest(arguments: arguments) {
+            guard let update = AppUpdateHandoff.startupUpdate(arguments: arguments) else { return }
+            do {
+                let store = try OctoRunnerPersistence.openStoreForUpdate(at: OctoRunnerPersistence.defaultStoreURL)
+                OctoRunnerAppDelegate.updateStartup = (update, store)
+            } catch {
+                return
+            }
+        } else if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" {
+            do {
+                guard try await AppUpdateHandoff.allowRegularStartup() else { return }
+            } catch AppUpdateNotice.inProgress {
+                // The installer owns the database and will reopen the app.
+                return
+            } catch {
+                let notice = error as? AppUpdateNotice ?? .recoveryRequired
+                NSApplication.shared.activate()
+                AppUpdatePresentation.makeAlert(notice, locale: AppPreferencesStore().language.locale).runModal()
+                return
+            }
+        }
+        OctoRunnerApp.main()
+    }
+}
+
 struct OctoRunnerApp: App {
     @NSApplicationDelegateAdaptor(OctoRunnerAppDelegate.self) private var appDelegate
 
@@ -84,7 +162,7 @@ struct OctoRunnerApp: App {
         let modelContainer = appDelegate.modelContainer
         @Bindable var preferences = services.preferences
         Window("OctoRunner", id: "main-dashboard") {
-            if !appDelegate.isPreview {
+            if !appDelegate.isPreview && appDelegate.isReadyForActions {
                 LocalJobResultsSource { results in
                     MainShellView(
                         historyRateBudget: services.historyRateBudget,
@@ -101,22 +179,26 @@ struct OctoRunnerApp: App {
                 .environment(services.storageMaintenance)
                 .environment(\.locale, preferences.language.locale)
                 .frame(minWidth: 960, minHeight: 620)
+            } else if !appDelegate.isPreview {
+                ProgressView().padding(40)
             }
         }
         .modelContainer(modelContainer)
         .windowToolbarStyle(.unified)
 
         Settings {
-            SettingsWindowView(accountSession: services.accounts, launchAgents: services.launchAgents)
-                .environment(services.preferences)
-                .environment(services.integration)
-                .environment(services.notifications)
-                .environment(services.storageMaintenance)
-                .environment(\.locale, preferences.language.locale)
+            if !appDelegate.isPreview && appDelegate.isReadyForActions {
+                SettingsWindowView(accountSession: services.accounts, launchAgents: services.launchAgents)
+                    .environment(services.preferences)
+                    .environment(services.integration)
+                    .environment(services.notifications)
+                    .environment(services.storageMaintenance)
+                    .environment(\.locale, preferences.language.locale)
+            }
         }
         .modelContainer(modelContainer)
 
-        MenuBarExtra(isInserted: appDelegate.isPreview ? .constant(false) : $preferences.showInMenuBar) {
+        MenuBarExtra(isInserted: appDelegate.isPreview || !appDelegate.isReadyForActions ? .constant(false) : $preferences.showInMenuBar) {
             MenuBarStatusView(monitor: services.healthMonitor)
                 .environment(services.preferences)
                 .environment(services.integration)

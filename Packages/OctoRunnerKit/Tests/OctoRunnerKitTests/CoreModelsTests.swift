@@ -165,6 +165,21 @@ struct CoreModelsTests {
         #expect(fetched.first?.isImportedLocal == false)
     }
 
+    @Test("An update startup rejects an invalid SQLite header without replacing the existing store")
+    @MainActor
+    func updateStartupPreservesCorruptStore() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "update-store-\(UUID())")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = directory.appending(path: "octorunner.store")
+        let original = Data("invalid sqlite header".utf8)
+        try original.write(to: store)
+        #expect(throws: CocoaError(.fileReadCorruptFile)) {
+            try OctoRunnerPersistence.openStoreForUpdate(at: store)
+        }
+        #expect(try Data(contentsOf: store) == original)
+    }
+
     @Test("AuditLogEntity and AuditLogRecorder persist configuration changes and system events")
     @MainActor
     func auditLogPersistenceAndRecorder() throws {

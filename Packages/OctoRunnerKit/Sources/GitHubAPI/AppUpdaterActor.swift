@@ -58,10 +58,17 @@ public struct AppUpdateInfo: Sendable, Equatable {
     }
 }
 
-public enum AppUpdateError: LocalizedError, Sendable {
+public enum AppUpdateError: LocalizedError, Sendable, Equatable {
     case invalidReleaseResponse
     case missingDownloadAsset
     case extractionFailed(String)
+    case unexpectedBundle
+    case invalidSignature
+    case rejectedByGatekeeper
+    case couldNotReplace
+    case couldNotRestore
+    case couldNotStart
+    case manualRecoveryRequired
 
     public var errorDescription: String? {
         switch self {
@@ -71,6 +78,20 @@ public enum AppUpdateError: LocalizedError, Sendable {
             return "No macOS arm64 release archive found in the latest GitHub Release."
         case .extractionFailed(let detail):
             return "Failed to unpack update archive: \(detail)"
+        case .unexpectedBundle:
+            return "The archive does not contain the expected OctoRunner release."
+        case .invalidSignature:
+            return "The update signature does not match the installed app."
+        case .rejectedByGatekeeper:
+            return "macOS did not accept the downloaded update."
+        case .couldNotReplace:
+            return "The installed app could not be replaced."
+        case .couldNotRestore:
+            return "The previous app could not be restored automatically."
+        case .couldNotStart:
+            return "The updated app did not finish starting."
+        case .manualRecoveryRequired:
+            return "The update requires manual recovery. The previous installation has been kept."
         }
     }
 }
@@ -142,49 +163,28 @@ public actor AppUpdaterActor {
         )
     }
 
-    /// Downloads the release `.zip`, unpacks `OctoRunner.app`, swaps the current `.app` bundle, and relaunches.
-    public func downloadAndInstallUpdate(from zipURL: URL, targetAppURL: URL = Bundle.main.bundleURL) async throws {
+    /// Validates the archive in a private directory on the installed app's volume.
+    public func downloadAndStageUpdate(
+        from zipURL: URL, expectedVersion: String, targetAppURL: URL = Bundle.main.bundleURL
+    ) async throws -> StagedAppUpdate {
+        let installed = targetAppURL.resolvingSymlinksInPath()
+        guard FileManager.default.isWritableFile(atPath: installed.deletingLastPathComponent().path) else {
+            throw AppUpdateError.couldNotReplace
+        }
         let (tempZipURL, response) = try await urlSession.download(from: zipURL)
+        defer { try? FileManager.default.removeItem(at: tempZipURL) }
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw AppUpdateError.invalidReleaseResponse
         }
 
-        let stagingDir = FileManager.default.temporaryDirectory
-            .appending(path: "OctoRunnerUpdate-\(UUID().uuidString)", directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: stagingDir, withIntermediateDirectories: true)
-
-        let unpackProcess = Process()
-        unpackProcess.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-        unpackProcess.arguments = ["-x", "-k", tempZipURL.path(), stagingDir.path()]
-        try unpackProcess.run()
-        unpackProcess.waitUntilExit()
-
-        guard unpackProcess.terminationStatus == 0 else {
-            throw AppUpdateError.extractionFailed("ditto exited with code \(unpackProcess.terminationStatus)")
+        let stagingDir = try StagedAppUpdate.makeStagingDirectory(beside: installed)
+        do {
+            let candidate = try await AppUpdateArchive.prepare(
+                archive: tempZipURL, in: stagingDir, replacing: installed, expectedVersion: expectedVersion)
+            return StagedAppUpdate(directory: stagingDir, candidate: candidate, installed: installed, version: expectedVersion)
+        } catch {
+            try? FileManager.default.removeItem(at: stagingDir)
+            throw error
         }
-
-        let unpackedAppURL = stagingDir.appending(path: "OctoRunner.app", directoryHint: .isDirectory)
-        guard FileManager.default.fileExists(atPath: unpackedAppURL.path()) else {
-            throw AppUpdateError.extractionFailed("OctoRunner.app not found inside archive.")
-        }
-
-        // Launch detached shell script that waits 0.6s for current PID to exit, replaces .app, clears quarantine, and re-opens
-        let currentPID = ProcessInfo.processInfo.processIdentifier
-        let destinationPath = targetAppURL.path()
-        let unpackedPath = unpackedAppURL.path()
-
-        let script = """
-        while kill -0 \(currentPID) 2>/dev/null; do sleep 0.2; done
-        rm -rf "\(destinationPath)"
-        mv "\(unpackedPath)" "\(destinationPath)"
-        xattr -cr "\(destinationPath)" 2>/dev/null || true
-        open "\(destinationPath)"
-        rm -rf "\(stagingDir.path())"
-        """
-
-        let relaunchProcess = Process()
-        relaunchProcess.executableURL = URL(fileURLWithPath: "/bin/sh")
-        relaunchProcess.arguments = ["-c", script]
-        try relaunchProcess.run()
     }
 }

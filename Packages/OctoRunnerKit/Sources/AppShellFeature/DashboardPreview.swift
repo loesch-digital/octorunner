@@ -13,7 +13,6 @@ struct DashboardPreview: View {
             .modelContainer(container)
             .environment(\.usesDashboardSampleData, true)
             .environment(\.locale, language.locale)
-            .disabled(true)
             .allowsHitTesting(false)
     }
 

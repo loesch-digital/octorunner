@@ -8,6 +8,16 @@ import RunnerEngine
 import Testing
 
 struct InterfaceLocalizationTests {
+    @MainActor
+    @Test("Update recovery explains what happened in the selected language")
+    func updateRecoveryDialog() {
+        let german = AppUpdatePresentation.makeAlert(.restoredPreviousVersion, locale: Locale(identifier: "de"))
+        #expect(german.messageText == "Vorherige OctoRunner-Version wiederhergestellt")
+        #expect(german.informativeText.contains("Runner-Daten"))
+        let english = AppUpdatePresentation.makeAlert(.recoveryRequired, locale: Locale(identifier: "en"))
+        #expect(english.messageText == "OctoRunner update needs recovery")
+        #expect(english.informativeText.contains("backup"))
+    }
     @Test("The runner limit and waiting status are findable in German")
     func capacityLocalization() {
         let locale = Locale(identifier: "de")
@@ -124,6 +134,11 @@ struct InterfaceLocalizationTests {
         #expect(error.localized(locale: english) == "GitHub rejected the request (HTTP 403). Check permissions for this runner target and the GitHub rate limit.")
         #expect(AppErrorMessage.failure(GitHubProvisioningError.missingAuthToken).localized(locale: german)
             == "Melde dich erneut bei GitHub an, um Runner einzurichten.")
+    }
+
+    @Test("Unsupported interface languages fall back to English")
+    func englishFallback() {
+        #expect(AppLocalization.string("New Runner", locale: Locale(identifier: "fr-FR")) == "New Runner")
     }
 
     @Test("A rate limit preserves an earlier repository failure")
