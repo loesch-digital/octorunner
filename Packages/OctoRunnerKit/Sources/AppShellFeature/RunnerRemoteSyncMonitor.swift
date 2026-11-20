@@ -12,6 +12,8 @@ public final class RunnerRemoteSyncMonitor {
     public private(set) var snapshot: RunnerSyncSnapshot?
     @ObservationIgnored private let scheduler: RunnerSyncScheduler
     @ObservationIgnored private var task: Task<Void, Never>?
+    @ObservationIgnored private var generation = UUID()
+    @ObservationIgnored private var isUpdatingLabels = false
 
     public init(scheduler: RunnerSyncScheduler) {
         self.scheduler = scheduler
@@ -48,11 +50,26 @@ public final class RunnerRemoteSyncMonitor {
     public func stop() {
         task?.cancel()
         task = nil
+        generation = UUID()
         snapshot = nil
     }
 
+    func beginLabelUpdate() async -> Bool {
+        guard !isUpdatingLabels, !Task.isCancelled else { return false }
+        isUpdatingLabels = true
+        generation = UUID()
+        snapshot = nil
+        await scheduler.clearAccount()
+        return true
+    }
+
+    func endLabelUpdate() {
+        isUpdatingLabels = false
+    }
+
     func refresh(in context: ModelContext) async {
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, !isUpdatingLabels else { return }
+        let operation = generation
         do {
             guard let account = try selectedAccount(in: context) else {
                 snapshot = nil
@@ -62,9 +79,9 @@ public final class RunnerRemoteSyncMonitor {
             if snapshot?.account != account { snapshot = nil }
             let configurations = try configurations(in: context)
             let refreshed = await scheduler.refresh(account: account, runners: configurations) {
-                self.isCurrent(account, in: context)
+                self.generation == operation && self.isCurrent(account, in: context)
             }
-            guard let refreshed, !Task.isCancelled else { return }
+            guard let refreshed, !Task.isCancelled, generation == operation else { return }
             guard try selectedAccount(in: context) == account else {
                 if snapshot?.account == account { snapshot = nil }
                 return
@@ -73,7 +90,7 @@ public final class RunnerRemoteSyncMonitor {
             guard refreshed.configurations == current else { return }
             snapshot = refreshed
         } catch {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, generation == operation else { return }
             snapshot = nil
         }
     }

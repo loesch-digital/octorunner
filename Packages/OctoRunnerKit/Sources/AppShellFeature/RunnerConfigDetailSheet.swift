@@ -5,6 +5,7 @@ import GitHubAPI
 import RunnerEngine
 import SwiftData
 import SwiftUI
+import SyncKit
 
 public struct RunnerConfigDetailSheet: View {
     private struct ReviewedMigration: Identifiable {
@@ -30,14 +31,18 @@ public struct RunnerConfigDetailSheet: View {
     @State private var isSaving: Bool = false
     @State private var isMigrating: Bool = false
     @State private var migrationTask: Task<Void, Never>?
+    @State private var labelsTask: Task<Void, Never>?
+    @State private var labelUpdate: RunnerRemoteLabelUpdate?
     @State private var reviewedLabels: RunnerRemoteLabelReview?
     @State private var reviewedMigration: ReviewedMigration?
     @State private var pendingRecovery: RunnerMigrationRecovery?
     @State private var unreadableRecovery = false
+    @State private var recoveryCheckedFor: UUID?
     @State private var isShowingRecovery = false
     @State private var statusBannerMessage: String?
     @State private var errorMessage: String?
 
+    private let syncClient = GitHubRunnerSyncActor()
     private let provisioningClient = GitHubRunnerProvisioningClient()
     private let provisionerActor = RunnerProvisionerActor()
     private let supervisor: RunnerSupervisorActor?
@@ -112,8 +117,11 @@ public struct RunnerConfigDetailSheet: View {
         .padding(22)
         .frame(width: 660, height: 580)
         .background(OctoTheme.surfaceLowest)
-        .interactiveDismissDisabled(isMigrating)
-        .onDisappear { migrationTask?.cancel() }
+        .interactiveDismissDisabled(isMigrating || isSaving)
+        .onDisappear {
+            migrationTask?.cancel()
+            labelsTask?.cancel()
+        }
         .task(id: runner.id) { await loadRecovery(for: runner.id) }
         .alert(Text("Adopt GitHub Labels?", bundle: .module), isPresented: Binding(
             get: { reviewedLabels != nil }, set: { if !$0 { reviewedLabels = nil } }
@@ -122,6 +130,18 @@ public struct RunnerConfigDetailSheet: View {
             Button(role: .cancel) {} label: { Text("Cancel", bundle: .module) }
         } message: { review in
             Text("Labels reported by @\(review.accountLogin): \(review.githubLabels.joined(separator: ", "))", bundle: .module)
+        }
+        .confirmationDialog(Text("Replace Custom Labels on GitHub?", bundle: .module), isPresented: Binding(
+            get: { labelUpdate != nil }, set: { if !$0 { labelUpdate = nil } }
+        ), titleVisibility: .visible, presenting: labelUpdate) { update in
+            Button {
+                labelsTask = Task { await applyVerifiedLabelUpdate(update) }
+            } label: {
+                Text("Apply on GitHub", bundle: .module)
+            }
+            Button(role: .cancel) {} label: { Text("Cancel", bundle: .module) }
+        } message: { update in
+            Text("Replace \(labelSummary(update.previousCustomLabels)) with \(labelSummary(update.customLabels)) on \(update.configuration.agentName)?", bundle: .module)
         }
         .sheet(item: $reviewedMigration) { review in
             RunnerMigrationConfirmation(
@@ -204,6 +224,11 @@ public struct RunnerConfigDetailSheet: View {
                 }
             }
 
+            if let snapshot = remoteSync?.snapshot, let account = accounts.first(where: { $0.isActive }),
+               let observation = RunnerSyncObservation(runner: runner, account: account, snapshot: snapshot) {
+                RunnerSyncStatusView(observation: observation, showsDetails: true)
+            }
+
             if let supervisor, runner.executionMode == .direct,
                let root = runner.rootDirectoryPath, root.hasPrefix("/") {
                 Divider()
@@ -225,7 +250,7 @@ public struct RunnerConfigDetailSheet: View {
                     }
                 }
                 .accessibilityHint(Text("Reviews different labels before applying them to OctoRunner.", bundle: .module))
-                .disabled(isMigrating || isSaving)
+                .disabled(!canEditLabels)
             }
 
             ScrollView(.horizontal) {
@@ -252,6 +277,7 @@ public struct RunnerConfigDetailSheet: View {
                 }
             }
             .scrollIndicators(.hidden)
+            .disabled(!canEditLabels)
 
             HStack(spacing: 8) {
                 TextField(AppLocalization.string("Add capability label (e.g. fastlane, ios-18, xcode-27)…", locale: locale), text: $newLabelInput)
@@ -263,6 +289,7 @@ public struct RunnerConfigDetailSheet: View {
                     .buttonStyle(.bordered)
                     .disabled(newLabelInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
+            .disabled(!canEditLabels)
         }
         .padding(14)
         .background(OctoTheme.surface, in: .rect(cornerRadius: 10))
@@ -320,6 +347,7 @@ public struct RunnerConfigDetailSheet: View {
                     }
                 }
                 .accessibilityHint(Text("Opens the last recorded migration stage and recovery instructions.", bundle: .module))
+                .disabled(isSaving)
             }
             if runner.isImportedLocal {
                 VStack(alignment: .leading, spacing: 10) {
@@ -390,7 +418,7 @@ public struct RunnerConfigDetailSheet: View {
             }
 
             Button {
-                Task { await saveChangesAndSyncGitHub() }
+                prepareLabelUpdate()
             } label: {
                 HStack(spacing: 6) {
                     if isSaving {
@@ -403,14 +431,16 @@ public struct RunnerConfigDetailSheet: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(OctoTheme.accentBlue)
-            .disabled(isSaving)
+            .accessibilityHint(Text("Reviews the custom labels before replacing them on GitHub.", bundle: .module))
+            .disabled(!canEditLabels)
         }
-        .disabled(isMigrating)
+        .disabled(isMigrating || isSaving)
     }
 
     private func adoptGitHubLabels(_ review: RunnerRemoteLabelReview) {
+        guard canEditLabels else { return }
         do {
-            guard try review.apply(in: modelContext) else {
+            guard try review.apply(snapshot: remoteSync?.snapshot, in: modelContext) else {
                 errorMessage = AppLocalization.string("The runner or account changed. Refresh and review the labels again.", locale: locale)
                 return
             }
@@ -449,7 +479,7 @@ public struct RunnerConfigDetailSheet: View {
     }
 
     private func prepareMigration() async {
-        guard !Task.isCancelled, !isMigrating else { return }
+        guard !Task.isCancelled, !isMigrating, !isSaving else { return }
         isMigrating = true
         errorMessage = nil
         defer { isMigrating = false }
@@ -484,7 +514,7 @@ public struct RunnerConfigDetailSheet: View {
     }
 
     private func confirmMigration(_ review: ReviewedMigration) async {
-        guard !Task.isCancelled, !isMigrating, let supervisor else { return }
+        guard !Task.isCancelled, !isMigrating, !isSaving, let supervisor else { return }
         isMigrating = true
         errorMessage = nil
         defer { isMigrating = false }
@@ -527,10 +557,12 @@ public struct RunnerConfigDetailSheet: View {
             guard !Task.isCancelled else { return }
             pendingRecovery = recovery
             unreadableRecovery = false
+            recoveryCheckedFor = runnerID
         } catch {
             guard !Task.isCancelled else { return }
             pendingRecovery = nil
             unreadableRecovery = true
+            recoveryCheckedFor = nil
         }
     }
 
@@ -551,7 +583,7 @@ public struct RunnerConfigDetailSheet: View {
     }
 
     private func recoverMigration(discard: Bool) async {
-        guard !Task.isCancelled, !isMigrating else { return }
+        guard !Task.isCancelled, !isMigrating, !isSaving else { return }
         let runnerID = runner.id
         isMigrating = true
         errorMessage = nil
@@ -631,42 +663,68 @@ public struct RunnerConfigDetailSheet: View {
         return AppLocalization.string(key, locale: locale)
     }
 
-    private func saveChangesAndSyncGitHub() async {
+    private func labelSummary(_ labels: [String]) -> String {
+        labels.isEmpty ? AppLocalization.string("No custom labels", locale: locale) : labels.joined(separator: ", ")
+    }
+
+    private var canEditLabels: Bool {
+        recoveryCheckedFor == runner.id && pendingRecovery == nil && !unreadableRecovery && !isMigrating && !isSaving
+    }
+
+    private func prepareLabelUpdate() {
+        guard canEditLabels else { return }
+        guard let snapshot = remoteSync?.snapshot, let account = accounts.first(where: { $0.isActive }),
+              let update = RunnerRemoteLabelUpdate(snapshot: snapshot, runner: runner, account: account,
+                                                   draft: editableLabels) else {
+            errorMessage = AppLocalization.string("Refresh the GitHub runner before changing its labels.", locale: locale)
+            return
+        }
+        labelUpdate = update
+    }
+
+    private func applyVerifiedLabelUpdate(_ update: RunnerRemoteLabelUpdate) async {
+        guard !Task.isCancelled, canEditLabels, let remoteSync else { return }
         isSaving = true
         errorMessage = nil
-        defer { isSaving = false }
-
-        let previousLabels = runner.labels.joined(separator: ",")
-        let updatedLabels = editableLabels.joined(separator: ",")
-        runner.labels = editableLabels
-
-        if let key = accounts.first(where: { $0.isActive })?.keychainAccountKey, !key.isEmpty,
-           let runnerId = runner.githubRunnerId,
-           let scopeURL = URL(string: runner.scopeUrlString),
-           let token = try? await provisioningClient.readToken(for: key) {
-            _ = try? await provisioningClient.replaceRunnerLabels(
-                scopeURL: scopeURL,
-                runnerId: runnerId,
-                labels: editableLabels,
-                token: token
-            )
+        var updateInProgress = false
+        defer {
+            if updateInProgress { remoteSync.endLabelUpdate() }
+            isSaving = false
         }
-
-        if previousLabels != updatedLabels {
-            AuditLogRecorder.record(
-                in: modelContext,
-                category: .configuration,
-                severity: .info,
-                title: "Runner Labels Updated",
-                summary: "Updated labels for \(runner.name)",
-                actorAccountLogin: accounts.first?.login,
-                targetRunnerName: runner.name,
-                previousValue: previousLabels,
-                newValue: updatedLabels
-            )
+        var submitted = false
+        do {
+            let token = try await provisioningClient.readToken(for: update.selection.credentialKey)
+            guard try update.isCurrent(in: modelContext),
+                  case .found(let remote, _) = try await syncClient.lookupRunner(for: update.configuration, token: token),
+                  try update.isCurrent(in: modelContext), update.matchesReviewedRemote(remote) else {
+                errorMessage = AppLocalization.string("The runner or account changed. Refresh and review the labels again.", locale: locale)
+                return
+            }
+            guard await remoteSync.beginLabelUpdate() else { return }
+            updateInProgress = true
+            guard try update.isCurrent(in: modelContext) else {
+                errorMessage = AppLocalization.string("The runner or account changed. Refresh and review the labels again.", locale: locale)
+                return
+            }
+            submitted = true
+            let names = try await provisioningClient.replaceRunnerLabels(scopeURL: update.configuration.gitHubUrl,
+                runnerId: update.configuration.agentId, labels: update.customLabels, token: token)
+            guard try update.apply(names, in: modelContext) else {
+                errorMessage = AppLocalization.string("Refresh the GitHub runner to verify which labels were saved.", locale: locale)
+                return
+            }
+            editableLabels = names
+            statusBannerMessage = AppLocalization.string("GitHub confirmed the new labels.", locale: locale)
+            remoteSync.endLabelUpdate()
+            updateInProgress = false
+            await remoteSync.refresh(in: modelContext)
+        } catch is CancellationError {
+            return
+        } catch {
+            guard !Task.isCancelled else { return }
+            errorMessage = submitted
+                ? AppLocalization.string("Refresh the GitHub runner to verify which labels were saved.", locale: locale)
+                : AppLocalization.string("GitHub labels could not be saved.", locale: locale)
         }
-
-        try? modelContext.save()
-        dismiss()
     }
 }

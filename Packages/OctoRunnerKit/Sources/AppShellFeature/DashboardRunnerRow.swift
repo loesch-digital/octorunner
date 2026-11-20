@@ -6,15 +6,17 @@ public struct DashboardRunnerRow: View {
     @Environment(\.locale) private var locale
     let runner: RunnerEntity
     let lastJob: WorkflowHistoryEntry?
+    let syncObservation: RunnerSyncObservation?
     let openLog: () -> Void
     let openSettings: () -> Void
     let migrate: () -> Void
     let remove: () -> Void
 
-    public init(runner: RunnerEntity, lastJob: WorkflowHistoryEntry? = nil, openLog: @escaping () -> Void, openSettings: @escaping () -> Void,
+    public init(runner: RunnerEntity, lastJob: WorkflowHistoryEntry? = nil, syncObservation: RunnerSyncObservation? = nil, openLog: @escaping () -> Void, openSettings: @escaping () -> Void,
                 migrate: @escaping () -> Void, remove: @escaping () -> Void) {
         self.runner = runner
         self.lastJob = lastJob
+        self.syncObservation = syncObservation
         self.openLog = openLog
         self.openSettings = openSettings
         self.migrate = migrate
@@ -82,6 +84,10 @@ public struct DashboardRunnerRow: View {
             }
             .font(.caption.monospaced())
             .foregroundStyle(.secondary)
+
+            if let syncObservation {
+                RunnerSyncStatusView(observation: syncObservation)
+            }
 
             Divider()
             RunnerLastJobView(entry: lastJob)

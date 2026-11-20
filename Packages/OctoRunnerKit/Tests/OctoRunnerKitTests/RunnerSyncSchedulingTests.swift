@@ -201,6 +201,34 @@ struct RunnerSyncSchedulingTests {
         #expect(monitor.snapshot?.results == [runner.id: .forbidden])
     }
 
+    @MainActor
+    @Test("Label changes invalidate an in-flight GitHub scan before the write begins")
+    func discardsSnapshotAcrossLabelUpdate() async throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let context = container.mainContext
+        let config = try configuration()
+        let runner = RunnerEntity(name: config.agentName, scopeUrl: config.gitHubUrl,
+                                  workDirectory: URL(fileURLWithPath: "/fixture/_work"))
+        runner.githubRunnerId = config.agentId
+        context.insert(runner)
+        context.insert(GitHubAccountEntity(githubUserId: 21, login: "fixture", keychainAccountKey: "fixture"))
+        try context.save()
+        let gate = RunnerLookupGate()
+        let monitor = RunnerRemoteSyncMonitor(scheduler: RunnerSyncScheduler { _, _, _, _ in
+            await gate.suspend()
+            return .forbidden
+        })
+
+        let pending = Task { await monitor.refresh(in: context) }
+        await gate.waitForLookup()
+        #expect(await monitor.beginLabelUpdate())
+        monitor.endLabelUpdate()
+        await gate.resume()
+        await pending.value
+
+        #expect(monitor.snapshot == nil)
+    }
+
     private func configuration(_ url: String = "https://github.com/example/build") throws -> LocalDotRunnerConfig {
         .init(agentId: 21, agentName: "local", gitHubUrl: try #require(URL(string: url)))
     }

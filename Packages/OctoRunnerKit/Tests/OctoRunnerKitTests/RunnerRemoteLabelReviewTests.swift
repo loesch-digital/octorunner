@@ -10,10 +10,11 @@ struct RunnerRemoteLabelReviewTests {
     @Test("Verified GitHub labels are adopted locally only after explicit confirmation")
     func acceptsVerifiedLabels() async throws {
         let fixture = try Fixture()
-        let review = try await fixture.review()
+        let snapshot = try await fixture.snapshot()
+        let review = try fixture.review(snapshot)
         #expect(fixture.runner.labels == ["local"])
         #expect(review.githubLabels == ["self-hosted", "xcode"])
-        #expect(try review.apply(in: fixture.context))
+        #expect(try review.apply(snapshot: snapshot, in: fixture.context))
         #expect(fixture.runner.labels == ["self-hosted", "xcode"])
         #expect(try fixture.context.fetch(FetchDescriptor<AuditLogEntity>()).contains { $0.targetRunnerName == "fixture" })
     }
@@ -21,7 +22,8 @@ struct RunnerRemoteLabelReviewTests {
     @Test("Changed account, identity or local labels invalidate a label review", arguments: ["account", "runner", "labels"])
     func rejectsStaleConfirmation(_ change: String) async throws {
         let fixture = try Fixture()
-        let review = try await fixture.review()
+        let snapshot = try await fixture.snapshot()
+        let review = try fixture.review(snapshot)
         switch change {
         case "account":
             try GitHubAccountStore.activate(accountID: fixture.account.id, in: fixture.context)
@@ -30,8 +32,32 @@ struct RunnerRemoteLabelReviewTests {
         default:
             fixture.runner.labels = ["new-local"]
         }
-        #expect(try !review.apply(in: fixture.context))
+        #expect(try !review.apply(snapshot: snapshot, in: fixture.context))
         #expect(fixture.runner.labels != review.githubLabels)
+    }
+
+    @Test("A dismissed GitHub observation cannot be adopted from an old confirmation")
+    func rejectsDiscardedObservation() async throws {
+        let fixture = try Fixture()
+        let snapshot = try await fixture.snapshot()
+        let review = try fixture.review(snapshot)
+
+        #expect(try !review.apply(snapshot: nil, in: fixture.context))
+        #expect(fixture.runner.labels == ["local"])
+    }
+
+    @Test("Confirmed label updates preserve read-only labels and require the same selection and draft")
+    func preparesVerifiedGitHubWrite() async throws {
+        let fixture = try Fixture()
+        let snapshot = try await fixture.snapshot()
+        let update = try #require(RunnerRemoteLabelUpdate(snapshot: snapshot, runner: fixture.runner,
+            account: fixture.account, draft: ["self-hosted", "xcode", "fastlane"]))
+        #expect(update.customLabels == ["xcode", "fastlane"])
+        #expect(try update.isCurrent(in: fixture.context))
+        #expect(update.verifiesResult(["self-hosted", "xcode", "fastlane"]))
+        #expect(!update.verifiesResult(["self-hosted", "xcode"]))
+        try GitHubAccountStore.activate(accountID: fixture.account.id, in: fixture.context)
+        #expect(try !update.isCurrent(in: fixture.context))
     }
 
     @MainActor
@@ -53,15 +79,18 @@ struct RunnerRemoteLabelReviewTests {
             try context.save()
         }
 
-        func review() async throws -> RunnerRemoteLabelReview {
-            let data = Data(#"{"id":91,"name":"fixture","os":"macOS","status":"offline","busy":false,"labels":[{"name":"self-hosted"},{"name":"xcode"}]}"#.utf8)
+        func review(_ latest: RunnerSyncSnapshot) throws -> RunnerRemoteLabelReview {
+            return try #require(RunnerRemoteLabelReview(snapshot: latest, runner: runner, account: account))
+        }
+
+        func snapshot() async throws -> RunnerSyncSnapshot {
+            let data = Data(#"{"id":91,"name":"fixture","os":"macOS","status":"offline","busy":false,"labels":[{"name":"self-hosted","type":"read-only"},{"name":"xcode","type":"custom"}]}"#.utf8)
             let remote = try JSONDecoder().decode(GitHubRemoteRunnerDTO.self, from: data)
             let monitor = RunnerRemoteSyncMonitor(scheduler: RunnerSyncScheduler { _, _, _, _ in
                 .found(remote, eTag: nil)
             })
             await monitor.refresh(in: context)
-            let snapshot = try #require(monitor.snapshot)
-            return try #require(RunnerRemoteLabelReview(snapshot: snapshot, runner: runner, account: account))
+            return try #require(monitor.snapshot)
         }
     }
 }
