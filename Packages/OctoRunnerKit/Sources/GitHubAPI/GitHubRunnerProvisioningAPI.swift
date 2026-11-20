@@ -156,8 +156,17 @@ public actor GitHubRunnerProvisioningClient {
         }
 
         let body = try JSONSerialization.data(withJSONObject: ["labels": labels])
-        _ = try await sendRequest(url: endpointURL, token: token, method: "PUT", body: body)
-        return labels
+        let data = try await sendRequest(url: endpointURL, token: token, method: "PUT", body: body)
+        let response = try JSONDecoder().decode(LabelResponse.self, from: data)
+        return response.labels.map(\.name)
+    }
+
+    private struct LabelResponse: Decodable {
+        struct Label: Decodable {
+            let name: String
+        }
+
+        let labels: [Label]
     }
 
     public static func isValidScope(_ url: URL) -> Bool {

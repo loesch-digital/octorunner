@@ -1,6 +1,346 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Replace Custom Labels on GitHub?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace Custom Labels on GitHub?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eigene Labels auf GitHub ersetzen?"
+          }
+        }
+      }
+    },
+    "Apply on GitHub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apply on GitHub"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auf GitHub anwenden"
+          }
+        }
+      }
+    },
+    "Replace %@ with %@ on %@?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace %@ with %@ on %@?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ durch „%@“ bei %@ ersetzen?"
+          }
+        }
+      }
+    },
+    "No custom labels": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No custom labels"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine eigenen Labels"
+          }
+        }
+      }
+    },
+    "Reviews the custom labels before replacing them on GitHub.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reviews the custom labels before replacing them on GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeigt die eigenen Labels vor dem Ersetzen auf GitHub."
+          }
+        }
+      }
+    },
+    "Refresh the GitHub runner before changing its labels.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh the GitHub runner before changing its labels."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktualisiere den GitHub-Runner, bevor du seine Labels änderst."
+          }
+        }
+      }
+    },
+    "Refresh the GitHub runner to verify which labels were saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh the GitHub runner to verify which labels were saved."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktualisiere den GitHub-Runner, um die gespeicherten Labels zu prüfen."
+          }
+        }
+      }
+    },
+    "GitHub confirmed the new labels.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub confirmed the new labels."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub hat die neuen Labels bestätigt."
+          }
+        }
+      }
+    },
+    "GitHub reports %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub reports %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub meldet %@"
+          }
+        }
+      }
+    },
+    "GitHub registration differs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub registration differs"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Registrierung weicht ab"
+          }
+        }
+      }
+    },
+    "GitHub cannot confirm this runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub cannot confirm this runner"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub kann diesen Runner nicht bestätigen"
+          }
+        }
+      }
+    },
+    "Reconnect GitHub to check this runner": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnect GitHub to check this runner"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub erneut verbinden, um den Runner zu prüfen"
+          }
+        }
+      }
+    },
+    "GitHub runner access is restricted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub runner access is restricted"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Zugriff auf den GitHub-Runner ist eingeschränkt"
+          }
+        }
+      }
+    },
+    "GitHub limit reached. Next check after %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub limit reached. Next check after %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Limit erreicht. Nächste Prüfung nach %@."
+          }
+        }
+      }
+    },
+    "GitHub runner status is unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub runner status is unavailable"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der GitHub-Runner-Status ist nicht verfügbar"
+          }
+        }
+      }
+    },
+    "The local and GitHub statuses differ.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The local and GitHub statuses differ."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der lokale Status weicht von GitHub ab."
+          }
+        }
+      }
+    },
+    "Local labels differ from GitHub.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local labels differ from GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die lokalen Labels weichen von GitHub ab."
+          }
+        }
+      }
+    },
+    "Local process %@ · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local process %@ · %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokaler Prozess %@ · %@"
+          }
+        }
+      }
+    },
+    "GitHub sync started %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub sync started %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Abgleich gestartet %@"
+          }
+        }
+      }
+    },
+    "The runner may have been removed or the selected account may lack access.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The runner may have been removed or the selected account may lack access."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Runner wurde möglicherweise entfernt oder das ausgewählte Konto hat keinen Zugriff."
+          }
+        }
+      }
+    },
     "Local runner records refreshed: %lld.": {
       "extractionState": "manual",
       "localizations": {

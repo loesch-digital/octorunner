@@ -53,6 +53,8 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 - [ ] Nur gesicherte beobachtete Statusdaten übernehmen; Labels/Gruppe bei Konflikt mit lokaler und entfernter Sicht zeigen. „Remote übernehmen“ und „lokal auf GitHub anwenden“ sind getrennte bestätigte Aktionen mit Audit.
 - [ ] Neue Model-Properties mit Defaults, Schema-/Migrationstests und makeInMemoryContainer; keinen bisherigen Store überschreiben. UI- und Unit-Tests grün, Commit/CI-Gates.
 
+**Umsetzungsstand:** Das Dashboard und die Runner-Einstellungen zeigen belegte Status- und Labelabweichungen mit getrenntem lokalen und GitHub-Status. Ein HTTP 404 bleibt ein mehrdeutiger Befund. Beide Richtungen des Labelabgleichs brauchen eine eigene Bestätigung und protokollieren angenommene Änderungen im Audit-Log. Eine GitHub-Änderung prüft die Registrierung erneut, sendet nur benutzerdefinierte Labels und übernimmt lokal erst die geprüfte GitHub-Antwort. Während einer Migration mit offenem Recovery-Journal sind Labeländerungen gesperrt. Diese Anzeige braucht keine neue SwiftData-Property. Eine bestätigte Abwesenheit anhand der Scope-Liste und Gruppenabweichungen stehen noch aus.
+
 ### Task 3: Gruppen, Multi-Repo und v0.6-Release
 
 **Files:** Modify `AppShellFeature/AddRunnerWizardViewModel.swift`, `AppShellFeature/RunnerTargetLoading.swift`, `CoreModels/RunnerScopeType.swift` und bestehende Wizard-Views; Tests `RunnerWizardProvisioningTests.swift`, `GitHubPermissionTests.swift`; `docs/releases/v0.6.0.md`.

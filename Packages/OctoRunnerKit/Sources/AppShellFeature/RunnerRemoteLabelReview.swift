@@ -29,8 +29,12 @@ struct RunnerRemoteLabelReview: Identifiable {
         originalLabels = runner.labels
     }
 
-    func apply(in context: ModelContext) throws -> Bool {
+    func apply(snapshot: RunnerSyncSnapshot?, in context: ModelContext) throws -> Bool {
         try Task.checkCancellation()
+        guard let snapshot, snapshot.account == account, snapshot.configurations[runnerID] == configuration,
+              case .found(let remote, _) = snapshot.results[runnerID],
+              remote.id == configuration.agentId, remote.name == configuration.agentName,
+              remote.labelNames == githubLabels else { return false }
         let active = FetchDescriptor<GitHubAccountEntity>(predicate: #Predicate { $0.isActive })
         guard try context.fetch(active).first.map(RunnerSyncAccount.init) == account else { return false }
         let id = runnerID

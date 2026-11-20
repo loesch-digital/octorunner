@@ -37,6 +37,19 @@ struct RunnerProvisioningAPITests {
         }
     }
 
+    @Test("Applying custom labels returns GitHub’s verified label list")
+    func returnsReportedLabels() async throws {
+        let client = GitHubRunnerProvisioningClient(transport: ProvisioningTestTransport { request in
+            #expect(request.httpMethod == "PUT")
+            #expect(request.url?.absoluteString == "https://api.github.com/repos/example/build/actions/runners/22/labels")
+            let data = Data(#"{"total_count":2,"labels":[{"name":"self-hosted","type":"read-only"},{"name":"xcode","type":"custom"}]}"#.utf8)
+            return .init(statusCode: 200, headers: [:], data: data)
+        })
+        let scope = try #require(URL(string: "https://github.com/example/build"))
+        #expect(try await client.replaceRunnerLabels(scopeURL: scope, runnerId: 22, labels: ["xcode"], token: "fixture-token")
+                == ["self-hosted", "xcode"])
+    }
+
     @Test("Invalid provisioning scopes fail before sending credentials")
     func rejectsInvalidScope() async throws {
         let client = GitHubRunnerProvisioningClient(transport: ProvisioningTestTransport { _ in

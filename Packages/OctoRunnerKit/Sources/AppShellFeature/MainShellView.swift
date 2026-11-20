@@ -461,7 +461,12 @@ public struct MainShellView: View {
     }
 
     private func runnerRow(_ runner: RunnerEntity) -> some View {
-        DashboardRunnerRow(runner: runner, lastJob: jobResults.latestByRunner[runner.id],
+        let observation = remoteSync?.snapshot.flatMap { snapshot in
+            accounts.first(where: { $0.isActive }).flatMap {
+                RunnerSyncObservation(runner: runner, account: $0, snapshot: snapshot)
+            }
+        }
+        return DashboardRunnerRow(runner: runner, lastJob: jobResults.latestByRunner[runner.id], syncObservation: observation,
             openLog: { activeConsoleRunner = runner },
             openSettings: {
                 showMigrationOnOpen = false
