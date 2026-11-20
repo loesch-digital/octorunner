@@ -109,7 +109,7 @@ jobs:
             python3 scripts/release_tools.py publish "$TAG" "$ZIP_PATH"
           fi
 
-      - name: Update Homebrew Tap (loesch-digital/homebrew-octorunner)
+      - name: Update Homebrew Tap (loesch-digital/tap)
         if: steps.version.outputs.update_homebrew == 'true'
         env:
           HOMEBREW_TAP_DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
@@ -122,9 +122,9 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
           export GIT_SSH_COMMAND="ssh -i ~/.ssh/homebrew_tap_key -o IdentitiesOnly=yes"
-          git clone git@github.com:loesch-digital/homebrew-octorunner.git /tmp/homebrew-octorunner
+          git clone git@github.com:loesch-digital/homebrew-tap.git /tmp/homebrew-tap
 
-          cat > /tmp/homebrew-octorunner/Casks/octorunner.rb <<EOF
+          cat > /tmp/homebrew-tap/Casks/octorunner.rb <<EOF
           cask "octorunner" do
             version "${VERSION}"
             sha256 "${SHA256}"
@@ -149,7 +149,7 @@ jobs:
           end
           EOF
 
-          cd /tmp/homebrew-octorunner
+          cd /tmp/homebrew-tap
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Casks/octorunner.rb
@@ -157,4 +157,4 @@ jobs:
             git commit -m "chore(cask): bump octorunner to v${VERSION}"
             git push origin main
           fi
-          rm -rf ~/.ssh/homebrew_tap_key /tmp/homebrew-octorunner
+          rm -rf ~/.ssh/homebrew_tap_key /tmp/homebrew-tap
