@@ -41,7 +41,7 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 - [ ] Gemeinsamen bestehenden GitHub-Transport verwenden; aktuelle API-Version offiziell prüfen. Bedingte Requests, begrenzte Parallelität und Rate-Limit-Backoff; keine Endlosschleifen pro View.
 - [ ] Scheduler im App-Lebenszyklus starten/stoppen; GUI-Ende bedeutet ohne separaten Agenten Ende dieses Abgleichs. Grün, Commit und CI-Gates.
 
-**Umsetzungsstand:** Der Runner-Einzelabruf verwendet den gemeinsamen GitHub-Transport und API-Version 2026-03-10. ETag-Cache und Rate-Limit-Backoff sind kontogetrennt. Der App-Dienst startet und stoppt mit der GUI und verwirft Snapshots, wenn sich Auswahl oder Runner-Registrierung während der Anfrage ändern. Paginierte Scope- und Gruppenlisten, vollständige Konfliktanzeige und deren explizite Aktionen folgen in den nächsten Aufgaben.
+**Umsetzungsstand:** Der Runner-Einzelabruf verwendet den gemeinsamen GitHub-Transport und API-Version 2026-03-10. ETag-Cache und Rate-Limit-Backoff sind kontogetrennt. Der App-Dienst startet und stoppt mit der GUI. Eine neue Auswahlrevision entwertet laufende Abrufe, auch nach einem Wechsel zurück zum ursprünglichen Konto. Lokaler Ordnerimport und Remote-Abruf sind getrennt. Der Assistent speichert die Runner-ID beim Einrichten. Abweichende GitHub-Labels können in den Runner-Einstellungen nach Bestätigung lokal übernommen werden. Paginierte Scope- und Gruppenlisten, weitere Konfliktanzeigen sowie bestätigte GitHub-Änderungen folgen in den nächsten Aufgaben.
 
 ### Task 2: Konflikte statt Überschreiben
 

@@ -44,6 +44,17 @@ struct RunnerSyncSchedulingTests {
                 == .rateLimited(retryAt: now.addingTimeInterval(60)))
     }
 
+    @Test("A secondary limit uses backoff even when the primary quota is available")
+    func headerlessSecondaryLimit() async throws {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let sync = GitHubRunnerSyncActor(transport: RunnerSyncTestTransport { _ in
+            let data = Data(#"{"message":"You have exceeded a secondary rate limit."}"#.utf8)
+            return .init(statusCode: 403, headers: ["X-RateLimit-Remaining": "300"], data: data)
+        })
+        #expect(try await sync.lookupRunner(for: configuration(), token: "fixture-token", now: now)
+                == .rateLimited(retryAt: now.addingTimeInterval(60)))
+    }
+
     @Test("A 200 response must identify the requested runner and can provide an ETag", arguments: [21, 22])
     func verifiesRunnerIdentity(_ id: Int) async throws {
         let json = """
@@ -118,6 +129,25 @@ struct RunnerSyncSchedulingTests {
         #expect(after?.results.values.allSatisfy { $0 == .forbidden } == true)
     }
 
+    @Test("Switching away and back retains the first account’s active backoff")
+    func preservesBackoffAfterAccountChange() async throws {
+        let first = RunnerSyncAccount(id: UUID(), credentialKey: "fixture-a", connectedAt: .distantPast)
+        let second = RunnerSyncAccount(id: UUID(), credentialKey: "fixture-b", connectedAt: .distantPast)
+        let requests = RunnerRateLimitRequests()
+        let scheduler = RunnerSyncScheduler { _, _, _, date in await requests.lookup(date) }
+        let query = [UUID(): try configuration()]
+        let now = Date(timeIntervalSince1970: 1_000)
+        let limited = await scheduler.refresh(account: first, runners: query, now: now)
+        let other = await scheduler.refresh(account: second, runners: query, now: now)
+        let reselected = RunnerSyncAccount(id: first.id, credentialKey: first.credentialKey,
+                                           connectedAt: first.connectedAt, selectionRevision: UUID())
+        let early = await scheduler.refresh(account: reselected, runners: query, now: now.addingTimeInterval(29))
+
+        #expect(other?.results.values.first == .forbidden)
+        #expect(early?.results == limited?.results)
+        #expect(await requests.count == 2)
+    }
+
     @Test("A delayed response is discarded after switching accounts")
     func discardsObsoleteSnapshot() async throws {
         let first = RunnerSyncAccount(id: UUID(), credentialKey: "fixture-a", connectedAt: .distantPast)
@@ -137,8 +167,8 @@ struct RunnerSyncSchedulingTests {
     }
 
     @MainActor
-    @Test("The app applies only observations for the account still selected when the lookup completes")
-    func rejectsAccountChangedDuringLookup() async throws {
+    @Test("The app discards observations after a selection change, including switching back", arguments: [false, true])
+    func rejectsAccountChangedDuringLookup(_ switchBack: Bool) async throws {
         let container = try OctoRunnerPersistence.makeInMemoryContainer()
         let context = container.mainContext
         let runnerConfig = try configuration()
@@ -159,13 +189,13 @@ struct RunnerSyncSchedulingTests {
         let monitor = RunnerRemoteSyncMonitor(scheduler: scheduler)
         let pending = Task { await monitor.refresh(in: context) }
         await gate.waitForLookup()
-        first.isActive = false
-        second.isActive = true
-        try context.save()
+        try GitHubAccountStore.activate(accountID: second.id, in: context)
+        if switchBack { try GitHubAccountStore.activate(accountID: first.id, in: context) }
         await gate.resume()
         await pending.value
 
         #expect(monitor.snapshot == nil)
+        if switchBack { return }
         await monitor.refresh(in: context)
         #expect(monitor.snapshot?.account.id == second.id)
         #expect(monitor.snapshot?.results == [runner.id: .forbidden])

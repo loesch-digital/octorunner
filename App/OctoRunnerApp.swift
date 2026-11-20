@@ -83,6 +83,7 @@ struct OctoRunnerApp: App {
                 )
             }
                 .environment(services.preferences)
+                .environment(services.remoteSyncMonitor)
                 .environment(services.integration)
                 .environment(services.notifications)
                 .environment(services.storageMaintenance)

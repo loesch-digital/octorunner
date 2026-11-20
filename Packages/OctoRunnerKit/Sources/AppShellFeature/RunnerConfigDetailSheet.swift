@@ -15,6 +15,7 @@ public struct RunnerConfigDetailSheet: View {
         let accountLogin: String
     }
 
+    @Environment(RunnerRemoteSyncMonitor.self) private var remoteSync: RunnerRemoteSyncMonitor?
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -29,6 +30,7 @@ public struct RunnerConfigDetailSheet: View {
     @State private var isSaving: Bool = false
     @State private var isMigrating: Bool = false
     @State private var migrationTask: Task<Void, Never>?
+    @State private var reviewedLabels: RunnerRemoteLabelReview?
     @State private var reviewedMigration: ReviewedMigration?
     @State private var pendingRecovery: RunnerMigrationRecovery?
     @State private var unreadableRecovery = false
@@ -113,6 +115,14 @@ public struct RunnerConfigDetailSheet: View {
         .interactiveDismissDisabled(isMigrating)
         .onDisappear { migrationTask?.cancel() }
         .task(id: runner.id) { await loadRecovery(for: runner.id) }
+        .alert(Text("Adopt GitHub Labels?", bundle: .module), isPresented: Binding(
+            get: { reviewedLabels != nil }, set: { if !$0 { reviewedLabels = nil } }
+        ), presenting: reviewedLabels) { review in
+            Button { adoptGitHubLabels(review) } label: { Text("Adopt Locally", bundle: .module) }
+            Button(role: .cancel) {} label: { Text("Cancel", bundle: .module) }
+        } message: { review in
+            Text("Labels reported by @\(review.accountLogin): \(review.githubLabels.joined(separator: ", "))", bundle: .module)
+        }
         .sheet(item: $reviewedMigration) { review in
             RunnerMigrationConfirmation(
                 runnerName: review.plan.runnerName, account: review.accountLogin, source: review.plan.sourceDirectory,
@@ -206,6 +216,17 @@ public struct RunnerConfigDetailSheet: View {
             Text(AppLocalization.string("Assigned Labels (Matched by Workflow 'runs-on:')", locale: locale))
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.secondary)
+
+            if let snapshot = remoteSync?.snapshot, let account = accounts.first(where: { $0.isActive }),
+               let review = RunnerRemoteLabelReview(snapshot: snapshot, runner: runner, account: account) {
+                Button { reviewedLabels = review } label: {
+                    Label { Text("Review GitHub Labels…", bundle: .module) } icon: {
+                        Image(systemName: "arrow.down.circle")
+                    }
+                }
+                .accessibilityHint(Text("Reviews different labels before applying them to OctoRunner.", bundle: .module))
+                .disabled(isMigrating || isSaving)
+            }
 
             ScrollView(.horizontal) {
                 HStack(spacing: 6) {
@@ -385,6 +406,20 @@ public struct RunnerConfigDetailSheet: View {
             .disabled(isSaving)
         }
         .disabled(isMigrating)
+    }
+
+    private func adoptGitHubLabels(_ review: RunnerRemoteLabelReview) {
+        do {
+            guard try review.apply(in: modelContext) else {
+                errorMessage = AppLocalization.string("The runner or account changed. Refresh and review the labels again.", locale: locale)
+                return
+            }
+            editableLabels = runner.labels
+            errorMessage = nil
+            statusBannerMessage = AppLocalization.string("GitHub labels applied locally.", locale: locale)
+        } catch {
+            errorMessage = AppLocalization.string("GitHub labels could not be saved.", locale: locale)
+        }
     }
 
     private func addCustomLabel() {

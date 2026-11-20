@@ -11,6 +11,7 @@ import TelemetryKit
 public struct MainShellView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.locale) private var locale
+    @Environment(RunnerRemoteSyncMonitor.self) private var remoteSync: RunnerRemoteSyncMonitor?
     @Environment(AppPreferencesStore.self) private var preferences: AppPreferencesStore?
     @Query(sort: \RunnerEntity.name) private var runners: [RunnerEntity]
     @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
@@ -37,7 +38,7 @@ public struct MainShellView: View {
 
     private let telemetryActor = HostTelemetryActor()
     private let updaterActor = AppUpdaterActor()
-    private let syncActor = GitHubRunnerSyncActor()
+    private let discoveryActor = LocalRunnerDiscoveryActor()
     private let migrationProvisioner = RunnerProvisionerActor()
     private let jobResults: LocalJobResults
     private let supervisor: RunnerSupervisorActor
@@ -82,11 +83,12 @@ public struct MainShellView: View {
                 .accessibilityHint(Text("Opens OctoRunner’s application settings", bundle: .module))
 
                 Button(AppLocalization.string("Sync Runners", locale: locale), systemImage: "arrow.triangle.2.circlepath.circle") {
-                    Task { await syncLocalAndRemoteRunners(manual: true) }
+                    Task { await syncLocalRunners(manual: true) }
                 }
                 .disabled(isSyncingRunners)
 
                 Button(AppLocalization.string("Import Folder…", locale: locale), systemImage: "folder.badge.plus", action: importRunnerFolderViaOpenPanel)
+                    .disabled(isSyncingRunners)
 
                 Button(AppLocalization.string("New Runner", locale: locale), systemImage: "plus") {
                     isShowingAddRunnerSheet = true
@@ -111,13 +113,12 @@ public struct MainShellView: View {
             RunnerConsoleLogSheet(runner: runner, supervisor: supervisor)
         }
         .task {
-            let initialKey = accounts.first(where: { $0.isActive })?.keychainAccountKey
             let hasConnectedAccount = !accounts.isEmpty
             guard !Task.isCancelled else { return }
             if !hasConnectedAccount {
                 isShowingAuthSheet = true
             }
-            await syncLocalAndRemoteRunners(manual: false, explicitKey: initialKey)
+            await syncLocalRunners(manual: false)
             guard !Task.isCancelled else { return }
             await checkForAppUpdates(manual: false)
         }
@@ -433,12 +434,14 @@ public struct MainShellView: View {
                     } actions: {
                         HStack(spacing: 10) {
                             Button(AppLocalization.string("Sync Local & GitHub Runners", locale: locale), systemImage: "arrow.triangle.2.circlepath") {
-                                Task { await syncLocalAndRemoteRunners(manual: true) }
+                                Task { await syncLocalRunners(manual: true) }
                             }
                             .buttonStyle(.borderedProminent)
+                            .disabled(isSyncingRunners)
 
                             Button(AppLocalization.string("Import Runner Folder…", locale: locale), systemImage: "folder.badge.plus", action: importRunnerFolderViaOpenPanel)
                                 .buttonStyle(.bordered)
+                                .disabled(isSyncingRunners)
                         }
                     }
                     .frame(maxWidth: .infinity, minHeight: 200)
@@ -524,7 +527,7 @@ public struct MainShellView: View {
 
             Button {
                 isShowingAccountPopover = false
-                Task { await syncLocalAndRemoteRunners(manual: true) }
+                Task { await syncLocalRunners(manual: true) }
             } label: {
                 Label(AppLocalization.string("Sync Local & GitHub Runners", locale: locale), systemImage: "arrow.triangle.2.circlepath.circle")
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -663,19 +666,17 @@ public struct MainShellView: View {
         return importedOrUpdated
     }
 
-    private func syncLocalAndRemoteRunners(
-        manual: Bool,
-        extraDirs: [URL] = [],
-        explicitKey: String? = nil
-    ) async {
-        let key = explicitKey ?? accounts.first(where: { $0.isActive })?.keychainAccountKey
+    private func syncLocalRunners(manual: Bool) async {
+        guard !Task.isCancelled, !isSyncingRunners else { return }
         isSyncingRunners = true
-        defer { isSyncingRunners = false }
+        await scanReservedLocalFolders(manual: manual, extraDirs: [])
+        if manual, !Task.isCancelled { await remoteSync?.refresh(in: modelContext) }
+    }
 
-        let discovered = await syncActor.discoverAndReconcileRunners(
-            accountKey: key,
-            additionalDirectories: extraDirs
-        )
+    private func scanReservedLocalFolders(manual: Bool, extraDirs: [URL]) async {
+        defer { isSyncingRunners = false }
+        guard !Task.isCancelled else { return }
+        let discovered = await discoveryActor.discoverAllLocalRunners(additionalDirectories: extraDirs)
         guard !Task.isCancelled else { return }
         let protectedPaths: Set<String>
         do {
@@ -691,12 +692,14 @@ public struct MainShellView: View {
         let count = Self.upsertDiscoveredRunners(discovered, into: modelContext, excludingPaths: protectedPaths)
         if manual {
             updateStatusMessage = count > 0
-                ? AppLocalization.string("Synced \(count) local runner(s) with GitHub.", locale: locale)
-                : AppLocalization.string("No local .runner instances found in standard paths.", locale: locale)
+                ? AppLocalization.string("Local runner records refreshed: \(count).", locale: locale)
+                : AppLocalization.string("No local runner records were updated.", locale: locale)
         }
     }
 
     private func importRunnerFolderViaOpenPanel() {
+        guard !isSyncingRunners else { return }
+        isSyncingRunners = true
         let panel = NSOpenPanel()
         panel.title = AppLocalization.string("Select Existing GitHub Actions Runner Folder", locale: locale)
         panel.message = AppLocalization.string("Choose a folder containing a configured GitHub Actions runner (.runner).", locale: locale)
@@ -705,10 +708,14 @@ public struct MainShellView: View {
         panel.allowsMultipleSelection = false
         panel.showsHiddenFiles = true
 
-        if panel.runModal() == .OK, let url = panel.url {
-            Task {
-                await syncLocalAndRemoteRunners(manual: true, extraDirs: [url])
-            }
+        guard panel.runModal() == .OK, let url = panel.url else {
+            isSyncingRunners = false
+            return
+        }
+        Task {
+            await scanReservedLocalFolders(manual: true, extraDirs: [url])
+            guard !Task.isCancelled else { return }
+            await remoteSync?.refresh(in: modelContext)
         }
     }
 
