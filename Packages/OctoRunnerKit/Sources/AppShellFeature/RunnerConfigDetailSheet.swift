@@ -7,6 +7,14 @@ import SwiftData
 import SwiftUI
 
 public struct RunnerConfigDetailSheet: View {
+    private struct ReviewedMigration: Identifiable {
+        var id: UUID { request.runnerID }
+        let plan: RunnerMigrationPlan
+        let request: RunnerMigrationRequest
+        let originalPath: String
+        let accountLogin: String
+    }
+
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -20,6 +28,11 @@ public struct RunnerConfigDetailSheet: View {
     @State private var registerBackgroundService: Bool = true
     @State private var isSaving: Bool = false
     @State private var isMigrating: Bool = false
+    @State private var migrationTask: Task<Void, Never>?
+    @State private var reviewedMigration: ReviewedMigration?
+    @State private var pendingRecovery: RunnerMigrationRecovery?
+    @State private var unreadableRecovery = false
+    @State private var isShowingRecovery = false
     @State private var statusBannerMessage: String?
     @State private var errorMessage: String?
 
@@ -31,11 +44,12 @@ public struct RunnerConfigDetailSheet: View {
 
     public init(runner: RunnerEntity, supervisor: RunnerSupervisorActor? = nil,
                 launchConfiguration: RunnerLaunchConfiguration = RunnerLaunchConfiguration(),
-                launchAgents: RunnerLaunchAgentInspector? = nil) {
+                launchAgents: RunnerLaunchAgentInspector? = nil, showMigrationOnOpen: Bool = false) {
         self.runner = runner
         self.supervisor = supervisor
         self.launchConfiguration = launchConfiguration
         self.launchAgents = launchAgents
+        _selectedTab = State(initialValue: showMigrationOnOpen ? "autostart" : "general")
         _editableLabels = State(initialValue: runner.labels)
     }
 
@@ -85,6 +99,7 @@ public struct RunnerConfigDetailSheet: View {
                     Text(errorMessage)
                         .font(.system(size: 12))
                         .foregroundStyle(OctoTheme.errorRed)
+                        .textSelection(.enabled)
                 }
             }
 
@@ -95,6 +110,28 @@ public struct RunnerConfigDetailSheet: View {
         .padding(22)
         .frame(width: 660, height: 580)
         .background(OctoTheme.surfaceLowest)
+        .interactiveDismissDisabled(isMigrating)
+        .onDisappear { migrationTask?.cancel() }
+        .task(id: runner.id) { await loadRecovery(for: runner.id) }
+        .sheet(item: $reviewedMigration) { review in
+            RunnerMigrationConfirmation(
+                runnerName: review.plan.runnerName, account: review.accountLogin, source: review.plan.sourceDirectory,
+                destination: review.plan.destination, scope: review.plan.scope, group: review.plan.group?.name,
+                labels: review.request.labels, launchAgent: review.plan.launchAgent,
+                onCancel: { reviewedMigration = nil },
+                onConfirm: {
+                    reviewedMigration = nil
+                    migrationTask = Task { await confirmMigration(review) }
+                }
+            )
+        }
+        .sheet(isPresented: $isShowingRecovery) {
+            RunnerMigrationRecoveryView(
+                recovery: pendingRecovery, error: errorMessage, isWorking: isMigrating,
+                discard: pendingRecovery?.stage == .preparing ? { runRecovery(discard: true) } : nil,
+                retry: canRetryMigrationStartup ? { runRecovery(discard: false) } : nil
+            )
+        }
     }
 
     private var headerBar: some View {
@@ -255,6 +292,14 @@ public struct RunnerConfigDetailSheet: View {
 
     private var autostartAndMigrationCard: some View {
         VStack(alignment: .leading, spacing: 14) {
+            if pendingRecovery != nil || unreadableRecovery {
+                Button { isShowingRecovery = true } label: {
+                    Label { Text("Review Migration Recovery", bundle: .module) } icon: {
+                        Image(systemName: "exclamationmark.triangle")
+                    }
+                }
+                .accessibilityHint(Text("Opens the last recorded migration stage and recovery instructions.", bundle: .module))
+            }
             if runner.isImportedLocal {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
@@ -264,9 +309,7 @@ public struct RunnerConfigDetailSheet: View {
                             .font(.system(size: 13, weight: .bold))
                     }
 
-                    Text(AppLocalization.string(
-                        "This runner is currently located at its original folder (\(runner.rootDirectoryPath ?? AppLocalization.string("external path", locale: locale))). Migration copies its configuration into OctoRunner’s Application Support folder. You can also enable automatic startup at login.", locale: locale)
-                    )
+                    Text("Stop the existing runner and disable its previous automatic startup before reviewing the migration.", bundle: .module)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
 
@@ -274,9 +317,10 @@ public struct RunnerConfigDetailSheet: View {
                         Text("Automatic Background Start on macOS Login", bundle: .module)
                     }
                     .accessibilityHint(Text("Installs a LaunchAgent when the runner is migrated.", bundle: .module))
+                    .disabled(isMigrating)
 
                     Button {
-                        Task { await migrateRunnerToOctoRunner() }
+                        migrationTask = Task { await prepareMigration() }
                     } label: {
                         HStack(spacing: 6) {
                             if isMigrating {
@@ -284,13 +328,14 @@ public struct RunnerConfigDetailSheet: View {
                                 Text(AppLocalization.string("Migrating Runner…", locale: locale))
                             } else {
                                 Image(systemName: "bolt.horizontal.circle.fill")
-                                Text(AppLocalization.string("Migrate into OctoRunner", locale: locale))
+                                Text("Review Runner Migration", bundle: .module)
                             }
                         }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(OctoTheme.accentBlue)
-                    .disabled(isMigrating)
+                    .accessibilityHint(Text("Checks the selected runner folder and its GitHub registration.", bundle: .module))
+                    .disabled(isMigrating || isSaving || pendingRecovery != nil || unreadableRecovery)
                 }
                 .padding(14)
                 .background(OctoTheme.surface, in: .rect(cornerRadius: 10))
@@ -339,6 +384,7 @@ public struct RunnerConfigDetailSheet: View {
             .tint(OctoTheme.accentBlue)
             .disabled(isSaving)
         }
+        .disabled(isMigrating)
     }
 
     private func addCustomLabel() {
@@ -367,42 +413,187 @@ public struct RunnerConfigDetailSheet: View {
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: runner.workDirectoryPath)
     }
 
-    private func migrateRunnerToOctoRunner() async {
+    private func prepareMigration() async {
+        guard !Task.isCancelled, !isMigrating else { return }
         isMigrating = true
         errorMessage = nil
         defer { isMigrating = false }
 
-        let runnerID = runner.id
-        let runnerName = runner.name
-        let sourcePath = runner.rootDirectoryPath ?? runner.workDirectoryPath
-        let sourceURL = if let root = runner.rootDirectoryPath {
-            URL(filePath: root, directoryHint: .isDirectory)
-        } else {
-            URL(filePath: runner.workDirectoryPath).deletingLastPathComponent()
+        guard let sourcePath = runner.rootDirectoryPath,
+              let remoteID = runner.githubRunnerId, let scope = URL(string: runner.scopeUrlString) else {
+            errorMessage = migrationMessage(for: RunnerMigrationError.runnerIdentityMismatch)
+            return
         }
-        let launchAgentInstalled = registerBackgroundService
-        let actorLogin = accounts.first(where: { $0.isActive })?.login
+        guard let account = accounts.first(where: { $0.isActive }) else {
+            errorMessage = migrationMessage(for: RunnerMigrationError.runnerNotAccessible)
+            return
+        }
+        let login = account.login
+        let request = RunnerMigrationRequest(runnerID: runner.id, name: runner.name, remoteRunnerID: remoteID,
+            sourceDirectory: URL(filePath: sourcePath, directoryHint: .isDirectory), scope: scope, labels: runner.labels,
+            accountKey: account.keychainAccountKey, launchAgent: registerBackgroundService)
 
         do {
-            let migratedRoot = try await provisionerActor.migrateImportedRunnerDirectory(
-                runnerName: runnerName,
-                sourceRootDirectory: sourceURL,
-                registerLaunchAgent: launchAgentInstalled
-            )
-            guard let migratedName = try RunnerMigrationCompletion.apply(
-                runnerID: runnerID, expectedSourcePath: sourcePath, managedRoot: migratedRoot,
-                context: modelContext, actorLogin: actorLogin, launchAgentInstalled: launchAgentInstalled
-            ) else {
-                errorMessage = AppLocalization.string("Migration finished on disk, but the runner changed or was removed. Review the managed folder before retrying.", locale: locale)
-                return
-            }
-            statusBannerMessage = AppLocalization.string("Successfully migrated '\(migratedName)' into OctoRunner!", locale: locale)
+            let plan = try await provisionerActor.prepareMigration(request)
+            try Task.checkCancellation()
+            reviewedMigration = ReviewedMigration(plan: plan, request: request, originalPath: sourcePath, accountLogin: login)
         } catch is CancellationError {
             return
         } catch {
             guard !Task.isCancelled else { return }
-            errorMessage = error.localizedDescription
+            errorMessage = migrationMessage(for: error)
+            if error as? RunnerMigrationError == .recoveryRequired {
+                await loadRecovery(for: request.runnerID)
+            }
         }
+    }
+
+    private func confirmMigration(_ review: ReviewedMigration) async {
+        guard !Task.isCancelled, !isMigrating, let supervisor else { return }
+        isMigrating = true
+        errorMessage = nil
+        defer { isMigrating = false }
+        let request = review.request
+        let context = modelContext
+
+        do {
+            guard accounts.first(where: { $0.isActive })?.keychainAccountKey == request.accountKey else {
+                throw RunnerMigrationError.runnerNotAccessible
+            }
+            try await provisionerActor.confirmMigration(review.plan, launch: launchConfiguration, supervisor: supervisor,
+                launchAgents: launchAgents) { registration in
+                    guard try RunnerMigrationCompletion.apply(
+                        runnerID: request.runnerID, expectedSourcePath: review.originalPath, managedRoot: review.plan.destination,
+                        context: context, actorLogin: review.accountLogin, launchAgentInstalled: request.launchAgent,
+                        oldRemoteID: request.remoteRunnerID, newRemoteID: registration.remoteID, installedVersion: registration.version
+                    ) != nil else { throw RunnerMigrationError.runnerIdentityMismatch }
+                }
+            try Task.checkCancellation()
+            statusBannerMessage = AppLocalization.string("Runner migration completed.", locale: locale)
+        } catch is CancellationError {
+            return
+        } catch {
+            guard !Task.isCancelled else { return }
+            errorMessage = migrationMessage(for: error)
+            if error as? RunnerMigrationError == .recoveryRequired {
+                AuditLogRecorder.record(in: context, category: .configuration, severity: .warning,
+                    title: "Runner Migration Needs Recovery", summary: "Check the last recorded migration stage.",
+                    actorAccountLogin: review.accountLogin, targetRunnerName: request.name)
+                await loadRecovery(for: request.runnerID)
+                guard !Task.isCancelled else { return }
+                isShowingRecovery = true
+            }
+        }
+    }
+
+    private func loadRecovery(for runnerID: UUID) async {
+        do {
+            let recovery = try await provisionerActor.migrationRecovery(for: runnerID)
+            guard !Task.isCancelled else { return }
+            pendingRecovery = recovery
+            unreadableRecovery = false
+        } catch {
+            guard !Task.isCancelled else { return }
+            pendingRecovery = nil
+            unreadableRecovery = true
+        }
+    }
+
+    private var canRetryMigrationStartup: Bool {
+        guard let recovery = pendingRecovery, let remoteID = runner.githubRunnerId, recovery.newRemoteID != nil else {
+            return false
+        }
+        if runner.isImportedLocal {
+            return [.registered, .committing].contains(recovery.stage) && recovery.version != nil && recovery.launchAgent != nil
+                && remoteID == recovery.oldRemoteID && RunnerMigrationCompletion.matchesPath(runner.rootDirectoryPath, recovery.source)
+        }
+        guard [.starting, .committing].contains(recovery.stage) else { return false }
+        return remoteID == recovery.newRemoteID && RunnerMigrationCompletion.matchesPath(runner.rootDirectoryPath, recovery.destination)
+    }
+
+    private func runRecovery(discard: Bool) {
+        migrationTask = Task { await recoverMigration(discard: discard) }
+    }
+
+    private func recoverMigration(discard: Bool) async {
+        guard !Task.isCancelled, !isMigrating else { return }
+        let runnerID = runner.id
+        isMigrating = true
+        errorMessage = nil
+        defer { isMigrating = false }
+        do {
+            if discard {
+                try await provisionerActor.discardInterruptedMigrationPreparation(for: runnerID)
+            } else {
+                guard canRetryMigrationStartup, let supervisor, let recovery = pendingRecovery,
+                      let remoteID = recovery.newRemoteID, let background = recovery.launchAgent,
+                      let scope = URL(string: runner.scopeUrlString),
+                      let account = accounts.first(where: { $0.isActive }) else {
+                    throw RunnerMigrationError.recoveryRequired
+                }
+                let context = modelContext
+                let accountLogin = account.login
+                let commit: (@MainActor @Sendable (RunnerMigrationRecovery, RunnerMigrationRegistration) throws -> Void)?
+                if runner.isImportedLocal {
+                    commit = { entry, registration in
+                        guard try RunnerMigrationCompletion.apply(
+                            runnerID: entry.runnerID, expectedSourcePath: entry.source.path, managedRoot: entry.destination,
+                            context: context, actorLogin: accountLogin, launchAgentInstalled: background,
+                            oldRemoteID: entry.oldRemoteID, newRemoteID: registration.remoteID, installedVersion: registration.version
+                        ) != nil else { throw RunnerMigrationError.runnerIdentityMismatch }
+                    }
+                } else {
+                    commit = nil
+                }
+                let configuration = ManagedRunnerConfiguration(runnerID: runnerID, name: runner.name,
+                    rootDirectory: recovery.destination, mode: background ? .launchAgent : .direct, launch: launchConfiguration)
+                try await provisionerActor.retryMigrationStartup(configuration: configuration, remoteID: remoteID,
+                    scope: scope, labels: runner.labels, accountKey: account.keychainAccountKey,
+                    supervisor: supervisor, launchAgents: launchAgents, commit: commit)
+            }
+            try Task.checkCancellation()
+            await loadRecovery(for: runnerID)
+            guard !Task.isCancelled else { return }
+            isShowingRecovery = false
+            if !discard {
+                statusBannerMessage = AppLocalization.string("Runner migration completed.", locale: locale)
+            }
+        } catch is CancellationError {
+            return
+        } catch {
+            guard !Task.isCancelled else { return }
+            errorMessage = migrationMessage(for: error)
+        }
+    }
+
+    private func migrationMessage(for error: any Error) -> String {
+        let key: String.LocalizationValue = switch error as? RunnerMigrationError {
+        case .unverifiedSource, .sourceChanged:
+            "OctoRunner could not verify the runner folder. Check the original folder before trying again."
+        case .runnerIdentityMismatch:
+            "The imported runner does not match its GitHub registration. Refresh the runner and check its repository or organization."
+        case .runnerNotAccessible:
+            "The selected account cannot access this runner on GitHub. Check the account and runner permissions."
+        case .runnerBusy:
+            "This runner is executing a job. Wait for the job to finish before stopping the runner."
+        case .listenerStillRunning:
+            "The original runner is still running or GitHub has not marked it offline. Stop it and try again when it is offline."
+        case .labelsChanged, .incompatibleRunnerLabels:
+            "The current GitHub labels cannot be preserved. Check the runner labels and refresh the runner."
+        case .groupChanged:
+            "OctoRunner could not confirm the original runner group. Check the group and the selected account’s permissions."
+        case .recoveryRequired:
+            "The migration needs recovery. Review the last recorded stage before restarting a runner."
+        case .conflictingService:
+            "A background service with the destination name already exists. Check it before trying again."
+        case .sourceServiceInstalled:
+            "The original GitHub runner service is still installed. Stop and uninstall the old service first. Keep the runner registered on GitHub."
+        case .unsupportedSourcePolicy:
+            "OctoRunner cannot preserve this runner’s ephemeral or pinned-update configuration."
+        case nil:
+            "OctoRunner could not complete this migration step. Check the runner folder and GitHub access."
+        }
+        return AppLocalization.string(key, locale: locale)
     }
 
     private func saveChangesAndSyncGitHub() async {

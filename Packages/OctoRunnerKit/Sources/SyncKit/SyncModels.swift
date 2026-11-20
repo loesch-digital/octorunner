@@ -9,6 +9,8 @@ public struct LocalDotRunnerConfig: Codable, Sendable, Equatable {
     public let serverUrl: String?
     public let gitHubUrl: URL
     public let workFolder: String
+    public let ephemeral: Bool?
+    public let disableUpdate: Bool?
 
     public init(
         agentId: Int64,
@@ -17,7 +19,9 @@ public struct LocalDotRunnerConfig: Codable, Sendable, Equatable {
         poolName: String? = "Default",
         serverUrl: String? = nil,
         gitHubUrl: URL,
-        workFolder: String = "_work"
+        workFolder: String = "_work",
+        ephemeral: Bool? = nil,
+        disableUpdate: Bool? = nil
     ) {
         self.agentId = agentId
         self.agentName = agentName
@@ -26,6 +30,8 @@ public struct LocalDotRunnerConfig: Codable, Sendable, Equatable {
         self.serverUrl = serverUrl
         self.gitHubUrl = gitHubUrl
         self.workFolder = workFolder
+        self.ephemeral = ephemeral
+        self.disableUpdate = disableUpdate
     }
 
     /// Strips the .NET UTF-8 Byte Order Mark (`0xEF 0xBB 0xBF`) if present before decoding `.runner` JSON.

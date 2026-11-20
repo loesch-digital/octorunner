@@ -2,6 +2,7 @@ import CoreModels
 import Darwin
 import Foundation
 import GitHubAPI
+import SyncKit
 
 public struct ProvisionedRunnerSummary: Sendable, Equatable {
     public let name: String
@@ -57,6 +58,124 @@ public actor RunnerProvisionerActor {
                 ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Library/Application Support")
             self.baseRunnersDirectory = appSupport.appending(path: "io.octorunner.macos/runners", directoryHint: .isDirectory)
         }
+    }
+
+    public func prepareMigration(_ request: RunnerMigrationRequest) async throws -> RunnerMigrationPlan {
+        guard try migrationJournal.pending(request.runnerID) == nil else { throw RunnerMigrationError.recoveryRequired }
+        return try await recheckMigration(request)
+    }
+
+    public func migrationRecovery(for runnerID: UUID) throws -> RunnerMigrationRecovery? {
+        try migrationJournal.pending(runnerID)
+    }
+
+    public func migrationProtectedPaths() throws -> Set<String> {
+        try migrationJournal.protectedPaths()
+    }
+
+    public func discardInterruptedMigrationPreparation(for runnerID: UUID) async throws {
+        try await RunnerMigrationCoordinator(journal: migrationJournal).discardPreparation(for: runnerID, in: baseRunnersDirectory)
+    }
+
+    public func retryMigrationStartup(
+        configuration: ManagedRunnerConfiguration, remoteID: Int64, scope: URL,
+        labels: [String], accountKey: String, supervisor: RunnerSupervisorActor, launchAgents: RunnerLaunchAgentInspector?,
+        commit: (@MainActor @Sendable (RunnerMigrationRecovery, RunnerMigrationRegistration) throws -> Void)? = nil
+    ) async throws {
+        guard configuration.mode == .direct || configuration.mode == .launchAgent,
+              configuration.rootDirectory.deletingLastPathComponent().standardizedFileURL.path == baseRunnersDirectory.standardizedFileURL.path,
+              RunnerMigrationSource.isGitHubScope(scope) else {
+            throw RunnerMigrationError.recoveryRequired
+        }
+        let client = provisioningClient
+        let verify: @Sendable (RunnerMigrationRecovery) async throws -> GitHubRemoteRunnerDTO = { entry in
+            let loaded = try RunnerMigrationSource.inspect(entry.destination).configuration
+            guard loaded.agentName == configuration.name, loaded.agentId == remoteID,
+                  loaded.workFolder == "_work", RunnerMigrationPreflight.matchesScope(scope, actual: loaded.gitHubUrl),
+                  entry.launchAgent == (configuration.mode == .launchAgent) else {
+                throw RunnerMigrationError.runnerIdentityMismatch
+            }
+            let oauth = try await client.readToken(for: accountKey)
+            let checks = RunnerMigrationGitHubChecks()
+            let expected = RunnerMigrationPreflight.arm64MacLabels.union(labels.map { $0.lowercased() })
+            guard let remote = try await checks.runner(for: loaded, token: oauth),
+                  remote.id == remoteID, remote.name == loaded.agentName,
+                  Set(remote.labelNames.map { $0.lowercased() }) == expected else {
+                throw RunnerMigrationError.runnerNotAccessible
+            }
+            if remote.id != entry.oldRemoteID,
+               try await !checks.previousRunnerIsAbsent(for: loaded, previousID: entry.oldRemoteID, token: oauth) {
+                throw RunnerMigrationError.runnerIdentityMismatch
+            }
+            if loaded.inferredScopeType == .organization {
+                guard let group = try await checks.group(for: loaded, runnerID: remoteID, token: oauth),
+                      group.id == loaded.poolId, group.name == loaded.poolName else { throw RunnerMigrationError.groupChanged }
+            }
+            return remote
+        }
+        let finalize: (@Sendable (RunnerMigrationRecovery) async throws -> Void)?
+        if let commit {
+            finalize = { entry in
+                let remote = try await verify(entry)
+                guard let version = entry.version, remote.status == "offline", !remote.busy else {
+                    throw RunnerMigrationError.recoveryRequired
+                }
+                try await commit(entry, .init(remoteID: remoteID, version: version))
+            }
+        } else {
+            finalize = nil
+        }
+        try await RunnerMigrationCoordinator(journal: migrationJournal).retryStartup(
+            for: configuration.runnerID, destination: configuration.rootDirectory, remoteID: remoteID, commit: finalize
+        ) { entry in
+            let remote = try await verify(entry)
+            try await RunnerMigrationStartup.start(
+                runnerID: entry.runnerID, name: configuration.name, original: entry.source, destination: entry.destination,
+                launchInBackground: configuration.mode == .launchAgent, launch: configuration.launch,
+                supervisor: supervisor, launchAgents: launchAgents, mayLaunchNewProcess: remote.status == "offline" && !remote.busy
+            )
+        }
+    }
+
+    public func confirmMigration(
+        _ plan: RunnerMigrationPlan,
+        launch: RunnerLaunchConfiguration,
+        supervisor: RunnerSupervisorActor,
+        launchAgents: RunnerLaunchAgentInspector?,
+        commit: @escaping @MainActor @Sendable (RunnerMigrationRegistration) throws -> Void
+    ) async throws {
+        guard !plan.launchAgent || launchAgents != nil else { throw RunnerSupervisionError.notManaged }
+        let operations = RunnerProvisioningMigrationOperations(
+            plan: plan, launch: launch, provisioning: provisioningClient, binaryCache: binaryCache,
+            supervisor: supervisor, launchAgents: launchAgents, commit: commit,
+            preflight: { try await self.recheckMigration($0) }
+        )
+        _ = try await RunnerMigrationCoordinator(journal: migrationJournal).migrate(plan, operations: operations)
+    }
+
+    private var migrationJournal: RunnerMigrationJournal {
+        RunnerMigrationJournal(directory: baseRunnersDirectory.deletingLastPathComponent()
+            .appending(path: "migration-journals", directoryHint: .isDirectory))
+    }
+
+    // Only the coordinator may recheck a plan after reserving its journal.
+    private func recheckMigration(_ request: RunnerMigrationRequest) async throws -> RunnerMigrationPlan {
+        let client = provisioningClient
+        let checks = RunnerMigrationGitHubChecks()
+        let sampler = RunnerProcessSampler()
+        let preflight = RunnerMigrationPreflight(
+            baseRunnersDirectory: baseRunnersDirectory,
+            fetchRemote: { config, account in
+                let token = try await client.readToken(for: account)
+                return try await checks.runner(for: config, token: token)
+            },
+            fetchGroup: { config, account, runnerID in
+                let token = try await client.readToken(for: account)
+                return try await checks.group(for: config, runnerID: runnerID, token: token)
+            },
+            sampleProcesses: { try await sampler.sample() }
+        )
+        return try await preflight.prepare(request)
     }
 
     public func provisionRunners(
@@ -159,49 +278,6 @@ public actor RunnerProvisionerActor {
         }
     }
 
-    /// Migrates an existing local runner directory (e.g. `~/Documents/apps/actions-runner`) into OctoRunner's managed directory
-    /// (`~/Library/Application Support/io.octorunner.macos/runners/<name>`) and optionally registers its LaunchAgent.
-    public func migrateImportedRunnerDirectory(
-        runnerName: String,
-        sourceRootDirectory: URL,
-        registerLaunchAgent: Bool,
-        configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration()
-    ) async throws -> URL {
-        try Self.validateRunnerName(runnerName)
-        try FileManager.default.createDirectory(at: baseRunnersDirectory, withIntermediateDirectories: true)
-        let destinationRoot = baseRunnersDirectory.appending(path: runnerName, directoryHint: .isDirectory)
-
-        if sourceRootDirectory.standardizedFileURL != destinationRoot.standardizedFileURL {
-            if FileManager.default.fileExists(atPath: destinationRoot.path(percentEncoded: false)) {
-                throw RunnerEngineError.runnerDirectoryAlreadyExists
-            }
-            try FileManager.default.copyItem(at: sourceRootDirectory, to: destinationRoot)
-        }
-
-        let workDir = destinationRoot.appending(path: "_work", directoryHint: .isDirectory)
-        let diagDir = destinationRoot.appending(path: "_diag", directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: diagDir, withIntermediateDirectories: true)
-
-        if registerLaunchAgent {
-            let label = RunnerServiceLabel.forRunner(named: runnerName)
-            let plistData = try LaunchAgentPlistGenerator.generatePlistData(
-                serviceLabel: label,
-                runnerRootDirectory: destinationRoot,
-                configuration: configuration
-            )
-            let plistURL = LaunchAgentPlistGenerator.launchAgentPlistURL(for: label)
-            try FileManager.default.createDirectory(
-                at: plistURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            try plistData.write(to: plistURL, options: .atomic)
-            _ = try await Self.bootstrapLaunchAgent(plistURL: plistURL)
-        }
-
-        return destinationRoot
-    }
-
     static func createInstanceDirectory(name: String, in base: URL) throws -> URL {
         try validateRunnerName(name)
         let root = base.appending(path: name, directoryHint: .isDirectory)
@@ -212,7 +288,7 @@ public actor RunnerProvisionerActor {
         return root
     }
 
-    private static func validateRunnerName(_ name: String) throws {
+    static func validateRunnerName(_ name: String) throws {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               name != ".", name != "..", name.utf8.count <= 200,
               !name.contains("/"), !name.contains("\\"),
@@ -246,7 +322,8 @@ public actor RunnerProvisionerActor {
         registrationToken: String,
         runnerName: String,
         labels: [String],
-        configuration: RunnerLaunchConfiguration
+        configuration: RunnerLaunchConfiguration,
+        runnerGroup: String? = nil
     ) async throws {
         let configScript = instanceRoot.appending(path: "config.sh")
         let process = Process()
@@ -256,13 +333,16 @@ public actor RunnerProvisionerActor {
             configScript.path(percentEncoded: false),
             "--unattended",
             "--url", scopeURL.absoluteString,
-            "--token", registrationToken,
             "--name", runnerName,
             "--labels", labels.joined(separator: ","),
             "--work", "_work",
             "--replace"
         ]
-        process.environment = ProcessInfo.processInfo.environment.merging(configuration.environment) { _, configured in configured }
+        var environment = ProcessInfo.processInfo.environment.merging(configuration.environment) { _, configured in configured }
+        environment = environment.filter { !$0.key.uppercased().hasPrefix("ACTIONS_RUNNER_INPUT_") }
+        environment["ACTIONS_RUNNER_INPUT_TOKEN"] = registrationToken
+        environment["ACTIONS_RUNNER_INPUT_RUNNERGROUP"] = runnerGroup
+        process.environment = environment
         // Unattended setup has no interactive input. Its output can contain the
         // registration credential, so never retain it in errors or diagnostic logs.
         // Null handles also avoid filling an undrained pipe while awaiting exit.

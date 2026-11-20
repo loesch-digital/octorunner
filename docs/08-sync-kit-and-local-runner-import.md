@@ -6,6 +6,17 @@
 
 > **Privacy correction (v0.4.4):** External paths such as Documents are inspected only after explicit selection using **Import Folder…**. Automatic discovery is limited to `~/actions-runner`, `~/.octorunner/runners/*`, and `~/Library/Application Support/io.octorunner.macos/runners/*`. Process-table paths alone do not authorize filesystem reads. External embedded logs require a user action. The automatic Documents scanning described below is historical and superseded by [the privacy audit](./09-pipeline-privacy-and-test-audit.md).
 
+## Migrating an imported runner in v0.6
+
+1. Wait for the current job to finish. Stop the original runner and disable its autostart. For a service installed with GitHub’s standard macOS installer, stop and uninstall the old service while keeping its GitHub registration. [GitHub’s macOS service instructions](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/configure-the-application?platform=mac)
+2. Open **Runner Settings → Autostart & Migration → Review Runner Migration**. Review the account, repository or organization, group, labels and the destination. OctoRunner checks the local listener and worker and requires GitHub to report the original runner as offline. A conflicting service, changed runner identity or unsupported configuration blocks the operation.
+3. Confirm **Replace GitHub Registration**. OctoRunner stages a checksum-verified macOS ARM64 runner and registers it using a short-lived token. It keeps the original directory and previous work files in place and creates a fresh `_work` in the managed directory. GitHub’s registration command finds the runner by name after OctoRunner checks the current numeric ID. Avoid concurrent registration changes in the same GitHub scope. [GitHub Runner registration implementation](https://github.com/actions/runner/blob/main/src/Runner.Listener/Configuration/ConfigurationManager.cs)
+4. OctoRunner saves the verified GitHub runner ID and an audit entry before starting the replacement. The selected mode determines whether it can run after OctoRunner quits. Local discovery excludes both paths while the journal is open and recognizes the old source after migration.
+
+The recovery dialog shows the last recorded stage. OctoRunner can discard a verified temporary installation before registration and resume a verified registration without registering again. If GitHub may have replaced the registration before it could be verified, use the GitHub runner settings to determine the current registration before attempting recovery. A copy of the original directory alone cannot restore overwritten GitHub credentials.
+
+Repository registration requires repository administration access. Organization migration also checks membership in the Runner Group and requires organization runner access. GitHub’s fine-grained permissions are Administration for a repository and Self-hosted runners for an organization. The verification endpoints use read access and issuing a registration token needs write access. [GitHub runner permissions](https://docs.github.com/en/rest/actions/self-hosted-runners?apiVersion=2026-03-10) [GitHub Runner Group permissions](https://docs.github.com/en/rest/actions/self-hosted-runner-groups?apiVersion=2026-03-10)
+
 ---
 
 ## 1. Problem Statement & Real-World Analysis

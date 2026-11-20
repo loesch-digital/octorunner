@@ -12516,6 +12516,788 @@
           }
         }
       }
+    },
+    "Confirm Runner Migration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm Runner Migration"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Migration bestätigen"
+          }
+        }
+      }
+    },
+    "GitHub Scope": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Scope"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Ziel"
+          }
+        }
+      }
+    },
+    "Runner Group": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner Group"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Gruppe"
+          }
+        }
+      }
+    },
+    "Labels": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Labels"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Labels"
+          }
+        }
+      }
+    },
+    "Current Folder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current Folder"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bisheriger Ordner"
+          }
+        }
+      }
+    },
+    "Managed Folder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Managed Folder"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neuer verwalteter Ordner"
+          }
+        }
+      }
+    },
+    "OctoRunner will start the new runner as a macOS background service.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner will start the new runner as a macOS background service."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner startet den neuen Runner als macOS-Hintergrunddienst."
+          }
+        }
+      }
+    },
+    "OctoRunner will run the new runner while the app is open.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner will run the new runner while the app is open."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner betreibt den neuen Runner, solange die App geöffnet ist."
+          }
+        }
+      }
+    },
+    "The previous runner must stay offline. OctoRunner will replace its GitHub registration and create a fresh working directory. The original folder and job files stay in place.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The previous runner must stay offline. OctoRunner will replace its GitHub registration and create a fresh working directory. The original folder and job files stay in place."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der bisherige Runner muss offline bleiben. OctoRunner ersetzt seine GitHub-Registrierung und legt einen leeren Arbeitsordner an. Der ursprüngliche Ordner und die bisherigen Job-Dateien bleiben erhalten."
+          }
+        }
+      }
+    },
+    "If registration is interrupted, use the recovery information in Runner Settings before restarting either installation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If registration is interrupted, use the recovery information in Runner Settings before restarting either installation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn die Registrierung unterbrochen wird, öffne vor einem Neustart einer der beiden Installationen die Wiederherstellung in den Runner-Einstellungen."
+          }
+        }
+      }
+    },
+    "Closes the review without changing the runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closes the review without changing the runner."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schließt die Vorschau, ohne den Runner zu ändern."
+          }
+        }
+      }
+    },
+    "Replace GitHub Registration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace GitHub Registration"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Registrierung ersetzen"
+          }
+        }
+      }
+    },
+    "Registers the prepared installation with GitHub.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registers the prepared installation with GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registriert die vorbereitete Installation bei GitHub."
+          }
+        }
+      }
+    },
+    "Review Migration Recovery": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review Migration Recovery"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiederherstellung prüfen"
+          }
+        }
+      }
+    },
+    "Opens the last recorded migration stage and recovery instructions.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the last recorded migration stage and recovery instructions."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeigt den zuletzt gespeicherten Migrationsschritt und die Hinweise zur Wiederherstellung."
+          }
+        }
+      }
+    },
+    "Stop the existing runner and disable its previous automatic startup before reviewing the migration.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop the existing runner and disable its previous automatic startup before reviewing the migration."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beende den bisherigen Runner und deaktiviere seinen bisherigen Autostart, bevor du die Migration prüfst."
+          }
+        }
+      }
+    },
+    "Review Runner Migration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review Runner Migration"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Migration prüfen"
+          }
+        }
+      }
+    },
+    "Checks the selected runner folder and its GitHub registration.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checks the selected runner folder and its GitHub registration."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüft den ausgewählten Runner-Ordner und seine GitHub-Registrierung."
+          }
+        }
+      }
+    },
+    "Runner migration completed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner migration completed."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner-Migration abgeschlossen."
+          }
+        }
+      }
+    },
+    "OctoRunner could not verify the runner folder. Check the original folder before trying again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner could not verify the runner folder. Check the original folder before trying again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner konnte den Runner-Ordner nicht bestätigen. Prüfe den ursprünglichen Ordner vor einem erneuten Versuch."
+          }
+        }
+      }
+    },
+    "The imported runner does not match its GitHub registration. Refresh the runner and check its repository or organization.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The imported runner does not match its GitHub registration. Refresh the runner and check its repository or organization."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der importierte Runner stimmt nicht mit seiner GitHub-Registrierung überein. Aktualisiere den Runner und prüfe das Repository oder die Organisation."
+          }
+        }
+      }
+    },
+    "The selected account cannot access this runner on GitHub. Check the account and runner permissions.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The selected account cannot access this runner on GitHub. Check the account and runner permissions."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das ausgewählte Konto kann auf diesen Runner bei GitHub nicht zugreifen. Prüfe das Konto und die Runner-Berechtigungen."
+          }
+        }
+      }
+    },
+    "This runner is executing a job. Wait for the job to finish before stopping the runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This runner is executing a job. Wait for the job to finish before stopping the runner."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Runner führt einen Job aus. Warte, bis der Job abgeschlossen ist, bevor du den Runner beendest."
+          }
+        }
+      }
+    },
+    "The original runner is still running or GitHub has not marked it offline. Stop it and try again when it is offline.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The original runner is still running or GitHub has not marked it offline. Stop it and try again when it is offline."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der ursprüngliche Runner läuft noch oder GitHub meldet ihn noch nicht als offline. Beende ihn und versuche es erneut, sobald er offline ist."
+          }
+        }
+      }
+    },
+    "The current GitHub labels cannot be preserved. Check the runner labels and refresh the runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current GitHub labels cannot be preserved. Check the runner labels and refresh the runner."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die aktuellen GitHub-Labels können nicht übernommen werden. Prüfe die Labels und aktualisiere den Runner."
+          }
+        }
+      }
+    },
+    "OctoRunner could not confirm the original runner group. Check the group and the selected account’s permissions.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner could not confirm the original runner group. Check the group and the selected account’s permissions."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner konnte die bisherige Runner-Gruppe nicht bestätigen. Prüfe die Gruppe und die Berechtigungen des ausgewählten Kontos."
+          }
+        }
+      }
+    },
+    "The migration needs recovery. Review the last recorded stage before restarting a runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The migration needs recovery. Review the last recorded stage before restarting a runner."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Migration erfordert eine Wiederherstellung. Prüfe den zuletzt gespeicherten Schritt, bevor du einen Runner neu startest."
+          }
+        }
+      }
+    },
+    "A background service with the destination name already exists. Check it before trying again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A background service with the destination name already exists. Check it before trying again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Hintergrunddienst mit dem Zielnamen ist bereits vorhanden. Prüfe ihn vor einem erneuten Versuch."
+          }
+        }
+      }
+    },
+    "OctoRunner could not complete this migration step. Check the runner folder and GitHub access.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner could not complete this migration step. Check the runner folder and GitHub access."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner konnte diesen Migrationsschritt nicht abschließen. Prüfe den Runner-Ordner und den GitHub-Zugriff."
+          }
+        }
+      }
+    },
+    "Runner Migration Recovery": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner Migration Recovery"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiederherstellung der Runner-Migration"
+          }
+        }
+      }
+    },
+    "Previous GitHub Runner ID": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous GitHub Runner ID"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bisherige GitHub-Runner-ID"
+          }
+        }
+      }
+    },
+    "New GitHub Runner ID": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New GitHub Runner ID"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue GitHub-Runner-ID"
+          }
+        }
+      }
+    },
+    "Check the runner entry on GitHub and keep the original service stopped until you know which installation is registered.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check the runner entry on GitHub and keep the original service stopped until you know which installation is registered."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüfe den Runner-Eintrag bei GitHub. Lass den bisherigen Dienst ausgeschaltet, bis du weißt, welche Installation registriert ist."
+          }
+        }
+      }
+    },
+    "OctoRunner could not read the migration journal. Review the original folder and the GitHub runner entry before starting a runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner could not read the migration journal. Review the original folder and the GitHub runner entry before starting a runner."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner konnte das Migrationsjournal nicht lesen. Prüfe den ursprünglichen Ordner und den Runner-Eintrag bei GitHub, bevor du einen Runner startest."
+          }
+        }
+      }
+    },
+    "Closes the recovery instructions.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closes the recovery instructions."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schließt die Hinweise zur Wiederherstellung."
+          }
+        }
+      }
+    },
+    "Preparation was interrupted before attempting to replace the GitHub registration.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparation was interrupted before attempting to replace the GitHub registration."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Vorbereitung wurde unterbrochen, bevor OctoRunner versucht hat, die GitHub-Registrierung zu ersetzen."
+          }
+        }
+      }
+    },
+    "Runner sync paused because OctoRunner could not read the migration journal.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runner sync paused because OctoRunner could not read the migration journal."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Runner-Synchronisierung pausiert, weil OctoRunner das Migrationsjournal nicht lesen konnte."
+          }
+        }
+      }
+    },
+    "The original GitHub runner service is still installed. Stop and uninstall the old service first. Keep the runner registered on GitHub.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The original GitHub runner service is still installed. Stop and uninstall the old service first. Keep the runner registered on GitHub."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der bisherige GitHub-Runner-Dienst ist noch installiert. Beende und deinstalliere zuerst den alten Dienst. Lass den Runner bei GitHub registriert."
+          }
+        }
+      }
+    },
+    "OctoRunner cannot preserve this runner’s ephemeral or pinned-update configuration.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner cannot preserve this runner’s ephemeral or pinned-update configuration."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner kann die Einstellungen dieses kurzlebigen Runners oder seine festgeschriebene Update-Konfiguration nicht übernehmen."
+          }
+        }
+      }
+    },
+    "Discard Preparation": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard Preparation"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorbereitung verwerfen"
+          }
+        }
+      }
+    },
+    "Removes only the verified temporary installation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removes only the verified temporary installation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernt ausschließlich die überprüfte temporäre Installation."
+          }
+        }
+      }
+    },
+    "Resume Verified Migration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume Verified Migration"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bestätigte Migration fortsetzen"
+          }
+        }
+      }
+    },
+    "Verifies the existing registration, saves any pending changes and starts the managed runner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifies the existing registration, saves any pending changes and starts the managed runner."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüft die bestehende Registrierung, speichert ausstehende Änderungen und startet den verwalteten Runner."
+          }
+        }
+      }
+    },
+    "GitHub may already have replaced the registration. Use GitHub’s runner settings to determine which installation can be recovered.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub may already have replaced the registration. Use GitHub’s runner settings to determine which installation can be recovered."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub könnte die Registrierung bereits ersetzt haben. Prüfe in den GitHub-Runner-Einstellungen, welche Installation wiederhergestellt werden kann."
+          }
+        }
+      }
+    },
+    "OctoRunner saved the updated runner. You can retry the managed startup here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner saved the updated runner. You can retry the managed startup here."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner hat den aktualisierten Runner gespeichert. Du kannst den Start hier wiederholen."
+          }
+        }
+      }
+    },
+    "OctoRunner verified the new registration and can resume from the last saved step.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner verified the new registration and can resume from the last saved step."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner hat die neue Registrierung bestätigt und kann beim zuletzt gespeicherten Schritt fortfahren."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

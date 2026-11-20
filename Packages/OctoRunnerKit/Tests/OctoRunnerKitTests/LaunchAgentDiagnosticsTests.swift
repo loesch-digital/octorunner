@@ -69,6 +69,22 @@ struct LaunchAgentDiagnosticsTests {
         #expect(try await fixture.inspector.inspect(fixture.target).definition == .verified)
     }
 
+    @Test("LaunchAgent startup accepts a generated directory-hinted path and historical trailing slashes")
+    func directoryHintDefinition() async throws {
+        let fixture = try LaunchAgentDiagnosticFixture()
+        defer { fixture.remove() }
+        let root = URL(filePath: fixture.root.path, directoryHint: .isDirectory)
+        try fixture.writeDefinition(root: root)
+        #expect(try await fixture.inspector.inspect(fixture.target).definition == .verified)
+        let data = try Data(contentsOf: fixture.plist)
+        let contents = try PropertyListSerialization.propertyList(from: data, format: nil)
+        var definition = try #require(contents as? [String: Any])
+        #expect(definition["WorkingDirectory"] as? String == fixture.root.path)
+        definition["WorkingDirectory"] = fixture.root.path + "/"
+        try PropertyListSerialization.data(fromPropertyList: definition, format: .xml, options: 0).write(to: fixture.plist)
+        #expect(try await fixture.inspector.inspect(fixture.target).definition == .verified)
+    }
+
     @Test("Bootstrap consumes the verified snapshot even if the installed plist is replaced")
     func bootstrapSnapshot() async throws {
         let fixture = try LaunchAgentDiagnosticFixture()

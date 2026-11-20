@@ -6,7 +6,7 @@ public enum LaunchAgentPlistGenerator {
         runnerRootDirectory: URL,
         configuration: RunnerLaunchConfiguration = RunnerLaunchConfiguration()
     ) throws -> Data {
-        let rootPath = runnerRootDirectory.path(percentEncoded: false)
+        let rootPath = runnerRootDirectory.standardizedFileURL.path
         let runScriptPath = runnerRootDirectory.appending(path: "run.sh").path(percentEncoded: false)
         let diagDir = runnerRootDirectory.appending(path: "_diag")
 

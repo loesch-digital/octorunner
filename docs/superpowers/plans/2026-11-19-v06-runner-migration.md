@@ -36,9 +36,9 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Interfaces:** Unveränderlicher MigrationPlan enthält Runner-ID, geprüfte Quelle/Ziel, Account/Scope, Labels/Gruppe und Auswirkungen; keine Credentials. Verwendet Supervisor aus dem vorausgehenden Plan.
 
-- [ ] Bestehenden Kopierpfad gegen das Credential-Verbot aus docs/08 prüfen. Rote Tests für enthaltene RSA-Datei, Symlinktausch, fremden Listener, Busy-Runner und verlorenen GitHub-Zugriff ergänzen.
-- [ ] Preflight rein lesend auf bewusst gewählter Quelle; Quellidentität vor Mutation erneut prüfen. Labels, Account und Organisation-/Repository-Ziel mit GitHub vergleichen; Konflikte nicht automatisch überstimmen.
-- [ ] Bestätigungsdialog mit alter/neuer Betriebsart, Jobauswirkung und Wiederherstellung anzeigen; keine Mutation vor Bestätigung. UI-/Unit-Tests grün, Commit/CI-Gates.
+- [x] Den bisherigen Kopierpfad mit Tests für den Quellordner, Symlinks, einen aktiven Listener, einen laufenden Job und fehlenden GitHub-Zugriff abgesichert.
+- [x] Vorprüfung liest nur die Metadaten der gewählten Quelle. Vor der Registrierung werden Quellidentität, ruhender Listener, Labels, Account, GitHub-Ziel und gegebenenfalls die Gruppe erneut geprüft.
+- [x] Beide UI-Einstiege führen zur gleichen Bestätigung. Der Dialog zeigt Betriebsart, neue Registrierung, Arbeitsordner und Wiederherstellung. NSHostingView-Tests decken Englisch und Deutsch ab.
 
 ### Task 2: Journal, Übernahme und Wiederherstellung
 
@@ -46,8 +46,8 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Interfaces:** Coordinator `migrate(plan: RunnerMigrationPlan) async throws` liefert belegten Abschluss oder Wiederherstellungsbedarf. Journal speichert ausschließlich IDs, nicht geheime Pfade, Stufen und Resultate; Credential-Zugriff nur im bestehenden sicheren Registrierungsdienst.
 
-- [ ] Rote Failure-Injection-Tests an jeder Grenze: Stop, Staging, Registration, Start, Modell-Commit; zusätzlich Prozessabsturz und erneuter Start. Assert: höchstens ein Listener und keine RSA-Kopie.
-- [ ] Alten Listener identitätsgeprüft stoppen; frische verifizierte Binary und kurzlebiges Registrierungstoken statt privater Schlüsselkopie nutzen. Alte Installation bis zum bestätigten Abschluss erhalten.
-- [ ] Bei neu erzeugter Remote-ID Modell explizit aktualisieren. Falls alte Credentials serverseitig ungültig wurden, Rückregistrierung als eigene Kompensation prüfen; nicht behaupten, Dateirückkopie allein repariere GitHub.
-- [ ] Nach await Modell erneut laden, Cancellation beachten, Audit mit Runner-Namen und tatsächlichen Stufen/Fehlern. Wiederherstellungsdialog nach unvollständigem Journal anbieten.
+- [x] Fehlergrenzen für Vorprüfung, Vorbereitung, Registrierung, Modell-Commit und Start sowie die Wiederaufnahme mit neuem Koordinator getestet. Der ursprüngliche Schlüssel bleibt im ursprünglichen Ordner. Offene Migrationen sperren beide Pfade für den Import.
+- [x] Die Übernahme setzt einen gestoppten alten Listener und deaktivierten Autostart voraus. OctoRunner lehnt den noch installierten Standarddienst ab und prüft lokalen und GitHub-Status. Die neue Installation nutzt ein checksum-geprüftes Archiv und ein kurzlebiges Registrierungstoken.
+- [x] Die verifizierte GitHub-ID wird vor dem Start gespeichert. OctoRunner kann vorbereitete Dateien sicher verwerfen und nach bestätigter Registrierung fortsetzen. Ein Abbruch mit unbekanntem GitHub-Ergebnis erfordert eine Prüfung in GitHub, da das Registrierungsprogramm den Austausch anhand des Namens ausführt.
+- [x] SwiftData lädt die Runner-ID nach asynchronen Schritten erneut. Der Commit enthält einen Runner-bezogenen Audit-Eintrag. Das Journal zeigt bei einem Abbruch die letzte bestätigte Stufe und verfügbare Wiederherstellungsschritte.
 - [ ] Grün, unabhängiges Review, Commit und CI-Gates. Nutzerabnahme mit einem entbehrlichen Runner; vorhandene produktive Runner nicht für Fehlersimulationen verwenden.

@@ -52,6 +52,23 @@ struct RunnerConfigurationProcessTests {
         }
     }
 
+    @Test("Configuration sends the short-lived token and exact runner group through runner input variables")
+    func registrationInput() async throws {
+        try await withScript("""
+        [[ "$ACTIONS_RUNNER_INPUT_TOKEN" == "synthetic-registration-secret" ]] || exit 7
+        [[ "$ACTIONS_RUNNER_INPUT_RUNNERGROUP" == "Build runners" ]] || exit 8
+        for argument in "$@"; do
+            [[ "$argument" != "--token" && "$argument" != "synthetic-registration-secret" ]] || exit 9
+        done
+        """) { root in
+            try await RunnerProvisionerActor.runConfigScript(
+                in: root, scopeURL: URL(string: "https://github.com/example")!,
+                registrationToken: "synthetic-registration-secret", runnerName: "fixture-runner",
+                labels: ["fixture"], configuration: RunnerLaunchConfiguration(), runnerGroup: "Build runners"
+            )
+        }
+    }
+
     private func configure(_ root: URL) async throws {
         try await RunnerProvisionerActor.runConfigScript(
             in: root, scopeURL: URL(string: "https://github.com/example/repository")!,
