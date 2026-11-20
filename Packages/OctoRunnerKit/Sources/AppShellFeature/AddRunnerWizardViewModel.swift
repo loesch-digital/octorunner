@@ -285,6 +285,7 @@ public final class AddRunnerWizardViewModel {
                             pid: summary.pid,
                             executionMode: mode
                         )
+                        entity.githubRunnerId = summary.remoteID
                         if let label = summary.launchdLabel {
                             entity.serviceLabel = label
                         }

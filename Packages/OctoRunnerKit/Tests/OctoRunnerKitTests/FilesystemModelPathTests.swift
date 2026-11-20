@@ -7,6 +7,31 @@ import Testing
 
 @MainActor
 struct FilesystemModelPathTests {
+    @Test("A discovered runner with the same name and numeric ID in another repository keeps its own row")
+    func separatesRepositoryIdentities() throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let context = container.mainContext
+        let firstScope = try #require(URL(string: "https://github.com/example/first"))
+        let secondScope = try #require(URL(string: "https://github.com/example/second"))
+        let firstRoot = URL(filePath: "/tmp/runner-sync-first")
+        let secondRoot = URL(filePath: "/tmp/runner-sync-second")
+        let first = RunnerEntity(name: "same-name", scopeUrl: firstScope, labels: ["custom-label"],
+                                 workDirectory: firstRoot.appending(path: "_work"), isImportedLocal: true)
+        first.githubRunnerId = 21
+        context.insert(first)
+        try context.save()
+        let other = DiscoveredLocalRunner(rootDirectory: secondRoot,
+            config: .init(agentId: 21, agentName: first.name, gitHubUrl: secondScope),
+            workDirectory: secondRoot.appending(path: "_work"), runnerVersion: nil, listenerPID: nil,
+            isWorkerActive: false)
+
+        MainShellView.upsertDiscoveredRunners([other], into: context)
+
+        #expect(try context.fetchCount(FetchDescriptor<RunnerEntity>()) == 2)
+        #expect(first.scopeUrlString == firstScope.absoluteString)
+        #expect(first.labels == ["custom-label"])
+    }
+
     private static var retainedContainers: [ModelContainer] = []
 
     @Test("Discovery never reassigns an owned runner to another folder", arguments: [RunnerExecutionMode.direct, .launchAgent])

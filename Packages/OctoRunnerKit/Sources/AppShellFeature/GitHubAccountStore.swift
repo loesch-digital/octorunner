@@ -5,6 +5,12 @@ import SwiftData
 
 @MainActor
 public enum GitHubAccountStore {
+    static private(set) var selectionRevision = UUID()
+
+    static func invalidateSelection() {
+        selectionRevision = UUID()
+    }
+
     /// Saves metadata only. The authenticator has already stored the credential.
     @discardableResult
     public static func upsert(_ session: AuthenticatedGitHubSession, in context: ModelContext) throws -> GitHubAccountEntity {
@@ -59,6 +65,7 @@ public enum GitHubAccountStore {
             context.delete(audit)
             throw error
         }
+        invalidateSelection()
         return account
     }
 
@@ -83,5 +90,6 @@ public enum GitHubAccountStore {
             context.delete(audit)
             throw error
         }
+        invalidateSelection()
     }
 }

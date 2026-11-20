@@ -90,12 +90,14 @@ public final class AccountSessionController {
             throw AccountSessionError.accountNotFound
         }
         let login = account.login
+        let wasActive = account.isActive
         context.delete(account)
         let audit = AuditLogEntity(category: .authentication, severity: .warning,
             title: "GitHub Account Signed Out", summary: "Removed local authentication for @\(login)", actorAccountLogin: login)
         context.insert(audit)
         do {
             try save(context)
+            if wasActive { GitHubAccountStore.invalidateSelection() }
         } catch {
             // Undo this deletion only; rolling back the shared context would discard unrelated edits.
             context.insert(account)

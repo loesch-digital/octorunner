@@ -40,7 +40,7 @@ struct RunnerMigrationGitHubChecks: Sendable {
     }
 
     private static func scopePath(for config: LocalDotRunnerConfig) -> String? {
-        guard RunnerMigrationSource.isGitHubScope(config.gitHubUrl), let target = config.ownerAndRepo else {
+        guard LocalDotRunnerConfig.isGitHubScope(config.gitHubUrl), let target = config.ownerAndRepo else {
             return nil
         }
         if let repository = target.repo { return "repos/\(target.owner)/\(repository)" }

@@ -7,7 +7,7 @@ public struct GitHubRateLimitSnapshot: Sendable, Equatable {
     public let retryAfterSeconds: TimeInterval?
     public let observedAt: Date
 
-    init(headers: [String: String], observedAt: Date = .now) {
+    public init(headers: [String: String], observedAt: Date = .now) {
         func nonnegative(_ value: String?) -> Int? {
             guard let value, let number = Int(value), number >= 0 else { return nil }
             return number

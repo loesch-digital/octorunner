@@ -28,6 +28,7 @@ struct RunnerWizardProvisioningTests {
         let start = await processes.configuration
         #expect(saved.executionMode == .direct)
         #expect(saved.status == .offline)
+        #expect(saved.githubRunnerId == 1234)
         #expect(start?.runnerID == saved.id)
         #expect(start?.rootDirectory.path == saved.rootDirectoryPath)
         await gate.release()
@@ -184,6 +185,6 @@ private actor WizardProvisioner: RunnerProvisioning {
         calls += 1
         request = Request(names: instanceNames, scope: scopeType, labels: labels, configuration: configuration)
         if calls == 1, let gate { await gate.enter() }
-        return [ProvisionedRunnerSummary(name: instanceNames[0], scopeType: scopeType, scopeURL: scopeURL, rootDirectory: URL(fileURLWithPath: "/tmp/runner fixture"), workDirectory: URL(fileURLWithPath: "/tmp/runner fixture/_work"), labels: labels, runnerVersion: "fixture", launchdLabel: nil, pid: nil)]
+        return [ProvisionedRunnerSummary(name: instanceNames[0], scopeType: scopeType, scopeURL: scopeURL, rootDirectory: URL(fileURLWithPath: "/tmp/runner fixture"), workDirectory: URL(fileURLWithPath: "/tmp/runner fixture/_work"), labels: labels, runnerVersion: "fixture", launchdLabel: nil, pid: nil, remoteID: 1234)]
     }
 }

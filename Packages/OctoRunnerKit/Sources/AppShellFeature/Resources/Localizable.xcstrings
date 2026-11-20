@@ -1,6 +1,176 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Local runner records refreshed: %lld.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local runner records refreshed: %lld."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Runner aktualisiert: %lld."
+          }
+        }
+      }
+    },
+    "No local runner records were updated.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No local runner records were updated."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es wurden keine lokalen Runner aktualisiert."
+          }
+        }
+      }
+    },
+    "Adopt GitHub Labels?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adopt GitHub Labels?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Labels übernehmen?"
+          }
+        }
+      }
+    },
+    "Adopt Locally": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adopt Locally"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokal übernehmen"
+          }
+        }
+      }
+    },
+    "Labels reported by @%@: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Labels reported by @%@: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Von @%@ gemeldete Labels: %@"
+          }
+        }
+      }
+    },
+    "Review GitHub Labels…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review GitHub Labels…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Labels prüfen …"
+          }
+        }
+      }
+    },
+    "Reviews different labels before applying them to OctoRunner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reviews different labels before applying them to OctoRunner."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeigt abweichende GitHub-Labels vor der Übernahme in OctoRunner."
+          }
+        }
+      }
+    },
+    "The runner or account changed. Refresh and review the labels again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The runner or account changed. Refresh and review the labels again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Runner oder das Konto hat sich geändert. Aktualisiere den Abgleich und prüfe die Labels erneut."
+          }
+        }
+      }
+    },
+    "GitHub labels applied locally.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub labels applied locally."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Labels wurden lokal übernommen."
+          }
+        }
+      }
+    },
+    "GitHub labels could not be saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub labels could not be saved."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub-Labels konnten nicht gespeichert werden."
+          }
+        }
+      }
+    },
     "Live Runner Output": {
       "extractionState": "manual",
       "localizations": {

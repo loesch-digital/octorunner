@@ -119,7 +119,7 @@ actor RunnerMigrationPreflight {
     }
 
     static func matchesScope(_ expected: URL, actual: URL) -> Bool {
-        guard RunnerMigrationSource.isGitHubScope(expected) else { return false }
+        guard LocalDotRunnerConfig.isGitHubScope(expected) else { return false }
         func scopePath(_ url: URL) -> [String] {
             url.path.split(separator: "/").map { $0.lowercased() }
         }

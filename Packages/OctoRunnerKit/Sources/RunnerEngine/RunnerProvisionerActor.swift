@@ -14,6 +14,7 @@ public struct ProvisionedRunnerSummary: Sendable, Equatable {
     public let runnerVersion: String
     public let launchdLabel: String?
     public let pid: Int32?
+    public let remoteID: Int64?
 
     public init(
         name: String,
@@ -24,7 +25,8 @@ public struct ProvisionedRunnerSummary: Sendable, Equatable {
         labels: [String],
         runnerVersion: String,
         launchdLabel: String?,
-        pid: Int32?
+        pid: Int32?,
+        remoteID: Int64? = nil
     ) {
         self.name = name
         self.scopeType = scopeType
@@ -35,6 +37,7 @@ public struct ProvisionedRunnerSummary: Sendable, Equatable {
         self.runnerVersion = runnerVersion
         self.launchdLabel = launchdLabel
         self.pid = pid
+        self.remoteID = remoteID
     }
 }
 
@@ -84,7 +87,7 @@ public actor RunnerProvisionerActor {
     ) async throws {
         guard configuration.mode == .direct || configuration.mode == .launchAgent,
               configuration.rootDirectory.deletingLastPathComponent().standardizedFileURL.path == baseRunnersDirectory.standardizedFileURL.path,
-              RunnerMigrationSource.isGitHubScope(scope) else {
+              LocalDotRunnerConfig.isGitHubScope(scope) else {
             throw RunnerMigrationError.recoveryRequired
         }
         let client = provisioningClient
@@ -236,6 +239,11 @@ public actor RunnerProvisionerActor {
                         configuration: configuration
                     )
 
+                    let registered = try RunnerMigrationSource.inspect(instanceRoot).configuration
+                    guard registered.agentName == instanceName,
+                          RunnerMigrationPreflight.matchesScope(scopeURL, actual: registered.gitHubUrl) else {
+                        throw RunnerMigrationError.runnerIdentityMismatch
+                    }
                     var launchdLabel: String?
                     var launchedPID: Int32?
 
@@ -265,7 +273,8 @@ public actor RunnerProvisionerActor {
                         labels: labels,
                         runnerVersion: version,
                         launchdLabel: launchdLabel,
-                        pid: launchedPID
+                        pid: launchedPID,
+                        remoteID: registered.agentId
                     )
                 }
             }
