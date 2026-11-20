@@ -1,6 +1,8 @@
 # OctoRunner
 
-Run your GitHub Actions workflows on your own Apple Silicon Mac. OctoRunner gives you one place to set up runners, see which ones are available or busy, and find out why a build failed. Check availability from the menu bar or open a workflow to see its pull request, jobs, steps, and logs.
+<img src="docs/assets/app_icon.png" width="88" height="88" alt="OctoRunner logo" />
+
+Run GitHub Actions CI/CD on your own Apple Silicon Mac. OctoRunner gives developers and DevOps teams a native macOS app to set up self-hosted runners, check availability from the menu bar, and trace a failed build from the workflow to its pull request, job, step, and log.
 
 [Download](https://github.com/loesch-digital/octorunner/releases/latest) · [User guide](docs/user-guide.md) · [Report an issue](https://github.com/loesch-digital/octorunner/issues/new) · [Apache 2.0 license](LICENSE)
 
