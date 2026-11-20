@@ -49,9 +49,9 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Interfaces:** Reine Funktion `reconcile(local:remote:)` liefert bestätigte Änderungen und explizite Konflikte, zugeordnet über Account+Scope+Remote-ID; Name allein ist keine Identität.
 
-- [ ] Rote Tests: busy/online/offline, entfernte Runner, doppelte Namen, abweichende Labels/Gruppe, alte Antwort und lokaler Aktivitätswiderspruch.
-- [ ] Nur gesicherte beobachtete Statusdaten übernehmen; Labels/Gruppe bei Konflikt mit lokaler und entfernter Sicht zeigen. „Remote übernehmen“ und „lokal auf GitHub anwenden“ sind getrennte bestätigte Aktionen mit Audit.
-- [ ] Neue Model-Properties mit Defaults, Schema-/Migrationstests und makeInMemoryContainer; keinen bisherigen Store überschreiben. UI- und Unit-Tests grün, Commit/CI-Gates.
+- [x] Rote Tests: busy/online/offline, entfernte Runner, doppelte Namen, abweichende Labels/Gruppe, alte Antwort und lokaler Aktivitätswiderspruch.
+- [x] Nur gesicherte beobachtete Statusdaten übernehmen. Labelkonflikte und abweichende Gruppenmitgliedschaften anzeigen. „Remote übernehmen“ und „lokal auf GitHub anwenden“ sind für Labels getrennte bestätigte Aktionen mit Audit.
+- [x] Neue Model-Properties mit Defaults, Schema-/Migrationstests und makeInMemoryContainer; keinen bisherigen Store überschreiben. UI- und Unit-Tests grün, Commit/CI-Gates.
 
 **Umsetzungsstand:** Das Dashboard und die Runner-Einstellungen zeigen belegte Status- und Labelabweichungen mit getrenntem lokalen und GitHub-Status. Ein unbelegter HTTP 404 bleibt mehrdeutig. Fehlt die Runner-ID in einer vollständigen einseitigen Scope-Liste, zeigt OctoRunner dies an und behält den lokalen Eintrag. Beide Richtungen des Labelabgleichs brauchen eine eigene Bestätigung und protokollieren angenommene Änderungen im Audit-Log. Eine GitHub-Änderung prüft die Registrierung erneut, sendet nur benutzerdefinierte Labels und übernimmt lokal erst die geprüfte GitHub-Antwort. Während einer Migration mit offenem Recovery-Journal sind Labeländerungen gesperrt. Die Runner-Einstellungen können auch die Mitgliedschaft in der gespeicherten Gruppe per Leseabfrage prüfen. Fehlt der Runner in einer vollständigen einseitigen Mitgliederliste, zeigt die Ansicht die Abweichung an. Eine Gruppenänderung erfolgt in GitHub.
 
@@ -61,9 +61,10 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 
 **Interfaces:** Personal Multi-Repo erzeugt getrennte Repository-Registrierungen; Organisationen können echte Runner-Gruppen verwenden. Prefix ist Namenshilfe, ein Label ist Routing, eine Gruppe ist Berechtigungs-/Organisationsstruktur.
 
-- [ ] Organisations-/Repository-Berechtigungsübersicht aus Screenshot 07c mit zugewiesenen Runner-Zahlen und explizitem „Berechtigungen abgleichen“ implementieren; reale Gruppen-/Scope-Daten statt Ableitung aus OAuth-Scopes. Rote Tests für fehlende Rechte, Kontowechsel und veraltete Sync-Antworten.
-- [ ] Screens 03 und 04 erneut abgleichen. Rote Tests für zwei Repos mit gleichem Prefix, Org-Gruppen ohne Berechtigung, Teilfehler und Identität nach Migration.
-- [ ] Wizard/Modell/API konsistent verdrahten, keine erfundenen Personal-Account-Runner. Rechte je Endpunkt anhand aktueller GitHub-Doku prüfen; nur tatsächlich benötigte Rechte anfordern, fehlende Fine-grained-PAT-Scope-Header bleiben „unbekannt“.
-- [ ] Alle drei v0.6-Pläne einschließlich Parallelität abnehmen, vollständige lokale Tests/Build/Review, grüne PR-/main-CI. Dann `npx release-it 0.6.0 --ci`, Release vollständig beobachten, Brew/App/Gatekeeper prüfen und deutsche Abnahmezusammenfassung liefern.
+- [x] Organisations-/Repository-Berechtigungsübersicht aus Screenshot 07c mit zugewiesenen Runner-Zahlen und explizitem „Berechtigungen abgleichen“ implementieren. Abfragen nutzen reale Gruppen- und Zieldaten. Tests prüfen fehlende Rechte, Kontowechsel und veraltete Sync-Antworten.
+- [x] Screens 03 und 04 erneut abgleichen. Tests prüfen getrennte Repositories mit demselben Präfix, Gruppenabfragen, Teilfehler und Identität nach Migration.
+- [x] Wizard/Modell/API konsistent verdrahten. Rechte je Endpunkt anhand aktueller GitHub-Doku prüfen. Unbekannte Token-Rechte bleiben als solche sichtbar.
+- [x] Lokale Tests, Xcode-Build, Review, PR-CI und main-CI für den Funktionsstand. [PR #43](https://github.com/loesch-digital/octorunner/pull/43) · [Main-CI](https://github.com/loesch-digital/octorunner/actions/runs/44718206244)
+- [ ] Versions-PR und dessen main-CI abschließen. Den geprüften Stand mit `npx release-it 0.6.0 --ci --no-npm --no-git.commit` taggen, Workflow beobachten und Brew, App-Start und Gatekeeper prüfen.
 
 **Umsetzungsstand:** Die Berechtigungsübersicht fragt die Runner-Listen pro gespeichertem Ziel mit dem aktiven Konto ab. Sie zeigt belegten Lesezugriff sowie getrennte Zahlen für GitHub-Registrierungen und passende Runner dieses Macs. Bei Organisationen fragt sie zusätzlich die sichtbaren Gruppen ab. Der Assistent verwendet pro ausgewähltem Repository eine eigene Registrierung und meldet Teilfehler mit der Zahl der gespeicherten Runner. Organisationsgruppen stammen aus GitHub und werden vor der Registrierung erneut geprüft. Neue Registrierungen verwenden GitHubs Ersetzungsoption nicht. Die bestätigte Migration speichert die geprüfte Runner-Gruppe zusammen mit der neuen Runner-ID.
