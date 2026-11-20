@@ -77,14 +77,6 @@ public struct AlertsSettingsTab: View {
         .accessibilityHint(
           Text("Reports a detected transition to a runner error state.", bundle: .module)
         )
-        .disabled(true)
-        Text(
-          "Runner error alerts require crash supervision in v0.6.0 and are not active yet.",
-          bundle: .module
-        )
-        .font(.caption)
-        .foregroundStyle(OctoTheme.secondaryText)
-        .fixedSize(horizontal: false, vertical: true)
         Toggle(isOn: $preferences.notificationPolicy.jobFailure) {
           Text("Local workflow job fails", bundle: .module)
             .frame(maxWidth: .infinity, alignment: .leading)

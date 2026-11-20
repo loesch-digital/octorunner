@@ -115,6 +115,17 @@ struct InterfaceLocalizationTests {
         #expect(AppErrorMessage.failure(GitHubAuthError.invalidHTTPStatus(502)).localized(locale: german).contains("502"))
     }
 
+    @Test("Runner setup explains GitHub responses in the selected language without copying response details")
+    func provisioningErrors() {
+        let german = Locale(identifier: "de")
+        let english = Locale(identifier: "en")
+        let error = AppErrorMessage.failure(GitHubProvisioningError.httpError(403, "fixture body"))
+        #expect(error.localized(locale: german) == "GitHub hat die Anfrage abgelehnt (HTTP 403). Prüfe die Berechtigungen für dieses Runner-Ziel und das GitHub-Anfragelimit.")
+        #expect(error.localized(locale: english) == "GitHub rejected the request (HTTP 403). Check permissions for this runner target and the GitHub rate limit.")
+        #expect(AppErrorMessage.failure(GitHubProvisioningError.missingAuthToken).localized(locale: german)
+            == "Melde dich erneut bei GitHub an, um Runner einzurichten.")
+    }
+
     @Test("A rate limit preserves an earlier repository failure")
     func combinedHistoryFailures() throws {
         let failure = WorkflowHistoryRepositoryFailure(repository: "owner/one", error: .permissionDenied)

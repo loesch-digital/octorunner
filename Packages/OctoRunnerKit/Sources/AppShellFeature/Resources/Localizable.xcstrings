@@ -307,6 +307,91 @@
         }
       }
     },
+    "Sign in to GitHub again to set up runners.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to GitHub again to set up runners."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich erneut bei GitHub an, um Runner einzurichten."
+          }
+        }
+      }
+    },
+    "Enter a valid GitHub organization or repository.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid GitHub organization or repository."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib eine gültige GitHub-Organisation oder ein gültiges Repository ein."
+          }
+        }
+      }
+    },
+    "GitHub rejected the request (HTTP 403). Check permissions for this runner target and the GitHub rate limit.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub rejected the request (HTTP 403). Check permissions for this runner target and the GitHub rate limit."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub hat die Anfrage abgelehnt (HTTP 403). Prüfe die Berechtigungen für dieses Runner-Ziel und das GitHub-Anfragelimit."
+          }
+        }
+      }
+    },
+    "GitHub could not find this runner target or it is not visible to this account (HTTP 404).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub could not find this runner target or it is not visible to this account (HTTP 404)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub hat dieses Runner-Ziel nicht gefunden oder es ist für dieses Konto nicht sichtbar (HTTP 404)."
+          }
+        }
+      }
+    },
+    "GitHub did not offer a runner download for Apple Silicon.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub did not offer a runner download for Apple Silicon."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub hat keinen Runner-Download für Apple Silicon angeboten."
+          }
+        }
+      }
+    },
     "GitHub rate limit reached. Try again later.": {
       "extractionState": "manual",
       "localizations": {
@@ -3720,23 +3805,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Runner-Ereignisse beziehen sich auf lokale Prozesse. Die Überwachung läuft auch bei geschlossenen Fenstern weiter. Das Beenden von OctoRunner stoppt die Überwachung und neue Statusmitteilungen."
-          }
-        }
-      }
-    },
-    "Runner error alerts require crash supervision in v0.6.0 and are not active yet.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Runner error alerts require crash supervision in v0.6.0 and are not active yet."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Runner-Fehlermeldungen benötigen die Crash-Überwachung aus v0.6.0 und sind noch nicht aktiv."
           }
         }
       }

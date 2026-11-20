@@ -13,6 +13,7 @@ public struct MainShellView: View {
     @Environment(\.locale) private var locale
     @Environment(RunnerRemoteSyncMonitor.self) private var remoteSync: RunnerRemoteSyncMonitor?
     @Environment(AppPreferencesStore.self) private var preferences: AppPreferencesStore?
+    @Environment(\.usesDashboardSampleData) private var usesDashboardSampleData
     @Query(sort: \RunnerEntity.name) private var runners: [RunnerEntity]
     @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
 
@@ -113,6 +114,7 @@ public struct MainShellView: View {
             RunnerConsoleLogSheet(runner: runner, supervisor: supervisor)
         }
         .task {
+            guard !usesDashboardSampleData else { return }
             let hasConnectedAccount = !accounts.isEmpty
             guard !Task.isCancelled else { return }
             if !hasConnectedAccount {
@@ -123,6 +125,7 @@ public struct MainShellView: View {
             await checkForAppUpdates(manual: false)
         }
         .task {
+            guard !usesDashboardSampleData else { return }
             while !Task.isCancelled {
                 let snapshot = await telemetryActor.currentSnapshot()
                 guard !Task.isCancelled else { return }
@@ -875,8 +878,6 @@ public struct MainShellView: View {
     }
 }
 
-#Preview("MainShellView — Populated Dashboard") {
-    MainShellView()
-        .frame(width: 1120, height: 740)
-        .preferredColorScheme(.dark)
+extension EnvironmentValues {
+    @Entry var usesDashboardSampleData = false
 }

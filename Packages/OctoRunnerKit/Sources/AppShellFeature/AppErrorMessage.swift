@@ -22,6 +22,23 @@ public enum AppErrorMessage {
                 case .missingRequiredScopes(let scopes): key = "Missing required token scopes: \(scopes.joined(separator: ", "))."
                 case .unexpectedResponse(let detail): key = "Unexpected response from GitHub: \(detail)"
                 }
+            case let error as GitHubProvisioningError:
+                switch error {
+                case .missingAuthToken, .httpError(401, _):
+                    key = "Sign in to GitHub again to set up runners."
+                case .invalidScopeURL:
+                    key = "Enter a valid GitHub organization or repository."
+                case .httpError(403, _):
+                    key = "GitHub rejected the request (HTTP 403). Check permissions for this runner target and the GitHub rate limit."
+                case .httpError(404, _):
+                    key = "GitHub could not find this runner target or it is not visible to this account (HTTP 404)."
+                case .httpError(429, _):
+                    key = "GitHub rate limit reached. Try again later."
+                case .httpError(let code, _):
+                    key = "GitHub returned HTTP status \(code)."
+                case .noArm64RunnerPackageFound:
+                    key = "GitHub did not offer a runner download for Apple Silicon."
+                }
             case let error as RunnerEngineError:
                 switch error {
                 case .sha256Mismatch(let expected, let actual): key = "Runner binary SHA256 checksum mismatch (expected \(expected), got \(actual))."

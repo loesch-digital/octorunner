@@ -7,12 +7,20 @@ import UserNotifications
 
 @MainActor
 public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
+    let isPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
     let services = AppServices()
-    let modelContainer = OctoRunnerPersistence.makeSharedContainer()
+    lazy var modelContainer: ModelContainer = {
+        guard !isPreview else {
+            do { return try OctoRunnerPersistence.makeInMemoryContainer() }
+            catch { preconditionFailure("Could not initialize the preview store: \(error)") }
+        }
+        return OctoRunnerPersistence.makeSharedContainer()
+    }()
     private let notificationPresenter = NotificationPresentationDelegate()
     private var isQuitRequestPending = false
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
+        guard !isPreview else { return }
         try? AppAuditEvent.started.record(in: modelContainer.mainContext)
         UNUserNotificationCenter.current().delegate = notificationPresenter
         services.startRecoveryMonitoring(container: modelContainer)
@@ -24,6 +32,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
+        guard !isPreview else { return }
         services.stopRecoveryMonitoring()
         services.healthMonitor.stop()
         services.remoteSyncMonitor.stop()
@@ -34,6 +43,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !isPreview else { return .terminateNow }
         guard !isQuitRequestPending else { return .terminateLater }
         let locale = services.preferences.language.locale
         let confirmation = AppQuitConfirmation.makeAlert(locale: locale)
@@ -57,6 +67,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationDidUpdate(_ notification: Notification) {
+        guard !isPreview else { return }
         // Re-evaluate after AppKit processes window and preference changes, including
         // when the dashboard is closed. A visible Settings window also keeps its Dock icon.
         let hasVisibleWindow = NSApplication.shared.windows.contains { $0.canBecomeMain && $0.isVisible }
@@ -73,15 +84,16 @@ struct OctoRunnerApp: App {
         let modelContainer = appDelegate.modelContainer
         @Bindable var preferences = services.preferences
         Window("OctoRunner", id: "main-dashboard") {
-            LocalJobResultsSource { results in
-                MainShellView(
-                    historyRateBudget: services.historyRateBudget,
-                    accountSession: services.accounts,
-                    jobResults: results,
-                    supervisor: services.supervisor,
-                    launchAgents: services.launchAgents
-                )
-            }
+            if !appDelegate.isPreview {
+                LocalJobResultsSource { results in
+                    MainShellView(
+                        historyRateBudget: services.historyRateBudget,
+                        accountSession: services.accounts,
+                        jobResults: results,
+                        supervisor: services.supervisor,
+                        launchAgents: services.launchAgents
+                    )
+                }
                 .environment(services.preferences)
                 .environment(services.remoteSyncMonitor)
                 .environment(services.integration)
@@ -89,6 +101,7 @@ struct OctoRunnerApp: App {
                 .environment(services.storageMaintenance)
                 .environment(\.locale, preferences.language.locale)
                 .frame(minWidth: 960, minHeight: 620)
+            }
         }
         .modelContainer(modelContainer)
         .windowToolbarStyle(.unified)
@@ -103,7 +116,7 @@ struct OctoRunnerApp: App {
         }
         .modelContainer(modelContainer)
 
-        MenuBarExtra(isInserted: $preferences.showInMenuBar) {
+        MenuBarExtra(isInserted: appDelegate.isPreview ? .constant(false) : $preferences.showInMenuBar) {
             MenuBarStatusView(monitor: services.healthMonitor)
                 .environment(services.preferences)
                 .environment(services.integration)
