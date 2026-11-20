@@ -1,5 +1,6 @@
 import CoreModels
 import Foundation
+import SyncKit
 
 public protocol RunnerProvisioning: Sendable {
     func provisionRunners(
@@ -10,6 +11,8 @@ public protocol RunnerProvisioning: Sendable {
         registerLaunchAgent: Bool,
         accessToken: String,
         configuration: RunnerLaunchConfiguration,
+        runnerGroup: GitHubRunnerGroupDTO?,
+        verifyAccountSelection: @escaping @MainActor @Sendable () throws -> Void,
         onStatusUpdate: @MainActor @Sendable (RunnerProvisioningProgress) -> Void
     ) async throws -> [ProvisionedRunnerSummary]
 }

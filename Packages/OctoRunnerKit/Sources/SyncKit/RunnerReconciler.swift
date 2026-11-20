@@ -57,3 +57,15 @@ public enum RunnerReconciler {
         .init(presence: presence, hasStatusConflict: false, hasLabelConflict: false)
     }
 }
+
+public enum RunnerGroupMembership: Sendable, Equatable {
+    case member
+    case different
+    case unverified
+
+    public static func resolve(runnerID: Int64, from inventory: RunnerScopeInventory) -> Self {
+        guard case .available(let runners, let singlePage, _) = inventory else { return .unverified }
+        if runners.contains(where: { $0.id == runnerID }) { return .member }
+        return singlePage ? .different : .unverified
+    }
+}

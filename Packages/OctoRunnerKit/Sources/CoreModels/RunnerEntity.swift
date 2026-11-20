@@ -8,6 +8,8 @@ public final class RunnerEntity {
     public var id: UUID = UUID()
     public var name: String = ""
     public var githubRunnerId: Int64?
+    public var githubRunnerGroupID: Int64? = nil
+    public var githubRunnerGroupName: String? = nil
     public var scopeTypeRaw: String = RunnerScopeType.repository.rawValue
     public var scopeUrlString: String = ""
     public var statusRaw: String = RunnerStatus.offline.rawValue

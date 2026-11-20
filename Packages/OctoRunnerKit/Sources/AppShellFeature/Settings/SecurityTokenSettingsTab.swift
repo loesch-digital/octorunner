@@ -77,6 +77,8 @@ public struct SecurityTokenSettingsTab: View {
         }
       }
 
+      RunnerAccessSettingsCard(account: orderedAccounts.first(where: { $0.isActive }))
+
       SettingsCard(
         "Credential security", symbol: "lock.shield",
         subtitle: "Credentials stay in macOS Keychain; token contents are never displayed."

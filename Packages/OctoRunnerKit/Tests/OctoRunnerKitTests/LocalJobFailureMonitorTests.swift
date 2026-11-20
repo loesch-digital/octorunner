@@ -68,7 +68,7 @@ struct LocalJobFailureMonitorTests {
         await env.monitor.refresh(in: env.context, now: start)
         await env.loader.set(page: try page(completed: start.addingTimeInterval(5), observed: start.addingTimeInterval(10)))
         await env.monitor.refresh(in: env.context, now: start.addingTimeInterval(10))
-        #expect(await env.client.events.count == (scenario == "organization" ? 1 : 0))
+        #expect(await env.client.events.count == (["organization", "personal"].contains(scenario) ? 1 : 0))
     }
 
     @Test("Success, cancellation, missing completion and invalid future timestamps never alert",

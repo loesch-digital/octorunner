@@ -6,6 +6,61 @@ import SyncKit
 import Testing
 
 struct RunnerSyncSchedulingTests {
+    @Test("Group membership requires a matching runner ID; ambiguous pages cannot establish a group conflict")
+    func evaluatesGroupMembership() async throws {
+        let runner = try JSONDecoder().decode(GitHubRemoteRunnerDTO.self, from: Data(
+            #"{"id":21,"name":"local","os":"macOS","status":"online","busy":false,"labels":[]}"#.utf8))
+        #expect(RunnerGroupMembership.resolve(runnerID: 21, from: .available([runner], singlePage: false)) == .member)
+        #expect(RunnerGroupMembership.resolve(runnerID: 22, from: .available([runner], singlePage: true)) == .different)
+        #expect(RunnerGroupMembership.resolve(runnerID: 22, from: .available([runner], singlePage: false)) == .unverified)
+        #expect(RunnerGroupMembership.resolve(runnerID: 22, from: .forbidden) == .unverified)
+    }
+
+    @MainActor
+    @Test("Permission checks retain accessible repository results when a different scope is forbidden")
+    func checksEachConfiguredScope() async throws {
+        let repository = try #require(URL(string: "https://github.com/example/build"))
+        let organization = try #require(URL(string: "https://github.com/example"))
+        let client = GitHubRunnerSyncActor(transport: RunnerSyncTestTransport { request in
+            if request.url?.path == "/orgs/example/actions/runners" {
+                return .init(statusCode: 403, headers: [:], data: Data())
+            }
+            let data = Data(#"{"total_count":1,"runners":[{"id":21,"name":"local","os":"macOS","status":"online","busy":false,"labels":[]}]}"#.utf8)
+            return .init(statusCode: 200, headers: [:], data: data)
+        })
+        let review = RunnerAccessReview(client: client)
+        let account = RunnerSyncAccount(id: UUID(), credentialKey: "fixture", connectedAt: .distantPast,
+                                        selectionRevision: GitHubAccountStore.selectionRevision)
+
+        try await review.refresh(scopes: [repository, organization], account: account, token: "fixture-token")
+
+        #expect(review.snapshot?.account == account)
+        #expect(review.snapshot?.checks[repository]?.runnerCount == 1)
+        #expect(review.snapshot?.checks[repository]?.matchingRunnerCount([
+            .init(id: 21, name: "local"), .init(id: 21, name: "another registration"), .init(id: 22, name: "local")
+        ]) == 1)
+        #expect(review.snapshot?.checks[repository]?.matchingRunnerCount([
+            .init(id: 21, name: "another registration"), .init(id: 22, name: "local")
+        ]) == 0)
+        #expect(review.snapshot?.checks[organization]?.runners == .forbidden)
+    }
+
+    @Test("Organization group inventory decodes access and inherited groups without trusting URLs in the response")
+    func groupInventoryUsesExactOrganization() async throws {
+        let sync = GitHubRunnerSyncActor(transport: RunnerSyncTestTransport { request in
+            #expect(request.url?.absoluteString == "https://api.github.com/orgs/example/actions/runner-groups?per_page=100&page=1")
+            let data = Data(#"{"total_count":2,"runner_groups":[{"id":1,"name":"Default","inherited":false,"default":true,"visibility":"all"},{"id":2,"name":"Enterprise","inherited":true,"default":false,"visibility":"selected","runners_url":"https://untrusted.example/"}]}"#.utf8)
+            return .init(statusCode: 200, headers: [:], data: data)
+        })
+        let scope = try #require(URL(string: "https://github.com/example"))
+        guard case .available(let groups, _, _) = try await sync.groupInventory(for: scope, token: "fixture-token") else {
+            Issue.record("The authorized organization should return its groups")
+            return
+        }
+        #expect(groups.map(\.name) == ["Default", "Enterprise"])
+        #expect(groups.map(\.inherited) == [false, true])
+    }
+
     @Test("Runner lookup keeps authentication failures, missing runners and service failures distinct")
     func classifiesResponses() async throws {
         let cases: [(Int, RunnerLookupResult)] = [

@@ -84,7 +84,7 @@ struct JobResultSeparationTests {
         default: break
         }
         let results = LocalJobResults(entries: [WorkflowHistoryEntry(job)], runners: runners, accountID: 7, reviewed: [], now: now)
-        let expected = ["matching", "organization"].contains(scenario) ? 1 : 0
+        let expected = ["matching", "organization", "personal"].contains(scenario) ? 1 : 0
         #expect(results.latestByRunner.count == expected)
         #expect(results.unreviewedFailures.count == expected)
         #expect(runner.status == .idle)

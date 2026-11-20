@@ -16,7 +16,7 @@ enum RunnerMigrationCompletion {
     static func apply(runnerID: UUID, expectedSourcePath: String, managedRoot: URL,
                       context: ModelContext, actorLogin: String?, launchAgentInstalled: Bool = true,
                       oldRemoteID: Int64? = nil, newRemoteID: Int64? = nil,
-                      installedVersion: String? = nil) throws -> String? {
+                      installedVersion: String? = nil, verifiedGroup: RunnerMigrationGroup? = nil) throws -> String? {
         try Task.checkCancellation()
         let descriptor = FetchDescriptor<RunnerEntity>(predicate: #Predicate { $0.id == runnerID })
         guard let runner = try context.fetch(descriptor).first,
@@ -40,6 +40,10 @@ enum RunnerMigrationCompletion {
             runner.currentRepo = nil
             if let newRemoteID { runner.githubRunnerId = newRemoteID }
             if let installedVersion { runner.runnerVersion = installedVersion }
+            if let verifiedGroup {
+                runner.githubRunnerGroupID = Int64(verifiedGroup.id)
+                runner.githubRunnerGroupName = verifiedGroup.name
+            }
             context.insert(AuditLogEntity(
                 category: .configuration, severity: .info,
                 title: "Runner Migrated into OctoRunner",

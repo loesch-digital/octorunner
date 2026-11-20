@@ -29,6 +29,8 @@ struct WorkflowHistoryTests {
         #expect(job.durationSeconds == 42)
         #expect(job.runner?.name == "fixture-runner")
         #expect(job.runner?.executionMode == nil)
+        #expect(job.runner?.githubRunnerGroupID == nil)
+        #expect(job.runner?.githubRunnerGroupName == nil)
         #expect(job.runner?.jobRuns.count == 1)
         #expect(job.recordKindRaw == "workflow" && job.sourceRaw == "legacy")
         #expect(job.runAttempt == nil && job.githubJobId == nil && job.conclusion == nil)

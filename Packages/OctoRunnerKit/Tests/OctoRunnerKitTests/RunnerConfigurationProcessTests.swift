@@ -3,6 +3,17 @@ import Foundation
 import Testing
 
 struct RunnerConfigurationProcessTests {
+    @Test("A new runner registration never replaces an existing runner on GitHub")
+    func newRegistrationDoesNotReplace() async throws {
+        try await withScript("""
+        for argument in "$@"; do
+            [[ "$argument" != "--replace" ]] || exit 31
+        done
+        """) { root in
+            try await configure(root)
+        }
+    }
+
     @Test("Verbose configuration completes instead of blocking on undrained output pipes")
     func verboseConfiguration() async throws {
         // The watchdog bounds the old deadlock, targeting only this fixture shell.

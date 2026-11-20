@@ -631,6 +631,10 @@ public struct MainShellView: View {
                 existing.name = item.config.agentName
                 existing.scopeType = item.config.inferredScopeType
                 existing.scopeUrlString = item.config.gitHubUrl.absoluteString
+                if existing.githubRunnerGroupID == nil, existing.scopeType == .organization {
+                    existing.githubRunnerGroupID = item.config.poolId.map(Int64.init)
+                    existing.githubRunnerGroupName = item.config.poolName
+                }
                 existing.workDirectoryPath = item.workDirectory.path(percentEncoded: false)
                 existing.rootDirectoryPath = item.rootDirectory.path(percentEncoded: false)
                 existing.runnerVersion = item.runnerVersion
@@ -651,6 +655,10 @@ public struct MainShellView: View {
                     pid: item.listenerPID
                 )
                 entity.githubRunnerId = item.config.agentId
+                if entity.scopeType == .organization {
+                    entity.githubRunnerGroupID = item.config.poolId.map(Int64.init)
+                    entity.githubRunnerGroupName = item.config.poolName
+                }
                 modelContext.insert(entity)
                 existingRunners.append(entity)
 
