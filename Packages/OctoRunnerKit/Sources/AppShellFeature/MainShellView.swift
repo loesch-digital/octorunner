@@ -32,12 +32,13 @@ public struct MainShellView: View {
     @State private var updateStatusMessage: String?
 
     @State private var activeConfigRunner: RunnerEntity?
+    @State private var showMigrationOnOpen = false
     @State private var activeConsoleRunner: RunnerEntity?
 
     private let telemetryActor = HostTelemetryActor()
     private let updaterActor = AppUpdaterActor()
     private let syncActor = GitHubRunnerSyncActor()
-    private let provisioner = RunnerProvisionerActor()
+    private let migrationProvisioner = RunnerProvisionerActor()
     private let jobResults: LocalJobResults
     private let supervisor: RunnerSupervisorActor
     private let launchAgents: RunnerLaunchAgentInspector?
@@ -104,7 +105,7 @@ public struct MainShellView: View {
         }
         .sheet(item: $activeConfigRunner) { runner in
             RunnerConfigDetailSheet(runner: runner, supervisor: supervisor, launchConfiguration: runnerLaunchConfiguration,
-                launchAgents: launchAgents)
+                launchAgents: launchAgents, showMigrationOnOpen: showMigrationOnOpen)
         }
         .sheet(item: $activeConsoleRunner) { runner in
             RunnerConsoleLogSheet(runner: runner, supervisor: supervisor)
@@ -459,42 +460,19 @@ public struct MainShellView: View {
     private func runnerRow(_ runner: RunnerEntity) -> some View {
         DashboardRunnerRow(runner: runner, lastJob: jobResults.latestByRunner[runner.id],
             openLog: { activeConsoleRunner = runner },
-            openSettings: { activeConfigRunner = runner },
-            migrate: { Task { await migrateImportedRunnerInline(runner) } },
+            openSettings: {
+                showMigrationOnOpen = false
+                activeConfigRunner = runner
+            },
+            migrate: {
+                showMigrationOnOpen = true
+                activeConfigRunner = runner
+            },
             remove: {
                 let id = runner.id
                 let isDirect = runner.executionMode == .direct
                 Task { await deleteRunner(id: id, isDirect: isDirect) }
             })
-    }
-
-    private func migrateImportedRunnerInline(_ runner: RunnerEntity) async {
-        guard !Task.isCancelled else { return }
-        let runnerID = runner.id
-        let runnerName = runner.name
-        let sourcePath = runner.rootDirectoryPath ?? runner.workDirectoryPath
-        let actorLogin = accounts.first(where: { $0.isActive })?.login
-        do {
-            let managedRoot = try await provisioner.migrateImportedRunnerDirectory(
-                runnerName: runnerName,
-                sourceRootDirectory: URL(fileURLWithPath: sourcePath),
-                registerLaunchAgent: true
-            )
-            try Task.checkCancellation()
-            guard let migratedName = try RunnerMigrationCompletion.apply(
-                runnerID: runnerID, expectedSourcePath: sourcePath, managedRoot: managedRoot,
-                context: modelContext, actorLogin: actorLogin
-            ) else {
-                updateStatusMessage = AppLocalization.string("Migration finished on disk, but the runner changed or was removed. Review the managed folder before retrying.", locale: locale)
-                return
-            }
-            updateStatusMessage = AppLocalization.string("Migrated '\(migratedName)' into OctoRunner managed pool with Autostart enabled.", locale: locale)
-        } catch is CancellationError {
-            return
-        } catch {
-            guard !Task.isCancelled else { return }
-            updateStatusMessage = AppLocalization.string("Migration failed: \(error.localizedDescription)", locale: locale)
-        }
     }
 
     // MARK: - Bottom Status Bar
@@ -603,13 +581,23 @@ public struct MainShellView: View {
     @discardableResult
     public static func upsertDiscoveredRunners(
         _ discoveredList: [DiscoveredLocalRunner],
-        into modelContext: ModelContext
+        into modelContext: ModelContext,
+        excludingPaths: Set<String> = []
     ) -> Int {
         let existingRunners = (try? modelContext.fetch(FetchDescriptor<RunnerEntity>())) ?? []
         var importedOrUpdated = 0
 
         for item in discoveredList {
             let path = LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: item.rootDirectory)
+            guard !excludingPaths.contains(path) else { continue }
+            let isPreviousInstallation = existingRunners.contains { runner in
+                guard let original = runner.migratedSourcePath, runner.migratedSourceRemoteID == item.config.agentId else {
+                    return false
+                }
+                return LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: URL(filePath: original)) == path
+                    && URL(string: runner.scopeUrlString)?.path.lowercased() == item.config.gitHubUrl.path.lowercased()
+            }
+            guard !isPreviousInstallation else { continue }
             let pathMatch = existingRunners.first { runner in
                 guard let root = runner.rootDirectoryPath else { return false }
                 return LocalRunnerDiscoveryActor.normalizedDirectoryPath(for: URL(filePath: root)) == path
@@ -677,7 +665,18 @@ public struct MainShellView: View {
             additionalDirectories: extraDirs
         )
         guard !Task.isCancelled else { return }
-        let count = Self.upsertDiscoveredRunners(discovered, into: modelContext)
+        let protectedPaths: Set<String>
+        do {
+            protectedPaths = try await migrationProvisioner.migrationProtectedPaths()
+        } catch {
+            guard !Task.isCancelled else { return }
+            if manual {
+                updateStatusMessage = AppLocalization.string("Runner sync paused because OctoRunner could not read the migration journal.", locale: locale)
+            }
+            return
+        }
+        guard !Task.isCancelled else { return }
+        let count = Self.upsertDiscoveredRunners(discovered, into: modelContext, excludingPaths: protectedPaths)
         if manual {
             updateStatusMessage = count > 0
                 ? AppLocalization.string("Synced \(count) local runner(s) with GitHub.", locale: locale)

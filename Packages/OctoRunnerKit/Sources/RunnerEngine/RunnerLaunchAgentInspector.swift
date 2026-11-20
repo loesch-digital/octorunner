@@ -114,7 +114,7 @@ public actor RunnerLaunchAgentInspector {
         guard response.status == 0 else { throw CocoaError(.fileReadUnknown) }
         guard let registration = Self.parseRegistration(response.output, identifier: identifier),
               matchesServicePath(registration.path, label: target.label),
-              registration.root == target.rootDirectory.standardizedFileURL.path,
+              Self.matchesWorkingDirectory(registration.root, root: target.rootDirectory.standardizedFileURL),
               registration.arguments == ["/bin/bash", target.rootDirectory.appending(path: "run.sh").path] else {
             return .unverified
         }
@@ -193,12 +193,16 @@ public actor RunnerLaunchAgentInspector {
         return lstat(url.path, &info) == 0 && info.st_mode & S_IFMT == type && info.st_uid == getuid()
     }
 
+    private static func matchesWorkingDirectory(_ path: String?, root: URL) -> Bool {
+        path == root.path || path == root.path + "/"
+    }
+
     private static func matchesGeneratedDefinition(_ plist: [String: Any], target: RunnerLaunchAgentTarget, root: URL) -> Bool {
         let commonKeys: Set<String> = ["Label", "ProgramArguments", "WorkingDirectory", "RunAtLoad",
             "KeepAlive", "EnvironmentVariables", "StandardOutPath", "StandardErrorPath"]
         guard plist["Label"] as? String == target.label,
               plist["ProgramArguments"] as? [String] == ["/bin/bash", root.appending(path: "run.sh").path],
-              plist["WorkingDirectory"] as? String == root.path,
+              matchesWorkingDirectory(plist["WorkingDirectory"] as? String, root: root),
               plist["StandardOutPath"] as? String == root.appending(path: "_diag/launchd.stdout.log").path,
               plist["StandardErrorPath"] as? String == root.appending(path: "_diag/launchd.stderr.log").path,
               plist["RunAtLoad"] as? Bool == true,

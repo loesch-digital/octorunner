@@ -14,6 +14,8 @@ public final class RunnerEntity {
     public var labels: [String] = []
     public var workDirectoryPath: String = ""
     public var rootDirectoryPath: String?
+    public var migratedSourcePath: String? = nil
+    public var migratedSourceRemoteID: Int64? = nil
     public var runnerVersion: String?
     public var isImportedLocal: Bool = false
     public var executionModeRaw: String? = nil

@@ -77,6 +77,6 @@ Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen u
 - [x] Screenshot 05 abgleichen. Regressionen für geteilte UTF-8-Zeichen, stdout/stderr, begrenzten Puffer, Rotation/Truncation und Freigabe der Dateideskriptoren abdecken.
 - [x] Den einmaligen Dateiausschnitt durch Live-Quellen ersetzen. Suche, Schweregrad, Auto-Scroll, Pause, Kopieren und Export umsetzen. Erkannte Zugangsdaten vor der Pufferung für den Export maskieren.
 - [x] NSHostingView schmal/breit prüfen. Review-Befunde zu Dateirotation, Exportkontext und Freigabe der Deskriptoren mit Regressionstests beheben.
-- [ ] Vollständige PR- und main-CI für die Live-Logs abwarten. Migration und Sync folgen vor dem v0.6-Tag.
+- [x] Vollständige PR- und main-CI für die Live-Logs abwarten. [PR #38](https://github.com/loesch-digital/octorunner/pull/38) und [CI auf main](https://github.com/loesch-digital/octorunner/actions/runs/44635943478) sind grün. Migration und Sync folgen vor dem v0.6-Tag.
 
 **Technische Grundlage:** [GitHub Self-hosted runner reference](https://docs.github.com/en/actions/reference/runners/self-hosted-runners): Empfehlungen für ephemere Runner und Einschränkungen persistenter Runner beim Herunterfahren. Optionaler Hintergrund-Agent ist ein gesonderter ADR und kein stiller Pflichtbestandteil dieses Plans.

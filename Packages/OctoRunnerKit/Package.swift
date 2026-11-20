@@ -40,7 +40,7 @@ let package = Package(
         ),
         .target(
             name: "RunnerEngine",
-            dependencies: ["CoreModels", "SecurityKit", "GitHubAPI"],
+            dependencies: ["CoreModels", "SecurityKit", "GitHubAPI", "SyncKit"],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .target(
