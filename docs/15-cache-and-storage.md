@@ -1,59 +1,29 @@
 # Cache & Storage
 
-Der sechste Einstellungsbereich übernimmt die vorhandene Kartenstruktur. Die
-Analyse beginnt per „Speicher analysieren“; der Standard „Nur manuell“ führt
-beim App-Start keine Ordneranalyse oder Bereinigung aus. Es werden keine neuen
-GitHub-Rechte oder macOS-Mitteilungsrechte benötigt.
+The sixth settings page uses the existing card layout. Click **Analyze storage** to start. The default policy, **Manual only**, leaves directory analysis and cleanup to the user. The feature requires no additional GitHub or macOS notification permissions.
 
-## Umfang
+## Scope
 
-Nur direkte Runner-Unterordner unter
-`~/Library/Application Support/io.octorunner.macos/runners` werden berücksichtigt.
-Als importiert markierte Runner und fremde Pfade sind ausgeschlossen. Nach einer
-Migration muss zusätzlich der gespeicherte Dienstname dem kanonischen Namen aus
-der Provisionierung entsprechen; veraltete oder abweichende Zuordnungen erlauben
-keine Bereinigung. Analysiert werden `_work` und `_diag`:
-Workspaces/Tools, Actions-Cache, temporäre Dateien und Diagnoseprotokolle.
-Die Größen sind logische Dateigrößen, keine Zusage über physisch frei werdende
-APFS-Blöcke. Die verfügbare Kapazität stammt aus den Volumenmetadaten.
+Analysis covers only direct runner subdirectories under `~/Library/Application Support/io.octorunner.macos/runners`. It excludes imported runners and external paths. After migration, cleanup also requires the saved service name to match the canonical provisioned name. Stale or mismatched service associations are ineligible.
 
-Eine Vorschau zeigt die konkreten Kandidaten mit Runner-ID und relativen Pfaden.
-Nur alte Workspaces, `_actions`, `_temp` und `Runner_*.log`/`Worker_*.log` sind
-bereinigbar. Das neueste Diagnoseprotokoll, `_tool`, andere reservierte Ordner,
-Runner-Konfiguration, Binärdateien und launchd-Ausgabeprotokolle bleiben erhalten.
-Symlinks werden weder verfolgt noch als Kandidaten angeboten.
+Analysis checks `_work` and `_diag` for workspaces, tools, the Actions cache, temporary files, and diagnostic logs. It reports logical file sizes. Actual reclaimed APFS space can differ. Available capacity comes from volume metadata.
 
-## Schutz vor laufenden Jobs
+The preview lists each candidate with its runner ID and relative path. Eligible items are old workspaces, `_actions`, `_temp`, and `Runner_*.log` or `Worker_*.log` files. Cleanup preserves the newest diagnostic log, `_tool`, other reserved directories, runner configuration, binaries, and launchd output logs. It skips symlinks.
 
-IDLE bedeutet nicht gestoppt. Vor jeder Löschung werden die aktuelle Modellidentität,
-fehlende Listener-/Worker-Prozesse und ein tatsächlich entladener LaunchAgent
-geprüft. Unbekannte Zustände erlauben keine Löschung. Alter, Dateigrößen und
-Dateiidentität werden nach asynchronen Prüfungen erneut gelesen. Veränderungen
-seit der Vorschau führen zum Überspringen. Die späteren Start-/Stop-Funktionen
-müssen diese Bereinigung mit ihrem Betriebszustand koordinieren.
+## Protecting Active Jobs
 
-## Richtlinien
+Before deleting anything, cleanup verifies the current model identity, checks that listener and worker processes are absent, and confirms that the LaunchAgent is unloaded. An idle runner may still be running. Cleanup skips unknown states. After asynchronous checks, the app rereads age, size, and file identity. It skips any item that changed since the preview. Later start and stop controls must coordinate cleanup with runner state.
 
-- Manuell: Vorschau und ausdrückliche Bestätigung.
-- Automatisch nach Alter: alle zehn Minuten bei laufender GUI.
-- Bei wenig freiem Speicher: gleiche Altersgrenzen; Abbruch, sobald die eingestellte
-  Kapazität verfügbar ist. Ohne zuverlässig lesbare Kapazität wird nicht gelöscht.
+## Policies
 
-Workspace-Alter, Log-Aufbewahrung und Mindestkapazität werden über den vorhandenen
-AppPreferencesStore gespeichert. Änderungen der Richtlinie während einer laufenden
-Bereinigung verhindern weitere Löschungen. Erfolgreiche Bereinigungen und Fehler
-werden im Audit-Log erfasst. Vor der ersten möglichen Löschung wird ein Start-Eintrag
-dauerhaft gespeichert. Bei Abbruch bleibt dieser erhalten und die Vorschau wird
-verworfen; ein Abschluss-Eintrag bestätigt erst die endgültigen Zähler.
+- **Manual only** requires a preview and explicit confirmation.
+- **Remove old data automatically** runs every ten minutes while the app is running.
+- **Only when disk space is low** uses the same age limits and stops once the configured capacity is available. It requires a reliable capacity measurement before deleting anything.
 
-## Bewusste Grenzen gegenüber dem Mockup
+The existing AppPreferencesStore saves workspace age, log retention, and minimum capacity. Changing the policy during cleanup stops further deletions. The audit log records cleanup success and errors. The app saves a start entry before the first possible deletion. Cancellation retains that entry and discards the preview. The completion entry records the final counts.
 
-Globale DerivedData-Ordner und Host-Caches werden nicht automatisch analysiert
-oder gelöscht: Andere Xcode-Prozesse können sie verwenden. Eine belastbare
-Zuordnung zu Runner-Jobs fehlt derzeit. Eine pauschale „kein Runner busy“-Prüfung
-würde dafür nicht reichen. Auch importierte Dokumente-Ordner bleiben unberührt.
+## Differences From the Mockup
 
-Die Funktion beendet oder entlädt selbst keine Runner. Die Engine-Steuerung aus
-v0.6.0 ergänzt den dafür nötigen Bedienweg. Bei noch geladenen LaunchAgents kann
-eine Vorschau deshalb Kandidaten zeigen, die bei der Bereinigung übersprungen
-werden; entfernte und übersprungene Einträge werden getrennt gezählt.
+Global DerivedData directories and host caches are outside the scope of automatic analysis and cleanup. Other Xcode processes may use them, and there is currently no reliable way to associate them with runner jobs. Checking that no runner is busy cannot establish that those files are safe to remove. Imported Documents folders are also outside the cleanup scope.
+
+The cleanup feature requires the runner to be stopped and unloaded. The v0.6.0 engine controls provide that operation. A preview can therefore include candidates that cleanup later skips because their LaunchAgent is still loaded. Cleanup reports deleted and skipped items separately.

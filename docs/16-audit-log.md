@@ -1,19 +1,19 @@
-# Audit-Log
+# Audit Log
 
-Der Toolbar-Eintrag **Audit Log** öffnet die lokale Ereignishistorie. Die Ansicht zeigt neue Ereignisse zuerst und bietet kombinierbare Filter für Kategorie, Schweregrad, Runner (Dropdown) und eine Suche in Titel und Beschreibung. Das Runner-Dropdown enthält registrierte Runner und Namen aus der gesamten gespeicherten Historie, unabhängig von der aktuellen Trefferseite oder anderen Filtern. Entfernte Runner bleiben damit auswählbar. Jede runnerbezogene Zeile zeigt eine eigene Runner-Zuordnung; allgemeine App-Ereignisse sind separat gekennzeichnet.
+Select **Audit Log** in the toolbar to open the local event history. The newest events appear first. Combine category, severity, and runner filters with a search of event titles and descriptions. The runner dropdown includes registered runners and names from the entire saved history, regardless of the current page or other filters. This keeps removed runners available for selection. Runner events show the associated runner on each row, and app-wide events have their own label.
 
-Zunächst werden bis zu 200 Treffer geladen. **Weitere Ereignisse laden** erweitert die Ansicht jeweils um 200 Treffer. Die Suche berücksichtigt die gespeicherte Historie, nicht nur die bereits geladenen Einträge. Ein Klick auf ein Ereignis öffnet seine vollständigen Details einschließlich Ereignis-ID, Konto und Vorher-/Nachher-Werten, sofern vorhanden.
+The view initially loads up to 200 matches. **Load more events** adds up to 200 at a time. Search covers the full saved history. Click an event for its full details, including its ID, account, and before and after values when available.
 
-**Angezeigte Ereignisse exportieren …** speichert genau die aktuell geladenen, gefilterten Ereignisse als JSON mit Schema-Version 1 und ISO-8601-Zeitstempeln. Der Inhalt wird vor dem Speicherdialog eingefroren. Für ältere Einträge zuerst weitere Ereignisse laden. Erst beim Export wird ein Speicherort gewählt; das Öffnen der Historie durchsucht keine Benutzerordner.
+**Export shown events…** saves the currently loaded, filtered events as JSON with schema version 1 and ISO 8601 timestamps. The app takes a snapshot before opening the save dialog. Load additional events first to include older entries. The export prompts for a destination. Opening the history reads the local event store without scanning user folders.
 
-Die App ergänzt bestehende Authentifizierungs-, Konfigurations- und Runner-Ereignisse um App-Start/-Ende, Update-Beginn/-Erfolg/-Fehlschlag und erkannte lokale Prozessstatuswechsel. Initiale Statusmessungen erzeugen keine künstlichen Wechsel. Runner-Prozessstatus und Workflow-Job-Ergebnis bleiben getrennte Informationen. Eine Beendigung durch einen erzwungenen Prozessabbruch kann keinen regulären App-Ende-Eintrag garantieren. Die vollständige Crash-Erkennung durch den Supervisor gehört zu v0.6.0.
+Alongside authentication, configuration, and runner events, the app records startup, shutdown, update start, update success and failure, and detected local process state changes. The first process measurement establishes a baseline. Runner process state and workflow job result are recorded separately. A force quit can bypass the regular shutdown entry. Full supervisor crash detection is part of v0.6.0.
 
-Die neuen System- und Update-Einträge speichern festgelegte Metadaten ohne Token, Download-URLs oder ungefilterte Fehlermeldungen. Der Export enthält die sichtbaren Audit-Informationen; gespeicherte Runner-Namen, Kontonamen und Konfigurationswerte sind entsprechend vor einer Weitergabe zu prüfen.
+New system and update events store a predefined set of metadata that excludes tokens, download URLs, and raw error messages. The export contains the visible audit information. Review saved runner names, account names, and configuration values before sharing it.
 
-## Prüfung
+## Verification
 
-- SwiftData-Filter einschließlich kombinierter Filter, Suche und Ladegrenze.
-- JSON-Snapshot einschließlich Unicode, Zeilenumbrüchen, stabiler Identität und Zeitstempeln.
-- App-/Update-Ereignisse und Prozessstatuswechsel ohne doppelte Baseline-Einträge.
-- NSHostingView-Layout mit echter Fensteranbindung für leere/gefüllte Historie bei 680 und 1100 Punkten, DE/EN sowie Hell/Dunkel.
-- Nativer UI-Test für Öffnen, Filtern, Zurücksetzen, Details und Schließen; Ausführung in der CI.
+- SwiftData filters, including combined filters, search, and load limits.
+- JSON snapshots with Unicode, line breaks, stable identities, and timestamps.
+- App and update events and process state changes without duplicate baseline entries.
+- NSHostingView layout in a real window with empty and populated history at 680 and 1,100 points, in German and English and Light and Dark appearances.
+- Native UI test in CI for opening, filtering, resetting, viewing details, and closing.

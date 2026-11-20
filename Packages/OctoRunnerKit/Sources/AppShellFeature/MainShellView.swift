@@ -32,6 +32,7 @@ public struct MainShellView: View {
     @State private var isCheckingForUpdates: Bool = false
     @State private var isInstallingUpdate: Bool = false
     @State private var updateStatusMessage: String?
+    @State private var isShowingUpdateFailure = false
 
     @State private var activeConfigRunner: RunnerEntity?
     @State private var showMigrationOnOpen = false
@@ -113,6 +114,15 @@ public struct MainShellView: View {
         .sheet(item: $activeConsoleRunner) { runner in
             RunnerConsoleLogSheet(runner: runner, supervisor: supervisor)
         }
+        .alert(AppLocalization.string(AppUpdatePresentation.title(.installationFailed), locale: locale),
+               isPresented: $isShowingUpdateFailure, presenting: updateInfo) { update in
+            Button(AppLocalization.string("Open on GitHub", locale: locale)) {
+                NSWorkspace.shared.open(update.releasePageURL)
+            }
+            Button(AppLocalization.string("Cancel", locale: locale), role: .cancel) {}
+        } message: { _ in
+            Text(AppLocalization.string(AppUpdatePresentation.message(.installationFailed), locale: locale))
+        }
         .task {
             guard !usesDashboardSampleData else { return }
             let hasConnectedAccount = !accounts.isEmpty
@@ -145,7 +155,7 @@ public struct MainShellView: View {
 
     private var sidebarContent: some View {
         VStack(spacing: 0) {
-            List(selection: $selectedSection) {
+            List(selection: usesDashboardSampleData ? .constant(nil) : $selectedSection) {
                 Section(AppLocalization.string("RUNNER STATUS", locale: locale)) {
                     ForEach(SidebarSection.allCases) { section in
                         HStack {
@@ -244,7 +254,7 @@ public struct MainShellView: View {
 
     private var sidebarVersionFooter: some View {
         HStack {
-            Text("OctoRunner v\(AppUpdaterActor.currentBundleVersion)")
+            Text(usesDashboardSampleData ? "OctoRunner" : "OctoRunner v\(AppUpdaterActor.currentBundleVersion)")
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
                 .foregroundStyle(.secondary)
             Spacer()
@@ -861,19 +871,23 @@ public struct MainShellView: View {
         }
         guard !Task.isCancelled else { return }
         isInstallingUpdate = true
+        defer { isInstallingUpdate = false }
         try? AppAuditEvent.updateStarted.record(in: modelContext)
         do {
-            try await updaterActor.downloadAndInstallUpdate(from: zipURL)
-            guard !Task.isCancelled else { return }
-            try? AppAuditEvent.updateInstalled.record(in: modelContext)
+            let staged = try await updaterActor.downloadAndStageUpdate(from: zipURL, expectedVersion: update.latestVersion)
+            do {
+                try Task.checkCancellation()
+                try AppUpdateHandoff.schedule(staged)
+            } catch {
+                staged.discard()
+                throw error
+            }
             NSApplication.shared.terminate(nil)
         } catch is CancellationError { return }
         catch {
             guard !Task.isCancelled else { return }
             try? AppAuditEvent.updateFailed.record(in: modelContext)
-            isInstallingUpdate = false
-            updateStatusMessage = AppLocalization.string("Auto-update failed (\(error.localizedDescription)) — opening release page.", locale: locale)
-            NSWorkspace.shared.open(update.releasePageURL)
+            isShowingUpdateFailure = true
         }
     }
 }

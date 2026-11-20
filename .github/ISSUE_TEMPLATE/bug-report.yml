@@ -1,0 +1,48 @@
+name: Bug report
+description: Report something in OctoRunner that did not work as expected.
+labels: [bug]
+body:
+  - type: input
+    id: octorunner-version
+    attributes:
+      label: OctoRunner version
+      description: Find the version under Settings → General.
+      placeholder: 0.7.0
+    validations:
+      required: true
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      description: Find the version under Apple menu → About This Mac.
+      placeholder: "15.7"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the dialog you were using and the runner type if relevant.
+      placeholder: |
+        1. Open …
+        2. Select …
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened?
+      description: Include the exact error message if one appeared.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Share only relevant details. Remove tokens and private repository information before posting.

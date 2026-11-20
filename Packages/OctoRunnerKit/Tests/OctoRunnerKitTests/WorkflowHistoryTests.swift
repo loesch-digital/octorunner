@@ -18,8 +18,7 @@ struct WorkflowHistoryTests {
         defer { try? FileManager.default.removeItem(at: directory) }
         let url = directory.appending(path: "history.store")
         try FileManager.default.copyItem(at: fixture, to: url)
-        let schema = OctoRunnerPersistence.schema
-        let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
+        let container = try OctoRunnerPersistence.openStoreForUpdate(at: url)
         Self.containers.append(container)
         let context = container.mainContext
         let job = try #require(context.fetch(FetchDescriptor<JobRunEntity>()).first)

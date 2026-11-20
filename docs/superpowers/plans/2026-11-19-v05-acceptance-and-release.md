@@ -1,56 +1,56 @@
-# v0.5 Abschluss und Release Implementation Plan
+# v0.5 Acceptance and Release Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Native Umsetzung; bestehende Nutzerfreigabe zur anschließenden Implementierung beachten.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Use the existing authorization to continue with native implementation.
 
-**Goal:** Vorhandene v0.5-Funktionen vollständig abnehmen und erst danach v0.5.0 signiert veröffentlichen.
+**Goal** — Complete acceptance testing for the existing v0.5 features before publishing the signed v0.5.0 release.
 
-**Architecture:** Bestehende Module bleiben erhalten. Der Abschluss prüft wirksame Einstellungen und belegbare Funktionen; Prozessaufsicht und globale Parallelität gehören zu v0.6.
+**Architecture** — Use the existing modules. Verify that settings take effect and that evidence supports each feature. Process supervision and global concurrency belong to v0.6.
 
-**Tech Stack:** Swift 6, SwiftUI, SwiftData, SPM, macOS ServiceManagement; bestehende Python-/GitHub-Actions-Werkzeuge.
+**Tech stack** — Swift 6, SwiftUI, SwiftData, SPM, macOS ServiceManagement, and the existing Python and GitHub Actions tools.
 
-**Spec:** `docs/07-step-05-settings-telemetry-and-jobs.md`, `docs/release-signing.md`, `docs/18-remaining-delivery-plan.md` (verlinkt die Detailkonzepte 11–17); verbindliche Umfangsentscheidung vom 19.11.2026: globales Parallelitätslimit erst v0.6.
+**Spec** — `docs/07-step-05-settings-telemetry-and-jobs.md`, `docs/release-signing.md`, and `docs/18-remaining-delivery-plan.md`, which links to detailed designs 11–17. The November 19, 2026 scope decision places the global concurrency limit in v0.6.
 
 ## Global Constraints
 
-Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen unter `Packages/OctoRunnerKit/Sources/`; Testdateinamen liegen unter `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/`. Neue Dateien werden jeweils dort angelegt.
+Source paths such as `RunnerEngine/...` and `CoreModels/...` are relative to `Packages/OctoRunnerKit/Sources/`. Test filenames are relative to `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/`. Create new files in the corresponding directories.
 
-- macOS 15+, Swift 6 Strict Concurrency, SwiftUI und SwiftData; keine Versionsanhebung durch das CI-Image.
-- Vor Änderungen die vier Repo-Skills und einschlägigen `references/*.md` lesen. `AGENTS.md` gilt uneingeschränkt.
-- Jede Produktionsänderung beginnt mit einem nachweislich roten Regressionstest; anschließend grün und Refactor. Swift: `swift test --package-path Packages/OctoRunnerKit --no-parallel`; Python: `python3 -m unittest discover -s scripts/tests`.
-- Feature-Branch, semantische Commits, PR. Nach Push PR-CI vollständig grün abwarten, dann Merge und main-CI vollständig grün abwarten. Keine überlappende nächste Feature-Umsetzung bei roter/laufender CI.
-- Keine Secrets in Logs, Modellen oder Exporten; keine vorsorgliche Dokumente-Abfrage. SwiftData-Defaults, SQLite-Headerprüfung und Cancellation vor Modellzugriffen beibehalten.
-- Neue Controls: Label/Hint, Tastaturbedienung, OctoTheme; WCAG 2.2 AA in Hell/Dunkel. NSHostingView für schmale/breite Ansichten, DE/EN.
-- Konkrete Werkzeug-/API-Versionen unmittelbar vor Änderung anhand offizieller Quellen verifizieren.
+- Target macOS 15+ with Swift 6 strict concurrency, SwiftUI, and SwiftData. Preserve the minimum supported version when selecting the CI image.
+- Read the four repo skills and relevant `references/*.md` files before making changes. Follow `AGENTS.md`.
+- Start every production change with a regression test that demonstrably fails, then make it pass and refactor. Run Swift tests with `swift test --package-path Packages/OctoRunnerKit --no-parallel` and Python tests with `python3 -m unittest discover -s scripts/tests`.
+- Use a feature branch, semantic commits, and a PR. After pushing, wait for all PR CI checks to pass before merging, then wait for all main CI checks to pass before starting the next feature.
+- Keep secrets out of logs, models, and exports. Access Documents only when needed. Preserve SwiftData defaults, SQLite header checks, and cancellation checks before model access.
+- Give new controls labels and hints, keyboard support, and OctoTheme styling. Meet WCAG 2.2 AA in Light and Dark appearances. Use NSHostingView to check narrow and wide layouts in German and English.
+- Verify exact tool and API versions against official sources immediately before changing them.
 
 ## Review Focus
 
-1. Persistierte Einstellung ohne Wirkung: Wirksamkeit oder ehrliche Einschränkung im Test belegen (Task 1).
-2. Kontowechsel während einer API-Antwort: keine Daten des alten Kontos anzeigen (Task 1).
-3. Leerer Filter bei registrierten Runnern: passender Filter-Empty-State (Task 1).
-4. Fensterabbau während einer Messung: keine fortgesetzten Modellzugriffe (Task 1).
-5. Installations-/Updatefehler: keine erfolgreichen Release-Behauptungen ohne Gatekeeper-/Brew-Prüfung (Task 2).
+1. For each persisted setting, use tests to show its effect or document any limitation (Task 1).
+2. Discard API responses for the previous account after an account switch (Task 1).
+3. Show a filter-specific empty state when runners exist but none match (Task 1).
+4. Stop model access when the window closes during a measurement (Task 1).
+5. Verify Gatekeeper and Homebrew before calling installation or update successful (Task 2).
 
-### Task 1: Abnahmematrix und gezielte Lückenschließung
+### Task 1: Acceptance Matrix and Targeted Fixes
 
-**Files:** `docs/18-remaining-delivery-plan.md`, `docs/07-step-05-settings-telemetry-and-jobs.md`, `docs/17-host-telemetry.md`; bestehende `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/{SettingsTests,AppPreferencesTests,WorkflowHistoryLoadingTests,RunnerFilterRegressionTests,HostTelemetryDashboardTests,AuditLogDialogTests}.swift`.
+**Files** — `docs/18-remaining-delivery-plan.md`, `docs/07-step-05-settings-telemetry-and-jobs.md`, `docs/17-host-telemetry.md`, and the existing `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/{SettingsTests,AppPreferencesTests,WorkflowHistoryLoadingTests,RunnerFilterRegressionTests,HostTelemetryDashboardTests,AuditLogDialogTests}.swift`.
 
-**Interfaces:** Verwendet vorhandene Settings Scene/AppPreferencesStore, Jobs-Historie, AuditLogEntity und TelemetryKit; keine neue Engine-Schnittstelle.
+**Interfaces** — Use the existing Settings scene and AppPreferencesStore, job history, AuditLogEntity, and TelemetryKit. Use the current engine interface.
 
-- [ ] Vor dem Abschluss den im Arbeitsindex erfassten Watchdog-EOF-Folgepunkt als eigenen Bugfix rot/grün abarbeiten: stdout geschlossen bei lebendem Kind darf keine CPU-Schleife auslösen; Deadline/Exitcode/Cleanup bleiben erhalten.
-- [ ] Screens 07, 07c, 07d, 07e, 08 und 09 mit implementierten Hauptfunktionen abgleichen; je Anforderung „vorhanden“, „begründet angepasst“ oder „offen“ mit Code/Test-Beleg eintragen. Parallelität verbindlich v0.6 zuordnen.
-- [ ] Coverage-Lücken und triviale Assertions aus dem Arbeitsindex prüfen; echte fehlende Settings-/Lifecycle-Verhaltenstests ergänzen, vorhandene native UI-Tests als getrennte Evidenz ausweisen. Kein pauschales „alles abgedeckt“ aus dem SPM-Prozentwert ableiten.
-- [ ] Vorhandene Tests den fünf Review-Fällen zuordnen. Für jede echte Lücke zuerst einen benannten roten Test ergänzen, dann nur die betroffene Implementierung korrigieren. Bestehende Tests nicht unnötig duplizieren.
-- [ ] Verifizieren: Login-Item, Dock, Sprache, Shell/Retention und neue LaunchAgent-Policies wirken im dokumentierten Umfang; Crash-Benachrichtigungen bleiben bis zur echten Engine deaktiviert. Keine fiktiven Token-Ablaufdaten, SLA oder P-/E-Lastdaten ergänzen.
-- [ ] Vollständige lokale Tests plus nativen App-Build ausführen; höchstens drei manuelle Abnahmen bündeln: Einstellungen, Jobs/Audit-Filter, Telemetrie/Resize. Frühere Nutzerabnahmen als Evidenz erhalten.
-- [ ] Abnahmematrix und erforderliche Korrekturen semantisch committen; PR-/main-CI abwarten.
+- [ ] Before acceptance, fix the watchdog EOF issue from the work index as a separate red-to-green bug fix. Closing stdout while the child is alive must leave the watchdog waiting without spinning. Preserve deadline, exit code, and cleanup behavior.
+- [ ] Compare screens 07, 07c, 07d, 07e, 08, and 09 with the implemented features. Record each requirement as present, adapted with a rationale, or open, with evidence from code or tests. Assign concurrency to v0.6.
+- [ ] Review the coverage gaps and trivial assertions in the work index. Add missing tests for substantive Settings and lifecycle behavior. Record existing native UI tests as separate evidence and describe what SPM coverage actually measures.
+- [ ] Map existing tests to the five review cases. For each gap, add a named failing test first, then correct only the affected implementation. Reuse existing tests where they already cover the behavior.
+- [ ] Verify that the login item, Dock, language, shell and retention settings, and new LaunchAgent policies work within the documented scope. Keep crash notifications disabled until the process supervisor ships. Use measured or verified data for token expiration, SLAs, and performance- and efficiency-core load.
+- [ ] Run the full local test suites and native app build. Group manual acceptance into at most three checks covering settings, Jobs and Audit filters, and telemetry and resizing. Retain earlier user acceptance as evidence.
+- [ ] Commit the acceptance matrix and required fixes with semantic messages. Wait for PR and main CI.
 
-### Task 2: Signiertes v0.5.0 liefern
+### Task 2: Ship Signed v0.5.0
 
-**Files:** Release-Versionierung gemäß vorhandener release-it-Konfiguration, `docs/releases/v0.5.0.md`, `docs/10-development-and-acceptance.md`.
+**Files** — Release versioning through the existing release-it configuration, `docs/releases/v0.5.0.md`, and `docs/10-development-and-acceptance.md`.
 
-**Interfaces:** Konsumiert grünen main-Commit aus Task 1 und den ergänzten Plan `2026-11-19-workflow-github-details.md` (Nutzerfrage vom 19.11.; PR-/Step-/Log-Ansicht noch nicht implementiert); liefert unveränderliches Tag und signiertes/notarisiertes App-ZIP plus Homebrew-Cask.
+**Interfaces** — Use the passing main commit from Task 1 and the additional plan `2026-11-19-workflow-github-details.md`, which records the November 19 user request for a still-pending PR, step, and log view. Produce an immutable tag, a signed and notarized app ZIP, and a Homebrew cask.
 
-- [ ] Aktuelle Releases, Toolchain und offene CI-Läufe prüfen; Release Notes enthalten Features, belegte Einschränkungen und den verschobenen Parallelitätsumfang.
-- [ ] Erst nach grüner main-CI `npx release-it 0.5.0 --ci` ausführen; vollständigen Release-Lauf einschließlich Tap bis zum Abschluss beobachten.
-- [ ] `brew update && brew upgrade --cask octorunner`, App-Start und `spctl --assess --type execute -vv /Applications/OctoRunner.app` prüfen. ZIP-Abnahme ohne Homebrew nach docs/10 ebenfalls verfügbar halten.
-- [ ] Bei Fehler Logs auswerten, Korrektur per PR und neues Patch-Tag; veröffentlichtes Archiv niemals ersetzen. Deutsche Zusammenfassung mit CI-/Release-Links und maximal drei manuellen Prüfpunkten liefern.
+- [ ] Check current releases, the toolchain, and outstanding CI runs. Document features, verified limitations, and the move of concurrency to v0.6 in the release notes.
+- [ ] After main CI passes, run `npx release-it 0.5.0 --ci`. Monitor the entire release run, including the tap update, through completion.
+- [ ] Verify `brew update && brew upgrade --cask octorunner`, app launch, and `spctl --assess --type execute -vv /Applications/OctoRunner.app`. Keep the ZIP acceptance procedure without Homebrew available as described in docs/10.
+- [ ] If a check fails, investigate the logs, fix the issue through a PR, and create a new patch tag. Keep published archives immutable. Provide a German summary for the user with CI and release links and up to three manual checks.

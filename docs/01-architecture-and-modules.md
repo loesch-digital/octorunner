@@ -1,60 +1,60 @@
-# 01 — System-Architektur, Modularisierung & Standards
+# 01 — System Architecture, Modules, and Standards
 
-## 1. Technische Eckdaten & Standards
+## 1. Technical specifications
 
-| Bereich | Standard / Spezifikation |
+| Area | Standard or specification |
 | :--- | :--- |
-| **App Name & Bundle** | `OctoRunner.app` (Anzeigename: `OctoRunner` / `ActionsRunner for GitHub`) |
-| **Bundle Identifier** | `io.octorunner.macos` |
-| **Zielplattform** | macOS 15.0+ (Sequoia), Native Apple Silicon (`arm64`) & Universal 2 |
-| **Sprache & Compiler** | Swift 6.0+ mit `SWIFT_STRICT_CONCURRENCY = complete` (Zero Data Races) |
-| **UI Framework** | SwiftUI 6 (`@Observable`, `NavigationSplitView`, `MenuBarExtra`, `Settings` Scene) |
-| **Persistenz** | SwiftData (`@Model`, `@Relationship(deleteRule: .cascade)`, `#Index`, `#Predicate`) |
-| **Security & Tokens** | Data Protection Keychain (`SecItem`, `kSecClassGenericPassword`, `SecAccessControl`) gemäß `swift-security-expert` |
-| **Prozess-Steuerung** | **Hybrid-Architektur (siehe ADR-01):** `SMAppService.mainApp` für den App-Login-Autostart, direkte Prozessaufsicht über eine eigene Gruppe ab `posix_spawn` und eigenständige User-LaunchAgents unter `~/Library/LaunchAgents` für den Betrieb nach App-Ende. Pipe-Streaming ist als eigener Schritt geplant. |
-| **Sandbox Status** | **Hardened Runtime aktiviert** (`ENABLE_HARDENED_RUNTIME = YES`), **App Sandbox deaktiviert** (`com.apple.security.app-sandbox = false`), damit `xcodebuild`, `fastlane`, `git`, Homebrew und Subprozesse uneingeschränkt laufen können |
-| **Lokalisierung** | String Catalog (`Localizable.xcstrings`) für Deutsch (`de`) und Englisch (`en`) |
+| **App name and bundle** | `OctoRunner.app` (display name `OctoRunner` / `ActionsRunner for GitHub`) |
+| **Bundle identifier** | `io.octorunner.macos` |
+| **Target platform** | macOS 15.0+ (Sequoia), native Apple silicon (`arm64`) and Universal 2 |
+| **Language and compiler** | Swift 6.0+ with `SWIFT_STRICT_CONCURRENCY = complete` to prevent data races |
+| **UI framework** | SwiftUI 6 (`@Observable`, `NavigationSplitView`, `MenuBarExtra`, `Settings` scene) |
+| **Persistence** | SwiftData (`@Model`, `@Relationship(deleteRule: .cascade)`, `#Index`, `#Predicate`) |
+| **Security and tokens** | Data Protection Keychain (`SecItem`, `kSecClassGenericPassword`, `SecAccessControl`) following `swift-security-expert` |
+| **Process management** | See ADR-01. `SMAppService.mainApp` starts the app at login. Direct supervision uses a dedicated process group created by `posix_spawn`. Standalone user LaunchAgents in `~/Library/LaunchAgents` can run after the app quits. Pipe streaming is planned separately. |
+| **Sandbox and runtime** | Hardened Runtime is enabled (`ENABLE_HARDENED_RUNTIME = YES`). App Sandbox is disabled (`com.apple.security.app-sandbox = false`) so `xcodebuild`, `fastlane`, `git`, Homebrew, and subprocesses can run without sandbox restrictions. |
+| **Localization** | String catalog (`Localizable.xcstrings`) for German (`de`) and English (`en`) |
 
 ---
 
-## 2. Modulare Projekt-Struktur (SPM + XcodeGen)
+## 2. Project structure (SPM and XcodeGen)
 
-Um maximale Wiederverwendbarkeit, schnelle inkrementelle Builds und isolierte Unit-Tests (`swift test` ohne Xcode-GUI-Zwang) zu erreichen, besteht das Projekt aus einem **dünnen App-Target** (`OctoRunnerApp`) und einem **lokalen Multi-Target Swift Package** (`Packages/OctoRunnerKit`):
+The project uses a **thin app target** (`OctoRunnerApp`) and a **local multi-target Swift package** (`Packages/OctoRunnerKit`). This supports code reuse, fast incremental builds, and isolated unit tests through `swift test` without the Xcode GUI.
 
 ```text
 octorunner/
-├── project.yml                      # XcodeGen Spezifikation (generiert OctoRunner.xcodeproj)
-├── package.json                     # release-it Konfiguration & Skripte
-├── Gemfile                          # Fastlane & CocoaPods/Bundler Setup
+├── project.yml                      # XcodeGen specification (generates OctoRunner.xcodeproj)
+├── package.json                     # release-it configuration and scripts
+├── Gemfile                          # Fastlane and CocoaPods/Bundler setup
 ├── fastlane/
 │   ├── Fastfile                     # Lanes: match_certs, build_mac, notarize_mac, release_archive
-│   ├── Matchfile                    # Anbindung an dein bestehendes Match-Git-Repo (developer_id)
-│   └── Appfile                      # Bundle-ID (io.octorunner.macos) & Apple Team ID
+│   ├── Matchfile                    # Integration with the existing Match Git repository (developer_id)
+│   └── Appfile                      # Bundle ID (io.octorunner.macos) and Apple Team ID
 ├── App/
-│   ├── OctoRunnerApp.swift          # @main Entrypoint (WindowGroup, MenuBarExtra, Settings)
-│   ├── OctoRunner.entitlements      # Hardened Runtime + Keychain Access Groups
+│   ├── OctoRunnerApp.swift          # @main entry point (WindowGroup, MenuBarExtra, Settings)
+│   ├── OctoRunner.entitlements      # Hardened Runtime and Keychain access groups
 │   └── Resources/
-│       ├── Assets.xcassets          # AppIcon (aus Stitch), Farben & Symbol-Assets
-│       └── Localizable.xcstrings    # DE / EN String Catalog
+│       ├── Assets.xcassets          # AppIcon (from Stitch), colors, and symbol assets
+│       └── Localizable.xcstrings    # German and English string catalog
 └── Packages/
     └── OctoRunnerKit/
-        ├── Package.swift            # Swift 6.0 Package Manifest
+        ├── Package.swift            # Swift 6.0 package manifest
         ├── Sources/
-        │   ├── CoreModels/          # SwiftData @Model Klassen, Enums & Sendable DTOs
-        │   ├── DesignSystem/        # macOS HIG Farben, Typografie, Badges, Terminal-Views
+        │   ├── CoreModels/          # SwiftData @Model classes, enums, and Sendable DTOs
+        │   ├── DesignSystem/        # macOS HIG colors, typography, badges, and terminal views
         │   ├── SecurityKit/         # KeychainActor, TokenVault, Touch ID / LAContext
         │   ├── GitHubAPI/           # OAuthDeviceFlowActor, GitHubRESTClient, RunnerDownloadService
         │   ├── RunnerEngine/        # RunnerBinaryCacheActor, LaunchAgentPlistGenerator, RunnerProvisionerActor
         │   ├── SyncKit/             # LocalRunnerDiscoveryActor, GitHubRunnerSyncActor, SyncModels
-        │   ├── TelemetryKit/        # HostTelemetryActor (CPU E/P-Cores, RAM, APFS Disk, Thermal)
+        │   ├── TelemetryKit/        # HostTelemetryActor (CPU E/P cores, RAM, APFS disk, thermal state)
         │   └── Features/
-        │       ├── AuthFeature/     # Screen 1: OAuth Device Flow & PAT Modal
-        │       ├── DashboardFeature/# Screen 2, 4, 5: Main Dashboard, Config, Live Logs
+        │       ├── AuthFeature/     # Screen 1: OAuth Device Flow and PAT sheet
+        │       ├── DashboardFeature/# Screens 2, 4, 5: Main dashboard, configuration, live logs
         │       ├── WizardFeature/   # Screen 3: Add Runner Setup Wizard
-        │       ├── MenuBarFeature/  # Screen 6: macOS Menu Bar Popover
-        │       ├── SettingsFeature/ # Screen 7a-7e: Settings Tabs
-        │       ├── JobsFeature/     # Screen 8: Workflow Runs & Queue View
-        │       └── TelemetryFeature/# Screen 9: Apple Silicon Hardware Monitor
+        │       ├── MenuBarFeature/  # Screen 6: macOS menu bar popover
+        │       ├── SettingsFeature/ # Screens 7a–7e: Settings tabs
+        │       ├── JobsFeature/     # Screen 8: Workflow runs and queue view
+        │       └── TelemetryFeature/# Screen 9: Apple silicon hardware monitor
         └── Tests/
             ├── CoreModelsTests/
             ├── SecurityKitTests/
@@ -62,7 +62,7 @@ octorunner/
             └── RunnerEngineTests/
 ```
 
-### Modul-Abhängigkeitsgraph
+### Module dependency graph
 
 ```mermaid
 graph TD
@@ -83,100 +83,105 @@ graph TD
 
 ---
 
-## 3. Verbindliche Architektur-Regeln aus den 4 Agent Skills
+## 3. Architecture requirements from the four agent skills
 
-### 3.1 `swift-concurrency-pro` (Swift 6 Strict Concurrency)
-1. **Striktes Actor-Design ohne Reentrancy-Bugs:**
-   - Alle Netzwerk-, Keychain-, Prozess- und Dateisystem-Operationen laufen in dedizierten `actor`-Typen (`GitHubOAuthActor`, `KeychainVaultActor`, `RunnerSupervisorActor`, `RunnerBinaryCacheActor`, `HostTelemetryActor`).
-   - Vor jedem `await` innerhalb eines Actors wird lokaler State gesichert, nach dem `await` werden Invarianten erneut geprüft (kein blindes Verlassen auf Zustand vor dem `await`).
-2. **Kein `@unchecked Sendable`:**
-   - Alle DTOs zwischen Actors und `@MainActor`-Views sind reine `struct` oder `enum` mit `Sendable`-Konformität.
-3. **Structured Concurrency & Cancellation:**
-   - Parallele Runner-Installationen (z.B. 2–4 Instanzen im Setup-Wizard) nutzen `withThrowingTaskGroup`.
-   - OAuth-Polling und Live-Log-Streaming (`AsyncStream<LogLine>`) reagieren kooperativ auf `Task.checkCancellation()` bzw. `.task(id:)` in SwiftUI (automatisches Abbrechen beim Schließen des Modals).
+### 3.1 `swift-concurrency-pro` (Swift 6 strict concurrency)
 
-### 3.2 `swift-security-expert` (Keychain & Credential Lifecycle)
-1. **Kein Secret in `UserDefaults`, `SwiftData` oder `.plist`:**
-   - Weder OAuth Access Tokens noch Personal Access Tokens (PATs) noch Runner Registration Tokens dürfen jemals in `SwiftData` oder `UserDefaults` landen.
-   - In `SwiftData` (`GitHubAccountEntity`) werden ausschließlich unkritische Metadaten (`username`, `avatarUrl`, `scopes`, `keychainAccountIdentifier`) gespeichert.
-2. **Add-or-Update Pattern & `OSStatus` Prüfung:**
-   - Jeder `SecItemAdd`-Aufruf behandelt `errSecDuplicateItem` durch ein atomares `SecItemUpdate`. Jeder `OSStatus` wird typisiert ausgewertet.
-3. **Access Control & Biometrie (Optional in Settings 7c):**
-   - Standardmäßig werden Tokens mit `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` und `kSecUseDataProtectionKeychain: true` gespeichert.
-   - Optional kann in den Settings (Tab 7c) Touch ID / `LAContext` für das Einsehen oder Rotieren von Tokens aktiviert werden.
+1. **Actor isolation and reentrancy**
+   - Dedicated actors handle all network, Keychain, process, and file system operations. These include `GitHubOAuthActor`, `KeychainVaultActor`, `RunnerSupervisorActor`, `RunnerBinaryCacheActor`, and `HostTelemetryActor`.
+   - Capture the relevant state before each `await` in an actor and recheck invariants after suspension.
+2. **`Sendable` DTOs**
+   - Use `struct` or `enum` types with checked `Sendable` conformance for all DTOs passed between actors and `@MainActor` views.
+3. **Structured concurrency and cancellation**
+   - Parallel runner installations, such as creating two to four instances in the setup wizard, use `withThrowingTaskGroup`.
+   - OAuth polling and live log streaming (`AsyncStream<LogLine>`) cooperate with cancellation through `Task.checkCancellation()` and SwiftUI’s `.task(id:)`, as applicable. Closing the sheet cancels its task.
 
-### 3.3 `swiftdata-pro` (Datenmodellierung & Abfragen)
-1. **Explizite Delete-Rules & Indizes (macOS 15 / iOS 18+ API):**
-   - `@Model final class RunnerEntity` nutzt `#Index<RunnerEntity>([\.statusRaw], [\.name])` für schnelle Filterung in der Sidebar.
-   - Beziehungen zwischen `RunnerEntity` und `JobRunEntity` definieren explizit `@Relationship(deleteRule: .cascade, inverse: \JobRunEntity.runner)`.
-2. **Sichere `#Predicate`-Abfragen:**
-   - Keine Laufzeit-Crashes durch `isEmpty == false` (stattdessen `!$0.labels.isEmpty` oder unterstützte `localizedStandardContains`-Filter).
-   - `@Query` wird ausschließlich direkt in SwiftUI Views genutzt; Services/Actors erhalten bei Bedarf eine `ModelConfiguration` bzw. einen eigenen `@ModelActor`.
+### 3.2 `swift-security-expert` (Keychain and credential lifecycle)
 
-### 3.4 `swiftui-pro` (Moderne SwiftUI 6 & macOS HIG)
-1. **Observation statt `ObservableObject`:**
-   - Ausschließliche Nutzung von `@Observable`, `@State`, `@Environment` und `@Bindable` (keine Legacy `@StateObject`, `@ObservedObject` oder `@Published`).
-2. **Moderne Modifier & API:**
-   - `foregroundStyle()` statt `foregroundColor()`, `clipShape(.rect(cornerRadius:))` statt `cornerRadius()`, `Button("Title", systemImage: "icon", action: ...)` für volle VoiceOver-Accessibility.
-   - Keine manuellen `Binding(get:set:)`-Konstrukte in `body`, sondern direkte Bindings mit `.onChange(of:)`.
-   - Ein Typ pro Datei (`One Type Per File`), strukturiert nach Feature-Modulen.
+1. **Credential storage**
+   - Keep OAuth access tokens, personal access tokens (PATs), and runner registration tokens out of `UserDefaults`, SwiftData, and plist files.
+   - Store only non-sensitive metadata in SwiftData (`GitHubAccountEntity`), including `username`, `avatarUrl`, `scopes`, and `keychainAccountIdentifier`.
+2. **Add or update and check `OSStatus`**
+   - Handle `errSecDuplicateItem` from each `SecItemAdd` call with an atomic `SecItemUpdate`. Interpret every `OSStatus` as a typed result.
+3. **Access control and biometrics (optional in Settings 7c)**
+   - Store tokens with `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` and `kSecUseDataProtectionKeychain: true` by default.
+   - Settings tab 7c can require Touch ID through `LAContext` to inspect or rotate tokens.
+
+### 3.3 `swiftdata-pro` (data modeling and queries)
+
+1. **Explicit delete rules and indexes (macOS 15 / iOS 18+ APIs)**
+   - `@Model final class RunnerEntity` uses `#Index<RunnerEntity>([\.statusRaw], [\.name])` for quick sidebar filtering.
+   - The relationship between `RunnerEntity` and `JobRunEntity` explicitly declares `@Relationship(deleteRule: .cascade, inverse: \JobRunEntity.runner)`.
+2. **Safe `#Predicate` queries**
+   - Use `!$0.labels.isEmpty` or a supported `localizedStandardContains` filter to avoid the runtime crashes associated with `isEmpty == false`.
+   - Use `@Query` directly in SwiftUI views. Services and actors receive a `ModelConfiguration` or use a dedicated `@ModelActor` when needed.
+
+### 3.4 `swiftui-pro` (SwiftUI 6 and macOS HIG)
+
+1. **Observation**
+   - Use `@Observable`, `@State`, `@Environment`, and `@Bindable` for all state and observation.
+2. **Modifiers and APIs**
+   - Use `foregroundStyle()`, `clipShape(.rect(cornerRadius:))`, and `Button("Title", systemImage: "icon", action: ...)`. The button initializer supports VoiceOver.
+   - Use direct bindings with `.onChange(of:)` to keep custom `Binding(get:set:)` construction out of `body`.
+   - Keep one type per file and group files by feature module.
 
 ---
 
-## 4. Kritische Architektur-Entscheidungen (ADRs — Hinterfragt statt blind übernommen)
+## 4. Architecture decision records (ADRs)
 
-In den Stitch-Entwürfen und dem ersten Spec-Draft standen einige Konzepte, die in der Praxis unter macOS 15+ und Swift 6 **nicht funktionieren oder veraltet sind**. Hier ist die kritische Analyse und unsere modernere Lösung:
+These decisions document changes to the Stitch mockups and initial specification for macOS 15+ and Swift 6.
 
-### ADR-01: Warum `SMAppService.agent(plistName:)` aus dem Spec-Draft für dynamische Runner NICHT funktioniert
-- **Was im Draft stand:** `SMAppService.agent(plistName: "io.octorunner.agent.\(id).plist")` für jeden neu angelegten Runner aufrufen.
-- **Warum das technisch fehlschlägt:** Apples `SMAppService.agent(plistName:)` sucht die `.plist` zwingend **innerhalb des schreibgeschützten, signierten App-Bundles** (`OctoRunner.app/Contents/Library/LaunchAgents/`). Würde die App zur Laufzeit dort neue `.plist`-Dateien für Runner 1, 2, 3 hineinschreiben, **bricht sofort die Code-Signatur und Notarisierung** von `OctoRunner.app` (`Code Signature Invalid` beim nächsten Start)!
-- **Was ist der moderne, saubere Weg (Unsere Lösung)?**
-  1. **Für den Autostart von OctoRunner selbst:** Wir nutzen **`SMAppService.mainApp`** (macOS 13+ Standard). Damit startet `OctoRunner` beim macOS-Login automatisch im Hintergrund (als MenuBar-App ohne Dock-Icon, wenn das Fenster zu ist).
-  2. **Für die Runner-Prozesse (Dual-Mode Supervisor):**
-     - **Modus A — Direct Managed Child Process (empfohlener Standard):** `RunnerSupervisorActor` verwaltet den Start von `run.sh` in einer eigenen Prozessgruppe. Die Gruppe entsteht atomar beim Start mit `posix_spawn`. Ein Stopp setzt die passende Startgeneration und eine frische Leerlaufbeobachtung voraus. Eine abgelaufene Wartefrist signalisiert dem Prozess nichts. Der GitHub-Scheduler kann zwischen Beobachtung und Signal einen neuen Job zuweisen.
-       - Für Echtzeit-Logs ist ein separater Anschluss von `stdout` und `stderr` über Pipes geplant. Der gestartete Prozess erhält die Umgebung der App. Schlüsselbundfreigaben, Xcode-Auswahl und im Terminal konfigurierte Pfade hängen weiterhin vom jeweiligen Startkontext ab.
-     - **Modus B — Standalone `launchd` User LaunchAgent (Optional für Headless-Betrieb auch wenn OctoRunner beendet wird):** Wenn der User in den Settings explizit wünscht, dass Runner weiterlaufen, selbst wenn er `OctoRunner` per `⌘Q` komplett beendet, generiert die App eine saubere `.plist` unter `~/Library/LaunchAgents/io.octorunner.agent.<id>.plist` und lädt sie über das moderne `launchctl bootstrap gui/<uid>`.
+### ADR-01 — App login items and dynamic runner supervision
 
-| Zustand | Prozessbesitz und Befugnisse |
+The draft proposed calling `SMAppService.agent(plistName: "io.octorunner.agent.\(id).plist")` for every new runner. The API requires the plist inside the read-only signed app bundle, at `OctoRunner.app/Contents/Library/LaunchAgents/`. Writing new runner plists there at runtime would invalidate the code signature and notarization and cause a `Code Signature Invalid` error on the next launch.
+
+1. **App login item**
+
+   `SMAppService.mainApp`, available since macOS 13, starts OctoRunner at login as a background menu bar app. The Dock icon can be hidden when the window is closed.
+2. **Runner process modes**
+   - **Directly managed child process (recommended default).** `RunnerSupervisorActor` starts `run.sh` in a dedicated process group that `posix_spawn` creates atomically. A stop requires the matching launch generation and a fresh observation that the runner is idle. An expired wait leaves the process unsignaled. The GitHub scheduler can assign a new job between the idle check and the signal.
+     - A separate connection to `stdout` and `stderr` through pipes is planned for real-time logs. The started process inherits the app’s environment. Keychain access, Xcode selection, and paths configured in Terminal depend on the launch context.
+   - **Standalone `launchd` user LaunchAgent (optional).** If the user explicitly chooses to keep runners active after quitting OctoRunner with **⌘Q**, the app writes `~/Library/LaunchAgents/io.octorunner.agent.<id>.plist` and loads it with `launchctl bootstrap gui/<uid>`.
+
+| State | Process ownership and control |
 | --- | --- |
-| Direkt, aktuelle Startgeneration | OctoRunner startet und beobachtet die Prozessgruppe. Beenden und Neustart verwenden das zugehörige Handle. |
-| Bestätigter User-LaunchAgent | `launchd` startet den Runner und lässt ihn nach GUI-Ende weiterlaufen. Steuerung erfolgt über den verifizierten Dienst und seine zugehörige Plist. |
-| Importiert oder Betriebsart ungeklärt | OctoRunner beobachtet den Runner. Steuerung erfordert eine explizite Übernahme. Ein gespeichertes PID-Feld oder generiertes Dienstlabel allein genügt dafür nicht. |
+| Direct, current launch generation | OctoRunner starts and observes the process group. Stop and restart use the corresponding handle. |
+| Verified user LaunchAgent | `launchd` starts the runner and keeps it running after the app quits. Control uses the verified service and its associated plist. |
+| Imported or unconfirmed mode | OctoRunner observes the runner. Control requires explicit adoption beyond a saved PID field or generated service label. |
 
-Für direkt verwaltete Runner gilt die Ausfallsicherung, solange die App läuft. Sie bindet Wiederanlauf und Stopp an die konkrete Prozessgeneration. Ein im Stromsparmodus aufgeschobener Start behält seine Anforderung, bis der Energiesparmodus endet oder der Start abgebrochen wird. Die Quarantäne begrenzt Wiederanlaufversuche je App-Sitzung. Installierte LaunchAgents behalten ihre eigene `launchd`-Richtlinie.
+Failover for directly managed runners applies while the app runs. It ties restarts and stops to a specific process generation. A start deferred by Low Power Mode stays pending until Low Power Mode ends or the user cancels it. Quarantine limits restart attempts per app session. Installed LaunchAgents follow their own `launchd` policies.
 
-Der Supervisor reserviert für jeden direkt verwalteten Start einen Platz für genau eine Prozessgeneration. Startbereite Wartende erhalten freie Plätze in Warteschlangenreihenfolge. Eine Limitänderung beeinflusst künftige Reservierungen. Bestehende Reservierungen enden bei einem fehlgeschlagenen Start oder beim Prozessende. GitHub weist Workflow-Jobs zu. Externe Runner und LaunchAgents verwalten ihre Prozesse unabhängig.
+The supervisor reserves one slot for each directly managed launch generation. Ready starts receive available slots in queue order. A limit change affects future reservations. Failed starts and process exits release their reservations. GitHub assigns workflow jobs. External runners and LaunchAgents manage their processes independently.
 
-### ADR-02: Native macOS Window-Chrome statt HTML-nachgebauter Traffic Lights
-- **Was in den Stitch-HTML-Exports steckt:** Eigene gezeichnete rote/gelbe/grüne Fenster-Buttons (`×`, `−`, `+`) und ein künstlicher Header-Balken im Content-Bereich.
-- **Warum man das in SwiftUI NICHT nachbaut:** Würde man in einer echten macOS-App eigene Traffic-Lights rendern, hätte man entweder doppelte Fenster-Buttons oder verlöre native macOS-Features (Vollbild-Tile-Menü beim Hover auf Grün, Stage Manager, Mission Control).
-- **Unsere Lösung (`swiftui-pro`):** Wir nutzen **echtes macOS Window-Styling** (`.windowStyle(.hiddenTitleBar)`, `.windowToolbarStyle(.unified)` und native `.toolbar`-Items). Dadurch sitzen die echten macOS Traffic-Lights exakt an der Stelle wie im Stitch-Design, inklusive nativem Vibrancy-Effekt (`.ultraThinMaterial`).
+### ADR-02 — Native macOS window chrome
 
-### ADR-03: APFS Snapshots & Ephemeral Runners (Saubere Isolation statt Root-Befehlen)
-- **Was in Screen 7a stand:** *"APFS Snapshot frequency: After every failed job"*.
-- **Kritische Prüfung:** Echte APFS Volume Snapshots (`tmutil localsnapshot` oder `mount_apfs -s`) erfordern unter macOS `root`-Rechte (`sudo`) und gelten immer nur für das **gesamte APFS-Volume** (also die ganze Festplatte des Users), nicht für einen einzelnen `_work`-Ordner!
-- **Was ist die viel bessere, moderne APFS-Technik (Unsere Lösung)?**
-  1. **APFS Copy-on-Write Directory Clones (`clonefile` / `cp -c`):** Auf Apple Silicon mit APFS kann ein ganzes Runner- oder `_work`-Verzeichnis mittels `FileManager` / `clonefile(2)` in **0 Millisekunden und mit 0 Byte zusätzlichem Speicherplatz** geklont oder gesichert werden — komplett ohne Root-Rechte!
-  2. **GitHub Ephemeral Flag (`--ephemeral`) + Pre-Job Cleanup:** Zusätzlich unterstützen wir das offizielle `--ephemeral`-Flag des GitHub Runners bzw. schnelles APFS-Cloning, sodass jeder Job in einer garantiert sauberen Umgebung startet.
+The Stitch HTML export drew its own red, yellow, and green window controls (`×`, `−`, `+`) and a header inside the content area. Recreating those controls in SwiftUI would either duplicate them or lose macOS features such as the full-screen tiling menu shown when hovering over the green button, Stage Manager, and Mission Control.
 
-### ADR-04: App Icon & Vector Assets (100% Transparenz & automatische Skalierung)
-- **Analyse des Stitch-Icons:** Das exportierte `screen.png` aus Stitch hatte einen weißen Hintergrund (`RGB` ohne Alpha-Kanal). Unter macOS wirkt ein Icon mit weißem Kasten im Dock unprofessionell.
-- **Unsere Lösung:**
-  - Das Master-Icon (`docs/assets/app_icon.png`, `1024×1024`) wurde per CoreGraphics exakt entlang der macOS-HIG-Squircle-Geometrie (`824×824` Body + weicher Drop-Shadow) freigestellt und besitzt nun einen **echten RGBA-Alpha-Kanal (100% transparenter Hintergrund)**.
-  - Das Swift-Skript [`scripts/generate-app-icons.swift`](../scripts/generate-app-icons.swift) generiert daraus vollautomatisch alle 10 für Xcode benötigten macOS-Auflösungen (`16x16@1x` bis `512x512@2x`) inkl. `Contents.json`.
-  - Für das Menüleisten-Icon liegt unter [`docs/assets/menubar_icon.svg`](./assets/menubar_icon.svg) eine echte **Vektor-SVG** (Template-Image für automatisches Dark/Light-Tinting in der macOS-Menüleiste).
+The app uses native window styling through `.windowStyle(.hiddenTitleBar)`, `.windowToolbarStyle(.unified)`, and native `.toolbar` items, following `swiftui-pro`. The native controls match their placement in the Stitch design and retain system vibrancy (`.ultraThinMaterial`).
 
-### ADR-05: Warum "Personal Account Level Runners" auf GitHub eine Halluzination sind (und wie wir sie im Wizard abbilden)
-- **Was im Stitch-Mockup (Screen 3: Setup Wizard) stand:** Segment 1: `Personal Account` mit Ziel-URL `https://github.com/dein-benutzer`.
-- **Kritische Faktenprüfung (Live gegen die GitHub REST API & Docs):**
-  - GitHub unterstützt Self-Hosted Runner ausschließlich auf **3 Hierarchie-Ebenen**:
-    1. **Repository-Level** (`/repos/{owner}/{repo}/actions/runners`)
-    2. **Organization-Level** (`/orgs/{org}/actions/runners` — ein Runner für alle Repos einer Organisation)
-    3. **Enterprise-Level** (`/enterprises/{enterprise}/actions/runners`)
-  - Auf einem **persönlichen GitHub-Account (User Account)** gibt es unter `github.com/settings` im Menü *Code, planning, and automation* **keinen** Punkt *Actions -> Runners*, und der API-Endpunkt `GET /user/actions/runners` liefert `404 Not Found` (häufige KI-Halluzination, die Organization-Settings mit Personal-Settings verwechselt).
-- **Unsere Lösung für OctoRunner (Echter Mehrwert statt Fehler-Dialog):**
-  - Wenn der User im Setup-Wizard **`Personal Account`** auswählt, lädt `OctoRunner` über `GET /user/repos?affiliation=owner` alle seine persönlichen Repositories zur einfachen Ein- oder Mehrfachauswahl!
-  - Wählt der User dort z.B. 3 seiner privaten Repositories aus, legt `OctoRunner` per **APFS Copy-on-Write (`clonefile`)** ohne doppelten Speicherverbrauch im Hintergrund die benötigten Runner-Instanzen für diese Repos an. So bekommt man auch mit einem persönlichen GitHub-Account das Komfort-Erlebnis eines "Account-weiten Runners"!
-  - Alternativ kann man auf GitHub jederzeit eine **kostenlose GitHub Organization** anlegen — dort funktioniert ein einziger Runner nativ für alle Repositories der Organisation.
+### ADR-03 — APFS cloning and ephemeral runners
 
+Screen 7a proposed *APFS Snapshot frequency: After every failed job*. On macOS, APFS volume snapshots through `tmutil localsnapshot` or `mount_apfs -s` require root privileges (`sudo`) and apply at the volume level. Runner workspaces need directory-level isolation around `_work`.
 
+1. **APFS copy-on-write clones (`clonefile` / `cp -c`).** On Apple silicon with APFS, use `FileManager` or `clonefile(2)` to clone or back up a runner or `_work` directory. The design calls for an immediate copy with zero additional file data at creation and no root privileges.
+2. **GitHub’s `--ephemeral` flag and pre-job cleanup.** The design supports the official GitHub runner flag and fast APFS cloning so each job starts in a clean environment.
+
+### ADR-04 — Transparent app icon and vector menu bar asset
+
+The Stitch `screen.png` export had a white background because the RGB image lacked an alpha channel. The master icon at `docs/assets/app_icon.png` is `1024×1024` and uses CoreGraphics to follow the macOS HIG squircle geometry with an `824×824` body and a soft drop shadow. It has an RGBA alpha channel with a fully transparent background.
+
+The Swift script generates all 10 macOS icon sizes Xcode requires, from `16x16@1x` through `512x512@2x`, along with `Contents.json`. [Icon generation script](../scripts/generate-app-icons.swift).
+
+The menu bar icon uses a vector SVG template image for automatic light and dark appearance tinting. [Menu bar icon](./assets/menubar_icon.svg).
+
+### ADR-05 — Runner scopes for personal GitHub accounts
+
+Screen 3 in the Stitch mockup used a **Personal Account** segment with a URL like `https://github.com/your-user`. The GitHub REST API supports self-hosted runners at three levels.
+
+1. **Repository** (`/repos/{owner}/{repo}/actions/runners`)
+2. **Organization** (`/orgs/{org}/actions/runners`), where a runner can serve repositories across the organization
+3. **Enterprise** (`/enterprises/{enterprise}/actions/runners`)
+
+A personal account’s **Code, planning, and automation** settings omit **Actions → Runners**, and `GET /user/actions/runners` returns `404 Not Found`.
+
+When the user selects **Personal Account** in the setup wizard, OctoRunner lists personally owned repositories through `GET /user/repos?affiliation=owner` and supports selecting one or more. For example, selecting three private repositories creates the needed runner instance for each repository in the background using APFS copy-on-write cloning (`clonefile`) to avoid duplicating file data. A free GitHub organization also supports a single organization runner that can serve the organization’s repositories.

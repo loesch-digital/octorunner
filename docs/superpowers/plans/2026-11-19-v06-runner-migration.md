@@ -1,53 +1,53 @@
-# v0.6 Sichere Runner-Migration Implementation Plan
+# v0.6 Safe Runner Migration Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Native Umsetzung; bestehende Nutzerfreigabe zur anschließenden Implementierung beachten.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Use the existing authorization to continue with native implementation.
 
-**Goal:** Importierte Runner nach bestätigter, nachvollziehbarer Migration vollständig übernehmen und bei Fehlern einen ehrlichen Wiederherstellungszustand zeigen.
+**Goal** — Take full control of imported runners through a confirmed, traceable migration and report recovery status accurately when a step fails.
 
-**Architecture:** Eine journalisierte Zustandsmaschine trennt Prüfung, Stop, neue Registrierung, Start und Commit. Dateisystem-Rollback und GitHub-Kompensation sind unterschiedliche Schritte; private Runner-Schlüssel werden nicht kopiert.
+**Architecture** — A journaled state machine records validation, stopping, new registration, starting, and commit as separate stages. The original private runner keys stay in place. File system rollback and compensating GitHub actions are distinct operations.
 
-**Tech Stack:** Swift 6, SwiftUI, SwiftData, SPM, macOS ServiceManagement; bestehende Python-/GitHub-Actions-Werkzeuge.
+**Tech stack** — Swift 6, SwiftUI, SwiftData, SPM, macOS ServiceManagement, and the existing Python and GitHub Actions tools.
 
-**Spec:** `docs/08-sync-kit-and-local-runner-import.md`, ADR-01, v0.6-Supervisor-Plan; verbindliche Umfangsentscheidung vom 19.11.2026: globales Parallelitätslimit erst v0.6.
+**Spec** — `docs/08-sync-kit-and-local-runner-import.md`, ADR-01, and the v0.6 supervisor plan. The November 19, 2026 scope decision places the global concurrency limit in v0.6.
 
 ## Global Constraints
 
-Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen unter `Packages/OctoRunnerKit/Sources/`; Testdateinamen liegen unter `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/`. Neue Dateien werden jeweils dort angelegt.
+Source paths such as `RunnerEngine/...` and `CoreModels/...` are relative to `Packages/OctoRunnerKit/Sources/`. Test filenames are relative to `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/`. Create new files in the corresponding directories.
 
-- macOS 15+, Swift 6 Strict Concurrency, SwiftUI und SwiftData; keine Versionsanhebung durch das CI-Image.
-- Vor Änderungen die vier Repo-Skills und einschlägigen `references/*.md` lesen. `AGENTS.md` gilt uneingeschränkt.
-- Jede Produktionsänderung beginnt mit einem nachweislich roten Regressionstest; anschließend grün und Refactor. Swift: `swift test --package-path Packages/OctoRunnerKit --no-parallel`; Python: `python3 -m unittest discover -s scripts/tests`.
-- Feature-Branch, semantische Commits, PR. Nach Push PR-CI vollständig grün abwarten, dann Merge und main-CI vollständig grün abwarten. Keine überlappende nächste Feature-Umsetzung bei roter/laufender CI.
-- Keine Secrets in Logs, Modellen oder Exporten; keine vorsorgliche Dokumente-Abfrage. SwiftData-Defaults, SQLite-Headerprüfung und Cancellation vor Modellzugriffen beibehalten.
-- Neue Controls: Label/Hint, Tastaturbedienung, OctoTheme; WCAG 2.2 AA in Hell/Dunkel. NSHostingView für schmale/breite Ansichten, DE/EN.
-- Konkrete Werkzeug-/API-Versionen unmittelbar vor Änderung anhand offizieller Quellen verifizieren.
+- Target macOS 15+ with Swift 6 strict concurrency, SwiftUI, and SwiftData. Preserve the minimum supported version when selecting the CI image.
+- Read the four repo skills and relevant `references/*.md` files before making changes. Follow `AGENTS.md`.
+- Start every production change with a regression test that demonstrably fails, then make it pass and refactor. Run Swift tests with `swift test --package-path Packages/OctoRunnerKit --no-parallel` and Python tests with `python3 -m unittest discover -s scripts/tests`.
+- Use a feature branch, semantic commits, and a PR. After pushing, wait for all PR CI checks to pass before merging, then wait for all main CI checks to pass before starting the next feature.
+- Keep secrets out of logs, models, and exports. Access Documents only when needed. Preserve SwiftData defaults, SQLite header checks, and cancellation checks before model access.
+- Give new controls labels and hints, keyboard support, and OctoTheme styling. Meet WCAG 2.2 AA in Light and Dark appearances. Use NSHostingView to check narrow and wide layouts in German and English.
+- Verify exact tool and API versions against official sources immediately before changing them.
 
 ## Review Focus
 
-1. Busy-Runner: kein Jobabbruch ohne ausdrückliche Entscheidung (Task 1).
-2. Symlink-/Quellpfadänderung: keine Übernahme fremder Dateien (Task 1).
-3. `.credentials_rsaparams`: niemals lesen, kopieren oder exportieren (Task 1/2).
-4. Fehler nach GitHub-Registrierung: ehrliche Server-Kompensation statt behauptetem Rollback (Task 2).
-5. App-Absturz zwischen Schritten: Wiederaufnahme ohne Doppel-Listener (Task 2).
+1. Require explicit authorization before interrupting a job on a busy runner (Task 1).
+2. Recheck symlinks and source paths to avoid taking ownership of unrelated files (Task 1).
+3. Keep `.credentials_rsaparams` unread, uncopied, and excluded from exports (Tasks 1 and 2).
+4. After a failure following GitHub registration, perform and report the actual compensating server action (Task 2).
+5. Resume after a crash between stages without starting a duplicate listener (Task 2).
 
-### Task 1: Preflight und Bestätigung
+### Task 1: Preflight and Confirmation
 
-**Files:** Modify `RunnerEngine/RunnerProvisionerActor.swift`, `AppShellFeature/RunnerMigrationCompletion.swift`; Create `RunnerEngine/RunnerMigrationPlan.swift`, `AppShellFeature/RunnerMigrationConfirmation.swift`; Test bestehende `RunnerMigrationSafetyTests.swift`, `RunnerMigrationCompletionTests.swift`.
+**Files** — Modify `RunnerEngine/RunnerProvisionerActor.swift` and `AppShellFeature/RunnerMigrationCompletion.swift`. Create `RunnerEngine/RunnerMigrationPlan.swift` and `AppShellFeature/RunnerMigrationConfirmation.swift`. Use the existing tests in `RunnerMigrationSafetyTests.swift` and `RunnerMigrationCompletionTests.swift`.
 
-**Interfaces:** Unveränderlicher MigrationPlan enthält Runner-ID, geprüfte Quelle/Ziel, Account/Scope, Labels/Gruppe und Auswirkungen; keine Credentials. Verwendet Supervisor aus dem vorausgehenden Plan.
+**Interfaces** — The immutable MigrationPlan contains the runner ID, verified source and destination, account and scope, labels and group, and expected effects. Keep credentials out of the plan. Use the supervisor from the preceding plan.
 
-- [x] Den bisherigen Kopierpfad mit Tests für den Quellordner, Symlinks, einen aktiven Listener, einen laufenden Job und fehlenden GitHub-Zugriff abgesichert.
-- [x] Vorprüfung liest nur die Metadaten der gewählten Quelle. Vor der Registrierung werden Quellidentität, ruhender Listener, Labels, Account, GitHub-Ziel und gegebenenfalls die Gruppe erneut geprüft.
-- [x] Beide UI-Einstiege führen zur gleichen Bestätigung. Der Dialog zeigt Betriebsart, neue Registrierung, Arbeitsordner und Wiederherstellung. NSHostingView-Tests decken Englisch und Deutsch ab.
+- [x] Covered the previous copy path with tests for the source folder, symlinks, an active listener, a running job, and missing GitHub access.
+- [x] Preflight reads only metadata from the selected source. Before registration, it rechecks source identity, stopped listener status, labels, account, GitHub target, and group when applicable.
+- [x] Both UI entry points open the same confirmation. The dialog shows the operating mode, new registration, working directory, and recovery options. NSHostingView tests cover English and German.
 
-### Task 2: Journal, Übernahme und Wiederherstellung
+### Task 2: Journal, Takeover, and Recovery
 
-**Files:** Create `RunnerEngine/RunnerMigrationCoordinator.swift`, `RunnerEngine/RunnerMigrationJournal.swift`; Modify Provisioner und MigrationCompletion; Test `RunnerMigrationTransactionTests.swift`.
+**Files** — Create `RunnerEngine/RunnerMigrationCoordinator.swift` and `RunnerEngine/RunnerMigrationJournal.swift`. Modify the provisioner and MigrationCompletion. Test in `RunnerMigrationTransactionTests.swift`.
 
-**Interfaces:** Coordinator `migrate(plan: RunnerMigrationPlan) async throws` liefert belegten Abschluss oder Wiederherstellungsbedarf. Journal speichert ausschließlich IDs, nicht geheime Pfade, Stufen und Resultate; Credential-Zugriff nur im bestehenden sicheren Registrierungsdienst.
+**Interfaces** — Coordinator method `migrate(plan: RunnerMigrationPlan) async throws` reports verified completion or the need for recovery. The journal stores only IDs, nonsecret paths, stages, and results. Access credentials only in the existing secure registration service.
 
-- [x] Fehlergrenzen für Vorprüfung, Vorbereitung, Registrierung, Modell-Commit und Start sowie die Wiederaufnahme mit neuem Koordinator getestet. Der ursprüngliche Schlüssel bleibt im ursprünglichen Ordner. Offene Migrationen sperren beide Pfade für den Import.
-- [x] Die Übernahme setzt einen gestoppten alten Listener und deaktivierten Autostart voraus. OctoRunner lehnt den noch installierten Standarddienst ab und prüft lokalen und GitHub-Status. Die neue Installation nutzt ein checksum-geprüftes Archiv und ein kurzlebiges Registrierungstoken.
-- [x] Die verifizierte GitHub-ID wird vor dem Start gespeichert. OctoRunner kann vorbereitete Dateien sicher verwerfen und nach bestätigter Registrierung fortsetzen. Ein Abbruch mit unbekanntem GitHub-Ergebnis erfordert eine Prüfung in GitHub, da das Registrierungsprogramm den Austausch anhand des Namens ausführt.
-- [x] SwiftData lädt die Runner-ID nach asynchronen Schritten erneut. Der Commit enthält einen Runner-bezogenen Audit-Eintrag. Das Journal zeigt bei einem Abbruch die letzte bestätigte Stufe und verfügbare Wiederherstellungsschritte.
-- [ ] Grün, unabhängiges Review, Commit und CI-Gates. Nutzerabnahme mit einem entbehrlichen Runner; vorhandene produktive Runner nicht für Fehlersimulationen verwenden.
+- [x] Tested failure boundaries for preflight, preparation, registration, model commit, and startup, and resumption with a new coordinator. The original key stays in the source folder. Open migrations block both paths from import.
+- [x] Takeover requires a stopped old listener and disabled automatic startup. OctoRunner rejects an installed standard service and checks local and GitHub status. The new installation uses a checksum-verified archive and a short-lived registration token.
+- [x] Store the verified GitHub ID before startup. OctoRunner can safely discard prepared files and resume after confirmed registration. If interruption leaves the GitHub outcome unknown, verify it in GitHub because the registration program performs replacement by name.
+- [x] SwiftData reloads the runner ID after asynchronous steps. The commit includes a runner-specific audit entry. On interruption, the journal shows the last confirmed stage and available recovery steps.
+- [ ] Pass tests, get independent review, commit, and pass CI gates. Use a disposable runner for user acceptance and failure simulations.

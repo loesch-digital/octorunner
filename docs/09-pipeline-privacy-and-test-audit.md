@@ -1,68 +1,74 @@
-# Pipeline-, Datenschutz- und Testprüfung (2026-11-11)
+# Pipeline, Privacy, and Test Audit (November 11, 2026)
 
-## Geprüfter Release-Stand
+## Verified release status
 
-- [v0.4.2](https://github.com/loesch-digital/octorunner/actions/runs/43046560949) scheiterte an der Signing-Keychain. Match importierte das Zertifikat, anschließend meldete der Signing-Schritt `The specified item could not be found in the keychain`.
-- [v0.4.3 Release](https://github.com/loesch-digital/octorunner/actions/runs/43049252599) und [main-CI](https://github.com/loesch-digital/octorunner/actions/runs/43049252861) sind grün. Der Keychain-Suchpfad-Fix ist bereits ausgeliefert. Ein erneutes v0.4.3-Tag oder Ersetzen des Archivs ist ausgeschlossen.
+- [v0.4.2](https://github.com/loesch-digital/octorunner/actions/runs/43046560949) failed during signing. Match imported the certificate, and the signing step then reported `The specified item could not be found in the keychain`.
+- The [v0.4.3 release](https://github.com/loesch-digital/octorunner/actions/runs/43049252599) and [main CI](https://github.com/loesch-digital/octorunner/actions/runs/43049252861) passed. v0.4.3 shipped the Keychain search path fix. The published tag and archive are final.
 
 ## Patch v0.4.4
 
-v0.4.4 ergänzte einen Xcode-27.2-Build neben dem bisherigen `macos-15`-Image. Auf ausdrücklichen Nutzerwunsch verwenden ab dem Step-5-Branch CI und Release ausschließlich das aktuelle offizielle `xcode-27`-Image mit explizit ausgewähltem Xcode 27.2; der zusätzliche Build mit altem Xcode entfällt. Ein aktuelles Build-SDK und die macOS-Untergrenze der App sind unabhängig. Ein erfolgreicher Build auf diesem Image ersetzt keinen Laufzeittest auf macOS 15. Das Deployment Target bleibt macOS 15. Swift-Sprachmodus 6 und `complete` Strict Concurrency sind weiterhin verbindlich; eine minimale SPM-Tools-Version 6.0 bezeichnet keinen veralteten Compiler.
+v0.4.4 added an Xcode 27.2 build alongside the existing `macos-15` image. Beginning with the Step 5 branch, CI and releases use only the official `xcode-27` image, with Xcode 27.2 explicitly selected, as requested by the user. The build SDK and the app’s deployment target are independent. The macOS 15 deployment target still requires runtime testing on macOS 15. Swift 6 language mode and `complete` strict concurrency remain required. The minimum SPM tools version of 6.0 can be used with a newer compiler.
 
-Verifiziert am 2026-11-11: lokal Xcode 27.2 (27B52), Swift 6.4.2; aktuelle stabile Xcode-Version 27.2, checkout v7.0.1, release-it 21.1.2. Referenzen: [Apple](https://developer.apple.com/xcode/system-requirements/), [Runner-Images](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md), [checkout](https://github.com/actions/checkout/releases).
+On November 11, 2026, local verification used Xcode 27.2 (27B52) and Swift 6.4.2. The latest stable versions verified that day were Xcode 27.2, checkout v7.0.1, and release-it 21.1.2. [Apple](https://developer.apple.com/xcode/system-requirements/), [runner images](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md), [checkout releases](https://github.com/actions/checkout/releases).
 
-Homebrew-Verfügbarkeitsprüfungen sind stumm; Installationsfehler bleiben sichtbar. Python-Signingtests laufen auch vor Releases. CI erhält nur `contents: read`. Release-Publikationen werden serialisiert und `gh release create --verify-tag` verweigert vorhandene Releases, statt Archive mit `--clobber` auszutauschen. PR-CI läuft weiterhin ausschließlich auf `pull_request`; nur main hat zusätzlich Push-CI.
+Homebrew availability checks run quietly and installation errors stay visible. Python signing tests also run before releases. CI receives only `contents: read`. Releases are published serially, and `gh release create --verify-tag` rejects duplicate releases to prevent replacing archives with `--clobber`. PR CI runs on `pull_request`. Push CI runs only on `main`.
 
-Die CI erzeugt Coverage für die ausgewählte Toolchain und bewahrt die JSON-Berichte 14 Tage als Artefakte auf (`actions/upload-artifact@v7`, aktuelle Version v7.0.2 geprüft). Es gibt bewusst noch keine pauschale Prozent-Hürde: Aussagekräftige Fehlerpfadtests gehen vor einer durch UI-Rendering erhöhten Gesamtzahl.
+CI collects coverage for the selected toolchain and retains JSON reports as artifacts for 14 days using `actions/upload-artifact@v7`. v7.0.2 was the verified version at the time. The team prioritizes tests for failure paths and has left the overall coverage threshold unset because UI rendering can inflate the aggregate number.
 
-## Warum macOS nach Dokumente-Zugriff fragte
+## Why macOS requested Documents access
 
-Der Starttask suchte automatisch nach `.runner` unter `~/Documents/apps/actions-runner` und `~/Documents/actions-runner`, außerdem unter Pfaden aus der Prozessliste. Die eingebettete Logansicht las auch bereits importierte externe Runner beim Start. Dies sind Zugriffe der installierten App; der Speicherort des OctoRunner-Quellrepos ist nicht die Ursache. [Apple: Ordnerzugriff](https://support.apple.com/guide/mac-help/control-access-to-files-and-folders-on-mac-mchld5a35146/mac).
+At startup, discovery looked for `.runner` under `~/Documents/apps/actions-runner` and `~/Documents/actions-runner`, along with paths found in the process table. The embedded log view also read previously imported external runners. The installed app’s startup reads triggered the prompt, independently of where the OctoRunner source repository was stored. [Apple’s file and folder access guide](https://support.apple.com/guide/mac-help/control-access-to-files-and-folders-on-mac-mchld5a35146/mac).
 
-Nach Abstimmung mit dem Nutzer:
+After reviewing the behavior with the user, the patch made these changes.
 
-- Automatisch: `~/actions-runner`, `~/.octorunner/runners/*` und `~/Library/Application Support/io.octorunner.macos/runners/*`.
-- Externe Runner: zuerst bewusst über **Import Folder…** auswählen. Prozessmetadaten allein sind keine Ordnerfreigabe.
-- Externe eingebettete Logs: zuerst **Refresh** oder **Full Console** wählen. Externe Pfade werden vor jeder Dateisystemauflösung von der automatischen Policy abgewiesen.
-- Automatische Suche folgt keinen Symlinks aus diesen Bereichen heraus. Diagnostik liest weder verlinkte `_diag`-Ordner noch verlinkte Logdateien.
+- Automatic discovery checks `~/actions-runner`, `~/.octorunner/runners/*`, and `~/Library/Application Support/io.octorunner.macos/runners/*`.
+- For external runners, first select the directory through **Import Folder…**. Process metadata alone grants no folder access.
+- For embedded logs from external runners, first select **Refresh** or **Full Console**. The automatic access policy rejects external paths before any file system resolution.
+- Automatic discovery stays within the allowed paths when following symlinks. Diagnostics skip symlinked `_diag` directories and log files.
 
-Die macOS-Freigabe wird nicht umgangen oder pauschal beantragt. Erst die konkrete Nutzeraktion kann einen notwendigen Systemdialog auslösen. Bereits erteilte Systemfreigaben bleiben unverändert.
+Only the specific user action can trigger a macOS permission prompt when access is required. macOS continues to enforce the permissions it has already granted.
 
-## Minimale GitHub-Rechte
+## Minimum GitHub permissions
 
-Der OAuth-Scope `workflow` ist für Runner-Verwaltung und Job-Historie unnötig: Er erlaubt das Ändern von Workflow-Dateien. Er wird nicht mehr angefordert. Bestehende Freigaben werden dadurch nicht automatisch entzogen; für weniger Rechte ist eine neue Autorisierung nötig.
+The `workflow` OAuth scope allows changes to workflow files. The app stopped requesting it because runner management and job history only require the permissions listed below. Reauthorize to lower the permissions on an existing grant.
 
-| Verwendung | OAuth / classic PAT | Fine-grained PAT |
+| Task | OAuth or classic PAT | Fine-grained PAT |
 | --- | --- | --- |
-| Private Repository-Runner registrieren / Labels ändern | `repo`, Administrator des Zielrepos | Nur ausgewählte Repos, Administration: write |
-| Organisations-Runner registrieren / Labels ändern | `admin:org`, ggf. zusätzlich `repo` für private Repos | Self-hosted runners: write für die Zielorganisation |
-| Künftige Workflow-/Job-Historie lesen | `repo` für private Repos, kein `workflow` | Actions: read für die Zielrepos |
+| Register private repository runners or update their labels | `repo` and administrator access to the target repository | Administration write access for selected repositories only |
+| Register organization runners or update their labels | `admin:org`, plus `repo` for private repositories where needed | Self-hosted runners write access for the target organization |
+| Read workflow and job history in a future release | `repo` for private repositories | Actions read access for the target repositories |
 
-Der aktuelle OAuth-Flow unterstützt beide Runner-Arten und fordert deshalb weiterhin `repo` und `admin:org` an. Ein nur für ausgewählte Repos ausgestellter Fine-grained PAT ist die engere Alternative. Ein eigener OAuth-Schritt für optionale Organisationsrechte kann im Settings-Meilenstein ergänzt werden. Fehlende `X-OAuth-Scopes` bei Fine-grained PATs bedeuten unbekannte Rechte; die App erfindet dafür keine Standardrechte mehr. Die Ziel-API prüft die tatsächlichen Rechte bei Verwendung.
+The OAuth flow requests `repo` and `admin:org` to support repository and organization runners. A fine-grained PAT issued for selected repositories can grant narrower access. A separate OAuth step for optional organization permissions could be added in the Settings milestone. When a fine-grained PAT response omits `X-OAuth-Scopes`, the app treats its permissions as unknown. The target API checks the actual permissions when the app makes a request.
 
-Quellen: [Runner-Endpunkte](https://docs.github.com/en/rest/actions/self-hosted-runners), [OAuth-Scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps), [Fine-grained permissions](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens).
+[Runner endpoints](https://docs.github.com/en/rest/actions/self-hosted-runners), [OAuth scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps), [fine-grained token permissions](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens).
 
-## Testabdeckung und Grenzen
+## Test coverage and limits
 
-Ausgangsbasis: 29 Swift-Tests, 6 Python-Tests. Der Patch ergänzt ausführbare Workflow-Regressionen, HTTP-Request-/Auth-Fixtures, Ordner-/Symlink-Grenzen sowie den Quit-Dialog. NSHostingView-Rendering und Kontrasttests bleiben erhalten. Renderabdeckung beweist weder vollständige Interaktionen noch VoiceOver-Konformität.
+The baseline included 29 Swift tests and 6 Python tests. The patch adds runnable workflow regression tests, HTTP request and authentication fixtures, folder and symlink boundary tests, and a test for the Quit dialog. It retains NSHostingView rendering and contrast tests. Interaction and VoiceOver conformance require separate verification.
 
-Coverage-Messung mit `swift test --package-path Packages/OctoRunnerKit --no-parallel --enable-code-coverage`, Zwischenstand vor den abschließenden Log-Symlink-Tests:
+The following measurements used `swift test --package-path Packages/OctoRunnerKit --no-parallel --enable-code-coverage` before the final log symlink tests.
 
-| Modul | Ausgeführte Zeilen |
+| Module | Lines executed |
 | --- | ---: |
-| AppShellFeature | 68,0 % |
-| CoreModels | 72,3 % |
-| DesignSystem | 100,0 % |
-| GitHubAPI | 27,0 % |
-| RunnerEngine | 25,1 % |
-| SecurityKit | 89,2 % |
-| SyncKit | 61,7 % |
-| TelemetryKit | 97,1 % |
+| AppShellFeature | 68.0% |
+| CoreModels | 72.3% |
+| DesignSystem | 100.0% |
+| GitHubAPI | 27.0% |
+| RunnerEngine | 25.1% |
+| SecurityKit | 89.2% |
+| SyncKit | 61.7% |
+| TelemetryKit | 97.1% |
 
-Diese Zahlen sind keine Freigabe als „vollständig abgedeckt“: SwiftUI-Generics erhöhen die Zahl der instrumentierten Zeilen. Besonders OAuth-Polling/Cancellation, Fehlerantworten/Paginierung, Provisioning-Rollback, Crash-Supervision und echter Update-Rollback brauchen weitere Verhaltenstests in v0.5–v0.7. Die bisherige Telemetrie-Testabdeckung belegt ebenfalls keine vollständige Hardware-Telemetrie; die Implementierung enthält noch einen geschätzten Speicherverbrauch.
+SwiftUI generics increase the number of instrumented lines. OAuth polling and cancellation, API error responses and pagination, provisioning rollback, crash supervision, and actual update rollback need more behavioral tests in v0.5–v0.7. Full hardware telemetry still needs verification. The implementation at this point estimates memory usage.
 
-Manuelle Nutzerabnahme abgeschlossen: fünfmal **Dashboard** im Menüleistenfenster öffnet weiterhin genau ein Fenster; Schließen und Wiederöffnen funktionieren; Quit-Dialog und Beenden funktionieren; erneuter normaler Start ohne Dokumente-Abfrage; die drei Vorschau-Schalter sind deaktiviert. Separat noch nicht live belegt sind das Weiterlaufen konkreter LaunchAgent-Runner und ein neuer externer Ordnerimport. Die Computersteuerung meldet `cgWindowNotFound`; die genannten UI-Ergebnisse stammen ausdrücklich vom Nutzer. Kein TCC-Reset und keine Änderung von Datenschutzfreigaben für Tests.
+During manual acceptance, the user confirmed that selecting **Dashboard** five times in the menu bar popover opened exactly one window, closing and reopening worked, the Quit dialog and quitting worked, a normal restart showed no Documents prompt, and the three preview toggles were disabled. A new external folder import and the continued operation of specific LaunchAgent runners still needed separate live checks. The computer control tool returned `cgWindowNotFound`, so the UI results came directly from the user. Testing proceeded without resetting TCC or changing privacy permissions.
 
-## Weitere Meilensteine
+## Upcoming milestones
 
-v0.5.0: sechs Settings-Tabs mit tatsächlicher Wirkung, Jobs/Queue, echte Host-Telemetrie und Audit-UI. v0.6.0: vollständiger Supervisor, sichere Importmigration, periodische Synchronisierung und sichtbare Konflikte. v0.7.0: DE/EN, Accessibility, echte Update-/Rollback-Prüfung, Dokumentation und Screenshots. Diese Meilensteine sind durch diesen Patch nicht erledigt. Nach v0.7.0 ohne ausdrückliche Freigabe kein v1.0.0.
+The patch left these milestones open.
+
+- **v0.5.0** delivers six functional Settings tabs, jobs and queue views, real host telemetry, and an audit interface.
+- **v0.6.0** delivers full supervision, safe import migration, periodic synchronization, and visible conflicts.
+- **v0.7.0** delivers German and English localization, accessibility, end-to-end update and rollback testing, documentation, and screenshots.
+
+A v1.0.0 release after v0.7.0 requires explicit approval.

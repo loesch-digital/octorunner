@@ -73,10 +73,10 @@ struct AppShellUITests {
 
             let rootView = DashboardPreview(container: container, language: .english)
                 .frame(width: 1120, height: 740)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(.light)
 
             let hostingView = NSHostingView(rootView: AnyView(rootView))
-            hostingView.appearance = NSAppearance(named: .darkAqua)
+            hostingView.appearance = NSAppearance(named: .aqua)
             hostingView.frame = NSRect(x: 0, y: 0, width: 1120, height: 740)
             hostingView.layoutSubtreeIfNeeded()
 
@@ -88,9 +88,16 @@ struct AppShellUITests {
             #expect(bitmap.pixelsWide >= 1120)
             #expect(bitmap.pixelsHigh >= 740)
             if let path = ProcessInfo.processInfo.environment["OCTORUNNER_LAYOUT_CAPTURE_DIR"] {
-                hostingView.cacheDisplay(in: hostingView.bounds, to: bitmap)
-                let url = URL(filePath: path).appending(path: "dashboard-en-dark.png")
-                try #require(bitmap.representation(using: .png, properties: [:])).write(to: url)
+                let window = NSWindow(contentRect: hostingView.frame,
+                    styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+                window.appearance = NSAppearance(named: .aqua)
+                window.contentView = hostingView
+                hostingView.layoutSubtreeIfNeeded()
+                let windowBitmap = try #require(hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds))
+                hostingView.cacheDisplay(in: hostingView.bounds, to: windowBitmap)
+                let url = URL(filePath: path).appending(path: "dashboard-en-light.png")
+                try #require(windowBitmap.representation(using: .png, properties: [:])).write(to: url)
+                window.contentView = nil
             }
 
             // Tear down the view and container before suspended startup work resumes.
@@ -100,6 +107,62 @@ struct AppShellUITests {
         for _ in 0..<10 {
             await Task.yield()
         }
+    }
+
+    @MainActor
+    @Test("Capture the runner wizard and live console with example data",
+          .enabled(if: ProcessInfo.processInfo.environment["OCTORUNNER_DOC_CAPTURE_DIR"] != nil))
+    func captureRunnerScreens() async throws {
+        let output = URL(filePath: try #require(ProcessInfo.processInfo.environment["OCTORUNNER_DOC_CAPTURE_DIR"]))
+        let container = try Self.makePreviewContainer()
+        let wizard = AddRunnerWizardViewModel()
+        wizard.selectedScope = .repository
+        wizard.manualTargetInput = "build-example/mobile"
+        wizard.instanceCount = 2
+        wizard.baseNamePrefix = "mac-studio"
+        let wizardView = AddRunnerWizardSheet(viewModel: wizard)
+            .environment(AppPreferencesStore()).modelContainer(container)
+        try await capture(wizardView, size: CGSize(width: 820, height: 720), to: output.appending(path: "wizard.png"))
+
+        let folder = FileManager.default.temporaryDirectory.appending(path: "OctoDocumentation-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let diagnostics = folder.appending(path: "_diag")
+        try FileManager.default.createDirectory(at: diagnostics, withIntermediateDirectories: true)
+        let log = """
+        [INFO Runner] Connected to GitHub Actions
+        [INFO Runner] Listening for Jobs
+        2026-11-20 09:30:00Z: Running job: Build and Test
+        [INFO Worker] Checking out build-example/mobile
+        [INFO Worker] Running Swift package tests
+        [INFO Worker] 128 tests passed
+        2026-11-20 09:34:00Z: Job Build and Test completed with result: Succeeded
+        """
+        try log.write(to: diagnostics.appending(path: "Runner_Documentation.log"), atomically: true, encoding: .utf8)
+        let scope = try #require(URL(string: "https://github.com/build-example/mobile"))
+        let runner = RunnerEntity(name: "mac-studio-1", scopeUrl: scope, status: .idle,
+            labels: ["self-hosted", "macOS", "ARM64", "ios"], workDirectory: folder)
+        container.mainContext.insert(runner)
+        try await capture(RunnerConsoleLogSheet(runner: runner).modelContainer(container),
+            size: CGSize(width: 900, height: 600), to: output.appending(path: "console.png"))
+    }
+
+    @MainActor
+    private func capture(_ view: some View, size: CGSize, to url: URL) async throws {
+        let locale = Locale(identifier: "en_US")
+        let root = view.environment(\.locale, locale).preferredColorScheme(.light)
+            .frame(width: size.width, height: size.height)
+        let host = NSHostingView(rootView: root)
+        let window = NSWindow(contentRect: CGRect(origin: .zero, size: size),
+            styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: .aqua)
+        window.contentView = host
+        defer { window.contentView = nil; window.close() }
+        try await Task.sleep(for: .milliseconds(250))
+        host.layoutSubtreeIfNeeded()
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        try #require(bitmap.representation(using: .png, properties: [:])).write(to: url)
     }
 
     @Test("OAuthDeviceFlowSheet Previews render all 3 states (Initial, Polling, Authenticated) cleanly")

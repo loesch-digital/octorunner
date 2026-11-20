@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest a way to improve OctoRunner.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: use-case
+    attributes:
+      label: What are you trying to do?
+      description: Describe the runner or GitHub Actions workflow and what makes it difficult today.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: What would help?
+      description: Describe the behavior you would like to see and where you would use it.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add a workaround, related issue, or screenshot if it helps explain the request.

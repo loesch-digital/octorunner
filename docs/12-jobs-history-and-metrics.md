@@ -1,153 +1,61 @@
-# Jobs-Historie: Daten und Kennzahlen
+# Job History Data and Metrics
 
-In Arbeit für v0.5.0. API, Persistenz, Kennzahlen und Lade-/Accountwechselsteuerung
-sind implementiert und an die Jobs-Ansicht im Hauptfenster angebunden.
-Die vollständige v0.5.0 bleibt in Arbeit.
+This guide records work in progress for v0.5.0. The API, persistence, metrics, and handling of loading and account changes are implemented and connected to the Jobs view in the main window. The full v0.5.0 milestone was still in progress at this point.
 
-Der Actions-Client liest Workflow-Runs, Jobs, Steps und verfügbare Job-Logs ausschließlich über GET.
-Er fordert keine zusätzlichen Schreibrechte an. JSON-Weiterleitungen werden abgelehnt;
-Pagination bleibt auf HTTPS, `api.github.com` und dem angefragten Repository samt
-Endpoint beschränkt. Rate-Limit und Retry-After kommen aus tatsächlichen Headern.
-Fehler enthalten Statuscodes statt Serverantworten oder Zugangsdaten.
+The Actions client uses GET for workflow runs, jobs, steps, and available job logs. It requires no additional write permissions. The client rejects JSON redirects and limits pagination to HTTPS on `api.github.com` for the requested repository and endpoint. Rate limits and retry delays come from the actual response headers. Error details include status codes and omit response bodies and credentials.
 
-Accounts, Repositories, Workflow-Runs, Run-Versuche und einzelne Matrix-Jobs haben
-getrennte Identitäten. Fehlt die Versuchszahl, bleibt sie unbekannt. Sobald ein
-bekannter Versuch vorliegt, verdrängt er den unbekannten Snapshot in der sichtbaren
-Workflow-Liste und den Kennzahlen. Alte Versuche bleiben gespeichert. Remote-Historie
-speichert Runner-Metadaten als Snapshot; das Entfernen eines lokalen Runners löscht
-sie nicht. Die bestehende Cascade-Beziehung lokaler Legacy-Jobs bleibt erhalten.
+Accounts, repositories, workflow runs, run attempts, and individual matrix jobs have distinct identities. A missing attempt number stays unknown. Once a numbered attempt is available, it takes the place of the unnumbered snapshot in the visible workflow list and metrics. Older attempts stay in storage. Remote history snapshots runner metadata and retains it when a local runner is removed. Existing cascade behavior for legacy local jobs is preserved.
 
-Die Kennzahlen beschreiben nur das geladene Historienfenster:
+Metrics describe the loaded history window.
 
-- Ein Workflow wird im jeweils neuesten bekannten Versuch einmal gezählt; seine
-  Matrix-Jobs erhöhen die Workflow-Anzahl nicht.
-- Erfolgsquote: `success / (success + failure + timed_out + startup_failure + action_required + stale)`.
-  Abgebrochene, übersprungene, neutrale und unbekannte Ergebnisse gehen nicht in
-  diese Quote ein. Ohne auswertbare Ergebnisse gibt es keinen Prozentwert.
-- Durchschnittliche Dauer: abgeschlossene Workflows mit tatsächlich bekannter
-  Dauer, unabhängig von ihrer Conclusion. Fehlende oder negative Intervalle werden
-  ausgeschlossen. Legacy-Dauern bleiben erhalten.
-- Dauer-SLA: Anteil der bekannten Dauern innerhalb eines ausdrücklich angegebenen
-  Zeitlimits. Ohne Zeitlimit oder Stichprobe bleibt der Wert unbekannt. Diese
-  Kennzahl bewertet Laufzeit, nicht erfolgreichen Abschluss.
-- „Heute abgeschlossen“ verwendet bekannte Abschlusszeiten und den übergebenen
-  Kalender. Fehlende Zeitwerte werden nicht durch den aktuellen Zeitpunkt ersetzt.
-- Live-Zähler für laufende und wartende Workflows benötigen eine Beobachtung aus
-  den letzten 90 Sekunden. Ältere offene Zustände werden getrennt als veraltet
-  gezählt; die Historie behält ihren zuletzt beobachteten Status.
+- The workflow count uses one entry per workflow run at its latest known attempt. Matrix jobs leave that count unchanged.
+- The success rate is `success / (success + failure + timed_out + startup_failure + action_required + stale)`. It excludes canceled, skipped, neutral, and unknown results. A percentage requires at least one eligible result.
+- Average duration includes completed workflows with known durations, regardless of conclusion. It excludes missing or negative intervals and preserves legacy durations.
+- The duration SLA is the fraction of known durations at or below a configured time limit. It requires both a limit and a sample. It measures elapsed time independently of the outcome.
+- The count of runs completed today uses known completion times and the supplied calendar. Runs with missing completion times are excluded.
+- Live counts for running and queued workflows require an observation within the past 90 seconds. Older open states are counted as stale, and history retains the last observed status.
 
-Der Loader lädt zehn Workflow-Runs pro Seite und alle zugehörigen Job-Seiten
-(höchstens 20 pro Versuch; zyklische Pagination wird abgelehnt). Vollständig
-geladene, abgeschlossene Versuche verwenden ihre gespeicherten Job-Details weiter.
-Laufende Versuche werden erneut abgefragt. Fehlende Versuchszahlen werden nicht
-durch einen geschätzten ersten Versuch ersetzt.
+The loader fetches ten workflow runs per page and all associated job pages, up to 20 job pages per attempt. It rejects cyclic pagination. Completed attempts with complete job data reuse their stored details. In-progress attempts are fetched again. Missing attempt numbers stay unknown.
 
-Account- und Auswahlwechsel sowie Cancellation verwerfen verspätete Daten vor
-jedem SwiftData-Zugriff. Rate-Limit-Metadaten gehören dagegen zur jeweiligen
-Antwort und ihrem Account: Eine spät eintreffende Sperre bleibt auch nach einem
-Auswahlwechsel erhalten und verkürzt keine bereits bekannte längere Wartezeit.
-Ein Repositorywechsel umgeht die Kontosperre nicht; andere Accounts bleiben
-nutzbar. Bei ausgeschöpftem Budget werden keine weiteren Job-Abfragen gesendet.
-Partielle Details gelten dabei nicht als vollständig geladen.
+Account changes, selection changes, and cancellation discard late data before every SwiftData access. Rate-limit metadata applies to the response's account, even if a response arrives after the selection changes. An existing longer wait remains in effect. All repositories on the same account share the restriction, and other accounts remain available. When the budget is exhausted, the loader stops sending job requests and marks partial details as incomplete.
 
-Vor einem neuen Aufruf werden sowohl `Retry-After` als auch der Reset eines
-ausgeschöpften Budgets beachtet. Fehlt ein brauchbarer Servertermin, beginnt die
-Wartezeit bei einer Minute und verdoppelt sich bei erneuten Limit-Fehlern bis auf
-eine Stunde. Der Loader startet selbst keine automatischen Wiederholungen.
-Siehe [GitHubs Regeln für Rate-Limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
+Before each request, the loader honors both `Retry-After` and the reset time for an exhausted budget. If the server provides no usable time, the wait starts at one minute and doubles on further rate-limit errors, up to one hour. Retrying requires a new load operation. [GitHub REST API rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)
 
-GitHubs `updated_at` ist kein Abschlusszeitpunkt. Ein Workflow-Ende wird deshalb
-erst aus der vollständigen Job-Liste mit bekannten Abschlusszeiten abgeleitet.
-Partielle Seiten oder laufende Jobs erzeugen keine abgeschlossene Workflow-Dauer.
+The loader derives workflow completion from a complete job list with known completion times. GitHub's `updated_at` records an update time. Partial pages or in-progress jobs leave the completed workflow duration unknown.
 
-Die Migrationsprüfung kopiert eine echte SQLite-Datei aus dem v0.4-Schema und
-öffnet sie direkt mit dem erweiterten SwiftData-Schema. Accounts, Runner,
-Job-Beziehungen, Audit-Einträge und gespeicherte Werte müssen erhalten bleiben.
-Der Test verwendet keine automatische Löschung oder Neuerstellung des Stores.
-Zusätzlich prüft er, dass neue Historien-Einträge nach der Migration gespeichert
-und in einem frischen ModelContext wieder gelesen werden können.
+The migration test copies a real SQLite file from the v0.4 schema and opens it directly with the expanded SwiftData schema. It checks that accounts, runners, job relationships, audit entries, and stored values survive without deleting or recreating the store. It also verifies that new history entries can be saved after migration and read in a fresh model context.
 
-## Bedienung und Aktualisierung
+## Using and Refreshing History
 
-In der Seitenleiste öffnet **Jobs & Workflow-Läufe** die Historie im vorhandenen
-Hauptfenster. Filter für Status, Repository, Runner sowie Workflow/Branch/Commit/PR
-beziehen sich auf den jeweils neuesten bekannten Versuch. Job-Details werden
-aufgeklappt; der GitHub-Link öffnet den zugehörigen Workflow samt Logs erst nach
-bewusstem Klick. Links auf fremde Hosts oder andere Runs werden nicht angeboten.
+Select **Jobs & Workflow Runs** in the sidebar to open history in the main window. Status, repository, runner, and workflow/branch/commit/PR filters apply to the latest known attempt. Expand a job to see details, or click the GitHub link to open the associated workflow and logs. Links are limited to the verified host and run.
 
-**Historienquellen** übernimmt konkrete Repository-URLs der lokalen Runner.
-Organisationen allein sind keine Repository-Quelle: zusätzliche `owner/repository`
-oder GitHub-Repository-URLs ausdrücklich hinzufügen. Zusätzliche Quellen werden
-pro aktivem Account gespeichert und können wieder entfernt werden; gespeicherte
-Historie bleibt erhalten. Es werden weder alle Account-Repositories automatisch
-aufgezählt noch neue GitHub-Schreibrechte angefordert.
+**History sources** uses repository URLs from local runners. For organization runners, explicitly add an `owner/repository` or a GitHub repository URL. Additional sources are saved for the active account. Removing a source keeps its saved history. The app uses these sources without enumerating all account repositories or requesting additional GitHub write permissions.
 
-Die Ansicht aktualisiert bei aktiver App alle 60 Sekunden die ersten zehn Läufe
-pro ausgewählter Quelle. Ein explizit ausgewähltes Repository erlaubt außerdem
-**Ältere Läufe laden**. Die Zeit der Beobachtung steht am einzelnen Lauf;
-„Letzte Antwort“ bezieht sich auf die letzte geladene Quelle und ist keine Zusage,
-dass jede gespeicherte Zeile gerade neu geladen wurde. Laufende ältere Seiten
-können veralten und werden dann entsprechend gekennzeichnet.
+While the app is active and the view is open, it refreshes the first ten runs for each selected source every 60 seconds. Select a specific repository to **Load older runs**. Each run shows its own observation time. **Last response** indicates when the most recent source was loaded. Open runs on older pages can become stale and are labeled accordingly.
 
-Ein einzelner Repositoryfehler verhindert den Abgleich weiterer Quellen nicht;
-die betroffenen Quellen werden gesammelt angezeigt. Authentifizierungsfehler,
-Rate-Limits und Cancellation stoppen den Batch. Nach Fehlern pausiert die
-automatische Aktualisierung bis zur bewussten Wiederholung. Aktive API-Sperren
-bleiben beim Wechsel zwischen Runner- und Jobs-Ansicht sowie beim Neuerstellen
-eines Jobs-ViewModels erhalten: der gemeinsame Budgetzustand lebt in AppServices.
+A repository error allows the batch to continue with other sources. The view lists the affected sources together. Authentication errors, rate limits, and cancellation stop the batch. After an error, automatic refresh pauses until you retry. The shared account budget lives in AppServices, so active rate restrictions persist across Runner and Jobs views and Jobs view model recreation.
 
-Das Dauerziel ist standardmäßig nicht konfiguriert. Ein ausgewähltes Ziel wird
-persistent gespeichert. Kennzahlen respektieren die aktuellen Filter und zeigen
-bei fehlenden Messungen einen Strich statt einer erfundenen Null oder 100 Prozent.
+The duration target starts unset and is saved when selected. Metrics follow the current filters and use a dash when data is missing.
 
-## Prüfung
+## Verification
 
-Lokaler Zwischenstand vom 12. November 2026: 141 Swift-Tests mit
-Coverage-Instrumentierung und zehn Python-Tests grün; vollständiger Xcode-Debug-Build
-erfolgreich. Zeilenabdeckung Historien-Store 99 %, Kennzahlen 100 %, Historienfilter
-97 %, Loader 100 %, Lade-ViewModel 99 %, Budgetzustand und History-Preferences
-100 %. Die reine Jobs-Darstellung wird über NSHostingView bei 560 und 900 Punkten
-in Light/Dark mit langen Namen, 80 Repository-Auswahlen und 80 Job-Snapshots geprüft.
-Deutsche und englische Statusdarstellung sowie sichere GitHub-Links haben eigene Tests.
+On November 12, 2026, 141 coverage-instrumented Swift tests and ten Python tests passed, and the full Xcode Debug build succeeded. Line coverage was 99% for the history store, 100% for metrics, 97% for history filters, 100% for the loader, 99% for the loading view model, and 100% for budget state and history preferences. NSHostingView tests cover the Jobs view at 560 and 900 points in Light and Dark appearances with long names, 80 repository choices, and 80 job snapshots. German and English status labels and safe GitHub links have dedicated tests.
 
-Diese Werte ersetzen keine interaktive Abnahme der vollständigen Anwendung und
-keinen Test aller unterstützten macOS-Versionen. Noch manuell prüfen:
+Interactive acceptance of the full app and testing across supported macOS versions remained separate. Verify the following manually.
 
-1. Quellen aufklappen, ein lesbares Test-Repository hinzufügen und wieder entfernen.
-2. Status-, Repository-, Runner- und Suchfilter kombinieren; schmale/breite Fenster prüfen.
-3. Jobs aufklappen und den Workflow-Link bewusst öffnen.
-4. Für ein Repository ältere Läufe laden; ohne SLA-Ziel muss der SLA-Wert unbekannt bleiben.
-5. Account wechseln und während des Ladens zurück zum Dashboard navigieren;
-   keine Daten des vorherigen Accounts und keine Fehlermeldung allein durch Abbruch.
-6. Bei einem echten API-/Berechtigungsfehler die sichtbare Fehlermeldung und pausierte
-   Aktualisierung prüfen. Keine echten Limits absichtlich durch viele Requests provozieren.
+1. Expand **History sources**, add a readable test repository, and remove it again.
+2. Combine status, repository, runner, and search filters in narrow and wide windows.
+3. Expand jobs and open the workflow link.
+4. Load older runs for one repository. Leave the SLA target unset and verify the SLA remains unknown.
+5. Switch accounts, then return to the dashboard while a load is in progress. Check that prior-account data stays out of the view and cancellation alone produces no error.
+6. When a genuine API or permission error occurs, verify the message and that refresh pauses. Observe naturally occurring errors so the test stays within normal request volumes.
 
-## PR-Zuordnung und Actions-Details
+## Pull Request Association and Actions Details
 
-**Workflow-Details anzeigen** öffnet den ausgewählten, bekannten Run-Versuch mit
-aufklappbaren Jobs und einzelnen Steps. Nummer, Zustand, Ergebnis und vorhandene
-Zeitstempel bleiben getrennt. Fehlende Zeiten ergeben keine erfundene Dauer.
-Laufende Jobs werden in der offenen Detailansicht alle 30 Sekunden aktualisiert;
-der Beobachtungszeitpunkt bleibt sichtbar. Fehler oder unvollständige Job-Seiten
-werden ausdrücklich angezeigt. Schließen oder Kontowechsel verwirft verspätete Daten.
+**View workflow details** opens the selected, numbered attempt with expandable jobs and individual steps. Attempt number, state, result, and available timestamps are shown individually. A duration requires known timestamps. The open detail view refreshes in-progress jobs every 30 seconds and shows the observation time. It flags errors and incomplete job pages. Closing the view or switching accounts discards late data.
 
-PR-Referenzen stammen aus dem Basis-Repository der API-Antwort. Fehlen sie bei einem
-PR-Ereignis, versucht die History gezielt einen begrenzten Commit-PR-Lookup.
-Dafür benötigt ein Fine-grained Token zusätzlich **Pull requests: read**;
-**Actions: read** genügt weiterhin für Jobs, Steps und Logs. Fehlendes PR-Leserecht
-unterbricht die Actions-Historie nicht: Die Zuordnung bleibt unbekannt.
-OAuth-Schreibrechte werden nicht zusätzlich angefordert. Abgeleitete Web-Links
-führen ausschließlich zum validierten Repository und PR/Run/Job auf github.com.
+PR references come from the base repository in the API response. When references are missing for a PR event, history performs a limited lookup for PRs associated with the commit. A fine-grained token needs **Pull requests: read** for that lookup. **Actions: read** is sufficient for jobs, steps, and logs. Without PR read access, the PR remains unknown and Actions history remains available. The app requests no additional OAuth write permissions. Derived web links point only to the validated repository and PR, run, or job on github.com.
 
-**Job-Log laden** öffnet eine separate Ansicht. Erst deren Lade-Schaltfläche
-fordert den Log-Snapshot an. Es gibt keinen automatischen Download beim App-Start,
-keinen privaten Log-Export und keinen vorgetäuschten REST-Live-Stream.
-Ein separater Byte-Stream liest höchstens 1 MiB plus ein Byte zur Kürzungserkennung
-und beendet danach den Transfer. Nur UTF-8-Text wird angezeigt; Kürzung und
-Ladezeitpunkt sind sichtbar. Noch nicht verfügbare oder abgelaufene Logs erhalten
-einen eigenen Hinweis, GitHub bleibt als Fallback erreichbar.
+**Load job log** opens a separate view. Use its load button to request a log snapshot. The snapshot is available on demand in the view, with GitHub as a fallback. Private log export is outside this workflow. A separate byte stream reads up to 1 MiB plus one byte to detect truncation, then stops the transfer. The view displays only UTF-8 text and shows truncation and load time. Logs that are unavailable or have expired get a distinct message.
 
-Der Log-Endpoint darf einmal auf eine temporäre HTTPS-Downloadadresse weiterleiten.
-Dieser zweite Request enthält weder Authorization noch Cookies; weitere Redirects
-werden abgelehnt. Signierte URLs und Log-Inhalte gelangen weder in SwiftData noch
-in Audit-/Diagnoseausgaben. Lokales Runner-Live-Streaming folgt getrennt in v0.6.
+The log endpoint may redirect once to a temporary HTTPS download URL. That second request omits authorization and cookies. The client rejects further redirects. Signed URLs and log contents stay out of SwiftData, audit logs, and diagnostic output. Local runner live streaming follows separately in v0.6.

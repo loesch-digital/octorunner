@@ -14471,6 +14471,159 @@
           }
         }
       }
+    },
+    "OctoRunner is installing an update": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner is installing an update"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner installiert ein Update"
+          }
+        }
+      }
+    },
+    "Previous OctoRunner version restored": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous OctoRunner version restored"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorherige OctoRunner-Version wiederhergestellt"
+          }
+        }
+      }
+    },
+    "OctoRunner could not install the update": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner could not install the update"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner konnte das Update nicht installieren"
+          }
+        }
+      }
+    },
+    "OctoRunner update needs recovery": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner update needs recovery"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner-Update erfordert eine Wiederherstellung"
+          }
+        }
+      }
+    },
+    "Wait for the installation to finish. OctoRunner will reopen automatically.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wait for the installation to finish. OctoRunner will reopen automatically."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warte, bis die Installation abgeschlossen ist. OctoRunner öffnet sich automatisch wieder."
+          }
+        }
+      }
+    },
+    "The updated app could not start. OctoRunner restored your previous version and local runner data.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The updated app could not start. OctoRunner restored your previous version and local runner data."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die aktualisierte App konnte nicht starten. OctoRunner hat deine vorherige Version und die lokalen Runner-Daten wiederhergestellt."
+          }
+        }
+      }
+    },
+    "You can download the signed macOS archive from GitHub Releases.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can download the signed macOS archive from GitHub Releases."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du kannst das signierte macOS-Archiv unter GitHub Releases herunterladen."
+          }
+        }
+      }
+    },
+    "OctoRunner could not complete update recovery. Keep the backup files and check the recovery section of the documentation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner could not complete update recovery. Keep the backup files and check the recovery section of the documentation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner konnte die Wiederherstellung nicht abschließen. Behalte die Sicherungsdateien und lies den Abschnitt zur Wiederherstellung in der Dokumentation."
+          }
+        }
+      }
+    },
+    "OK": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

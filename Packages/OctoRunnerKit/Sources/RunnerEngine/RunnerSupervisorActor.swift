@@ -385,6 +385,12 @@ public actor RunnerSupervisorActor: LoginItemServicing, RunnerServiceStateReadin
         }
     }
 
+    public func resumeAfterAbortedQuit() async {
+        isQuitting = false
+        scheduleCapacityReview()
+        await powerStateChanged()
+    }
+
     private func stop(runnerID: UUID, force: Bool) async throws {
         guard let runtime = runners[runnerID] else { return }
         guard runtime.configuration.mode == .direct else { throw RunnerSupervisionError.notManaged }

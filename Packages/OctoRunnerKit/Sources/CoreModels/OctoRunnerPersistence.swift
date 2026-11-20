@@ -21,8 +21,8 @@ public enum OctoRunnerPersistence {
         let legacyDefaultStore = appSupport.appending(path: "default.store")
 
         // If the dedicated store doesn't exist yet, copy over any existing v0.2.x default.store so the user's account is preserved
-        if !FileManager.default.fileExists(atPath: dedicatedStore.path()),
-           FileManager.default.fileExists(atPath: legacyDefaultStore.path()) {
+        if !FileManager.default.fileExists(atPath: dedicatedStore.path),
+           FileManager.default.fileExists(atPath: legacyDefaultStore.path) {
             try? FileManager.default.copyItem(at: legacyDefaultStore, to: dedicatedStore)
         }
         return dedicatedStore
@@ -35,6 +35,13 @@ public enum OctoRunnerPersistence {
             isStoredInMemoryOnly: true
         )
         return try ModelContainer(for: schema, configurations: [config])
+    }
+
+    /// An update startup must fail closed if the existing store cannot open.
+    public static func openStoreForUpdate(at url: URL) throws -> ModelContainer {
+        guard !isCorruptedSQLiteFile(at: url) else { throw CocoaError(.fileReadCorruptFile) }
+        let schema = schema
+        return try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url)])
     }
 
     public static func makeSharedContainer(storeURL: URL? = nil) -> ModelContainer {
@@ -64,7 +71,7 @@ public enum OctoRunnerPersistence {
     }
 
     private static func isCorruptedSQLiteFile(at storeURL: URL) -> Bool {
-        guard FileManager.default.fileExists(atPath: storeURL.path()) else { return false }
+        guard FileManager.default.fileExists(atPath: storeURL.path) else { return false }
         guard let handle = try? FileHandle(forReadingFrom: storeURL) else { return false }
         defer { try? handle.close() }
         guard let headerData = try? handle.read(upToCount: 16), !headerData.isEmpty else {
@@ -75,10 +82,10 @@ public enum OctoRunnerPersistence {
     }
 
     private static func removeStoreFiles(at storeURL: URL) {
-        let basePath = storeURL.path()
+        let basePath = storeURL.path
         for suffix in ["", "-shm", "-wal"] {
             let fileURL = URL(fileURLWithPath: basePath + suffix)
-            if FileManager.default.fileExists(atPath: fileURL.path()) {
+            if FileManager.default.fileExists(atPath: fileURL.path) {
                 try? FileManager.default.removeItem(at: fileURL)
             }
         }
