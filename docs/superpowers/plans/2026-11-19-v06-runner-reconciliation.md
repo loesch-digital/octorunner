@@ -1,70 +1,70 @@
-# v0.6 Periodischer GitHub-Abgleich Implementation Plan
+# v0.6 Periodic GitHub Reconciliation Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Native Umsetzung; bestehende Nutzerfreigabe zur anschließenden Implementierung beachten.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Use the existing authorization to continue with native implementation.
 
-**Goal:** Lokale und entfernte Runner periodisch kontogetrennt abgleichen und echte Konflikte sichtbar auflösen.
+**Goal** — Periodically reconcile local and remote runners by account and make confirmed conflicts visible and actionable.
 
-**Architecture:** SyncKit erzeugt unveränderliche Snapshots und einen reinen Reconciliation-Plan. SwiftData wird erst nach Account-/Generationsprüfung am MainActor aktualisiert; schreibende GitHub-Aktionen bleiben explizit.
+**Architecture** — SyncKit produces immutable snapshots and computes a side-effect-free reconciliation plan. Update SwiftData on MainActor only after verifying the account and generation. Require explicit authorization for GitHub writes.
 
-**Tech Stack:** Swift 6, SwiftUI, SwiftData, SPM, macOS ServiceManagement; bestehende Python-/GitHub-Actions-Werkzeuge.
+**Tech stack** — Swift 6, SwiftUI, SwiftData, SPM, macOS ServiceManagement, and the existing Python and GitHub Actions tools.
 
-**Spec:** `docs/08-sync-kit-and-local-runner-import.md`, ADR-05, `docs/09-pipeline-privacy-and-test-audit.md`, v0.6-Engine und Migration; verbindliche Umfangsentscheidung vom 19.11.2026: globales Parallelitätslimit erst v0.6.
+**Spec** — `docs/08-sync-kit-and-local-runner-import.md`, ADR-05, `docs/09-pipeline-privacy-and-test-audit.md`, and the v0.6 engine and migration plans. The November 19, 2026 scope decision places the global concurrency limit in v0.6.
 
 ## Global Constraints
 
-Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen unter `Packages/OctoRunnerKit/Sources/`; Testdateinamen liegen unter `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/`. Neue Dateien werden jeweils dort angelegt.
+Source paths such as `RunnerEngine/...` and `CoreModels/...` are relative to `Packages/OctoRunnerKit/Sources/`. Test filenames are relative to `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/`. Create new files in the corresponding directories.
 
-- macOS 15+, Swift 6 Strict Concurrency, SwiftUI und SwiftData; keine Versionsanhebung durch das CI-Image.
-- Vor Änderungen die vier Repo-Skills und einschlägigen `references/*.md` lesen. `AGENTS.md` gilt uneingeschränkt.
-- Jede Produktionsänderung beginnt mit einem nachweislich roten Regressionstest; anschließend grün und Refactor. Swift: `swift test --package-path Packages/OctoRunnerKit --no-parallel`; Python: `python3 -m unittest discover -s scripts/tests`.
-- Feature-Branch, semantische Commits, PR. Nach Push PR-CI vollständig grün abwarten, dann Merge und main-CI vollständig grün abwarten. Keine überlappende nächste Feature-Umsetzung bei roter/laufender CI.
-- Keine Secrets in Logs, Modellen oder Exporten; keine vorsorgliche Dokumente-Abfrage. SwiftData-Defaults, SQLite-Headerprüfung und Cancellation vor Modellzugriffen beibehalten.
-- Neue Controls: Label/Hint, Tastaturbedienung, OctoTheme; WCAG 2.2 AA in Hell/Dunkel. NSHostingView für schmale/breite Ansichten, DE/EN.
-- Konkrete Werkzeug-/API-Versionen unmittelbar vor Änderung anhand offizieller Quellen verifizieren.
+- Target macOS 15+ with Swift 6 strict concurrency, SwiftUI, and SwiftData. Preserve the minimum supported version when selecting the CI image.
+- Read the four repo skills and relevant `references/*.md` files before making changes. Follow `AGENTS.md`.
+- Start every production change with a regression test that demonstrably fails, then make it pass and refactor. Run Swift tests with `swift test --package-path Packages/OctoRunnerKit --no-parallel` and Python tests with `python3 -m unittest discover -s scripts/tests`.
+- Use a feature branch, semantic commits, and a PR. After pushing, wait for all PR CI checks to pass before merging, then wait for all main CI checks to pass before starting the next feature.
+- Keep secrets out of logs, models, and exports. Access Documents only when needed. Preserve SwiftData defaults, SQLite header checks, and cancellation checks before model access.
+- Give new controls labels and hints, keyboard support, and OctoTheme styling. Meet WCAG 2.2 AA in Light and Dark appearances. Use NSHostingView to check narrow and wide layouts in German and English.
+- Verify exact tool and API versions against official sources immediately before changing them.
 
 ## Review Focus
 
-1. 401/403/404/429 sind keine austauschbaren „Runner entfernt“-Zustände (Task 1).
-2. Verspätete Antwort nach Kontowechsel darf nichts überschreiben (Task 1).
-3. Lokaler Prozess aktiv, GitHub offline: Konflikt samt Zeitstempeln anzeigen (Task 2).
-4. Name identisch, Remote-ID/Repo verschieden: keine falsche Zuordnung (Task 2).
-5. Rechte fehlen oder Multi-Repo nur teilweise erfolgreich: Teilerfolg erhalten (Task 3).
+1. Preserve distinct meanings for 401, 403, 404, and 429 (Task 1).
+2. Discard late responses after an account switch (Task 1).
+3. When the local process is active and GitHub reports it offline, show the conflict with timestamps (Task 2).
+4. Match runner identity by remote ID and repository scope even when names are identical (Task 2).
+5. Preserve partial success when permissions are missing or only some repositories succeed (Task 3).
 
-### Task 1: Typisierte API-Ergebnisse und Lebenszyklus
+### Task 1: Typed API Results and Lifecycle
 
-**Files:** Modify `SyncKit/GitHubRunnerSyncActor.swift`, `SyncKit/SyncModels.swift`; Create `SyncKit/RunnerSyncScheduler.swift`; Test `RunnerSyncSchedulingTests.swift` und bestehende `SyncKitTests.swift`.
+**Files** — Modify `SyncKit/GitHubRunnerSyncActor.swift` and `SyncKit/SyncModels.swift`. Create `SyncKit/RunnerSyncScheduler.swift`. Test in `RunnerSyncSchedulingTests.swift` and the existing `SyncKitTests.swift`.
 
-**Interfaces:** Typisierte Ergebnisse für found/notFound/unauthorized/forbidden/rateLimited/unavailable; Snapshot trägt Account-ID, Generation und Messzeit. Keine `try?`-Zusammenfassung aller Fehler zu nil.
+**Interfaces** — Typed results are found, notFound, unauthorized, forbidden, rateLimited, and unavailable. A snapshot contains the account ID, generation, and observation time. Preserve typed errors through the lookup and avoid collapsing distinct outcomes to nil with `try?`.
 
-- [x] Transport-/Decoding-Tests für `GitHubRunnerProvisioningAPI.swift` ergänzen: Repository-/Org-Endpoints, kurzlebiges Registrierungstoken, fehlende Rechte, Fehler ohne Response-Body-/Secret-Ausgabe. Die bisherige niedrige Coverage nicht durch reine DTO-Konstruktion kaschieren.
-- [x] Rote Transport-/Fake-Uhr-Tests für 200/304/401/403/404/429, Pagination, Retry-After, Abbruch und Kontowechsel schreiben.
-- [x] Gemeinsamen bestehenden GitHub-Transport verwenden; aktuelle API-Version offiziell prüfen. Bedingte Requests, begrenzte Parallelität und Rate-Limit-Backoff; keine Endlosschleifen pro View.
-- [x] Scheduler im App-Lebenszyklus starten/stoppen; GUI-Ende bedeutet ohne separaten Agenten Ende dieses Abgleichs.
+- [x] Added transport and decoding tests for `GitHubRunnerProvisioningAPI.swift` covering repository and organization endpoints, short-lived registration tokens, missing permissions, and error output that excludes response bodies and secrets. Exercise behavior beyond DTO construction.
+- [x] Wrote failing transport and fake-clock tests for 200, 304, 401, 403, 404, 429, pagination, Retry-After, cancellation, and account switches.
+- [x] Used the existing shared GitHub transport and verified the current API version against official documentation. Use conditional requests, bounded concurrency, and rate-limit backoff through the shared scheduler.
+- [x] Start and stop the scheduler with the app lifecycle. Without a separate agent, reconciliation stops when the GUI closes.
 
-**Umsetzungsstand:** Der Runner-Einzelabruf verwendet den gemeinsamen GitHub-Transport und API-Version 2026-03-10. ETag-Cache und Rate-Limit-Backoff sind kontogetrennt. Der App-Dienst startet und stoppt mit der GUI. Eine neue Auswahlrevision entwertet laufende Abrufe, auch nach einem Wechsel zurück zum ursprünglichen Konto. Lokaler Ordnerimport und Remote-Abruf sind getrennt. Der Assistent speichert die Runner-ID beim Einrichten. Nach den Einzelabrufen prüft der Abgleich eine gemeinsame Runner-Liste für alle 404 aus demselben Repository oder derselben Organisation. Ein bestätigter ID-Treffer kann aus einer paginierten Liste kommen. Abwesenheit wird nur aus einer vollständigen Antwort auf einer Seite ohne Fortsetzung abgeleitet. Bei mehreren Seiten können Hinzufügen und Löschen während der Abfrage den Inhalt verschieben.
+**Implementation status** — Single-runner lookup uses the shared GitHub transport and API version 2026-03-10. ETag caching and rate-limit backoff are scoped by account. The app service starts and stops with the GUI. A new account selection revision invalidates in-flight requests even after switching back to the original account. Local folder import and remote lookup run separately. The wizard stores the runner ID during setup. After individual requests, reconciliation checks one shared runner list for all 404s in the same repository or organization. A confirmed ID match can come from a paginated list. Report absence only from a complete single-page response without a continuation. Additions and deletions during a multipage request can shift results across pages.
 
-### Task 2: Konflikte statt Überschreiben
+### Task 2: Conflict Detection and Resolution
 
-**Files:** Create `SyncKit/RunnerReconciler.swift`, `CoreModels/RunnerSyncConflict.swift`, `AppShellFeature/RunnerSyncConflictView.swift`; Modify IntegrationController/RunnerEntity bei nachgewiesenem Schema-Bedarf; Test `RunnerReconciliationTests.swift`.
+**Files** — Create `SyncKit/RunnerReconciler.swift`, `CoreModels/RunnerSyncConflict.swift`, and `AppShellFeature/RunnerSyncConflictView.swift`. Modify IntegrationController or RunnerEntity if a schema change is required. Test in `RunnerReconciliationTests.swift`.
 
-**Interfaces:** Reine Funktion `reconcile(local:remote:)` liefert bestätigte Änderungen und explizite Konflikte, zugeordnet über Account+Scope+Remote-ID; Name allein ist keine Identität.
+**Interfaces** — The pure function `reconcile(local:remote:)` returns confirmed changes and explicit conflicts, matched by account, scope, and remote ID.
 
-- [x] Rote Tests: busy/online/offline, entfernte Runner, doppelte Namen, abweichende Labels/Gruppe, alte Antwort und lokaler Aktivitätswiderspruch.
-- [x] Nur gesicherte beobachtete Statusdaten übernehmen. Labelkonflikte und abweichende Gruppenmitgliedschaften anzeigen. „Remote übernehmen“ und „lokal auf GitHub anwenden“ sind für Labels getrennte bestätigte Aktionen mit Audit.
-- [x] Neue Model-Properties mit Defaults, Schema-/Migrationstests und makeInMemoryContainer; keinen bisherigen Store überschreiben. UI- und Unit-Tests grün, Commit/CI-Gates.
+- [x] Added failing tests for busy, online, offline, removed runners, duplicate names, label or group mismatches, stale responses, and contradictory local activity.
+- [x] Adopt only confirmed observed status data. Show label conflicts and group membership mismatches. “Use Remote Labels” and “Apply Local Labels to GitHub” are separate actions with their own confirmations and audit entries.
+- [x] Added model properties with defaults, schema and migration tests, and makeInMemoryContainer. Preserve the existing store. Passed UI and unit tests, committed, and passed CI gates.
 
-**Umsetzungsstand:** Das Dashboard und die Runner-Einstellungen zeigen belegte Status- und Labelabweichungen mit getrenntem lokalen und GitHub-Status. Ein unbelegter HTTP 404 bleibt mehrdeutig. Fehlt die Runner-ID in einer vollständigen einseitigen Scope-Liste, zeigt OctoRunner dies an und behält den lokalen Eintrag. Beide Richtungen des Labelabgleichs brauchen eine eigene Bestätigung und protokollieren angenommene Änderungen im Audit-Log. Eine GitHub-Änderung prüft die Registrierung erneut, sendet nur benutzerdefinierte Labels und übernimmt lokal erst die geprüfte GitHub-Antwort. Während einer Migration mit offenem Recovery-Journal sind Labeländerungen gesperrt. Die Runner-Einstellungen können auch die Mitgliedschaft in der gespeicherten Gruppe per Leseabfrage prüfen. Fehlt der Runner in einer vollständigen einseitigen Mitgliederliste, zeigt die Ansicht die Abweichung an. Eine Gruppenänderung erfolgt in GitHub.
+**Implementation status** — The dashboard and runner settings show verified status and label differences with separate local and GitHub status. An unverified HTTP 404 remains ambiguous. If a complete single-page list for the scope lacks the runner ID, OctoRunner reports it and keeps the local entry. Each direction of label reconciliation requires its own confirmation and audits accepted changes. To update GitHub, OctoRunner rechecks registration, submits only custom labels, and updates local state from the verified GitHub response. An open migration recovery journal blocks label changes. Runner settings can verify membership in the stored group through a read request. If a complete single-page membership list lacks the runner, the view shows the discrepancy. Change group membership in GitHub.
 
-### Task 3: Gruppen, Multi-Repo und v0.6-Release
+### Task 3: Groups, Multiple Repositories, and the v0.6 Release
 
-**Files:** Modify `AppShellFeature/AddRunnerWizardViewModel.swift`, `AppShellFeature/RunnerTargetLoading.swift`, `CoreModels/RunnerScopeType.swift` und bestehende Wizard-Views; Tests `RunnerWizardProvisioningTests.swift`, `GitHubPermissionTests.swift`; `docs/releases/v0.6.0.md`.
+**Files** — Modify `AppShellFeature/AddRunnerWizardViewModel.swift`, `AppShellFeature/RunnerTargetLoading.swift`, `CoreModels/RunnerScopeType.swift`, and the existing wizard views. Test in `RunnerWizardProvisioningTests.swift` and `GitHubPermissionTests.swift`. Update `docs/releases/v0.6.0.md`.
 
-**Interfaces:** Personal Multi-Repo erzeugt getrennte Repository-Registrierungen; Organisationen können echte Runner-Gruppen verwenden. Prefix ist Namenshilfe, ein Label ist Routing, eine Gruppe ist Berechtigungs-/Organisationsstruktur.
+**Interfaces** — Personal multi-repository setup creates separate repository registrations. Organizations can use GitHub runner groups. Prefixes are for naming, labels are for routing, and groups define access and organization.
 
-- [x] Organisations-/Repository-Berechtigungsübersicht aus Screenshot 07c mit zugewiesenen Runner-Zahlen und explizitem „Berechtigungen abgleichen“ implementieren. Abfragen nutzen reale Gruppen- und Zieldaten. Tests prüfen fehlende Rechte, Kontowechsel und veraltete Sync-Antworten.
-- [x] Screens 03 und 04 erneut abgleichen. Tests prüfen getrennte Repositories mit demselben Präfix, Gruppenabfragen, Teilfehler und Identität nach Migration.
-- [x] Wizard/Modell/API konsistent verdrahten. Rechte je Endpunkt anhand aktueller GitHub-Doku prüfen. Unbekannte Token-Rechte bleiben als solche sichtbar.
-- [x] Lokale Tests, Xcode-Build, Review, PR-CI und main-CI für den Funktionsstand. [PR #43](https://github.com/loesch-digital/octorunner/pull/43) · [Main-CI](https://github.com/loesch-digital/octorunner/actions/runs/44718206244)
-- [x] Versions-PR und dessen main-CI abschließen. Den geprüften Stand mit `release-it` taggen und ausschließlich den Release-Tag pushen. Release, Homebrew-Upgrade, Start des installierten Prozesses und Gatekeeper sind geprüft. [Versions-PR](https://github.com/loesch-digital/octorunner/pull/44) · [Main-CI](https://github.com/loesch-digital/octorunner/actions/runs/44721755971) · [Release-Lauf](https://github.com/loesch-digital/octorunner/actions/runs/44723287728)
+- [x] Implemented the organization and repository permissions overview from screenshot 07c with assigned runner counts and an explicit permission sync action. Requests use actual group and target data. Tests cover missing permissions, account switches, and stale sync responses.
+- [x] Compared behavior with screens 03 and 04. Tests cover separate repositories with the same prefix, group queries, partial failures, and identity after migration.
+- [x] Connected the wizard, model, and API consistently. Verified endpoint permissions against current GitHub documentation. Show unknown token permissions as unknown.
+- [x] Passed local tests, Xcode build, review, PR CI, and main CI for the feature. [PR #43](https://github.com/loesch-digital/octorunner/pull/43) · [Main CI](https://github.com/loesch-digital/octorunner/actions/runs/44718206244)
+- [x] Completed the version PR and its main CI. Tagged the verified commit with `release-it` and pushed only the release tag. Verified the release, Homebrew upgrade, installed process launch, and Gatekeeper. [Version PR](https://github.com/loesch-digital/octorunner/pull/44) · [Main CI](https://github.com/loesch-digital/octorunner/actions/runs/44721755971) · [Release run](https://github.com/loesch-digital/octorunner/actions/runs/44723287728)
 
-**Umsetzungsstand:** Die Berechtigungsübersicht fragt die Runner-Listen pro gespeichertem Ziel mit dem aktiven Konto ab. Sie zeigt belegten Lesezugriff sowie getrennte Zahlen für GitHub-Registrierungen und passende Runner dieses Macs. Bei Organisationen fragt sie zusätzlich die sichtbaren Gruppen ab. Der Assistent verwendet pro ausgewähltem Repository eine eigene Registrierung und meldet Teilfehler mit der Zahl der gespeicherten Runner. Organisationsgruppen stammen aus GitHub und werden vor der Registrierung erneut geprüft. Neue Registrierungen verwenden GitHubs Ersetzungsoption nicht. Die bestätigte Migration speichert die geprüfte Runner-Gruppe zusammen mit der neuen Runner-ID.
+**Implementation status** — The permissions overview requests runner lists for each saved target using the active account. It shows verified read access and separate counts for GitHub registrations and matching runners on this Mac. For organizations, it also requests visible groups. The wizard creates a registration per selected repository and reports partial failures with the count of saved runners. Organization groups come from GitHub and are rechecked before registration. New registrations omit GitHub's replacement option. Confirmed migration saves the verified runner group with the new runner ID.

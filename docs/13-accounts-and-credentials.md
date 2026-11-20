@@ -1,61 +1,23 @@
-# Accounts und Zugangsdaten — Zwischenstand für v0.5.0
+# Accounts and Credentials During v0.5.0 Development
 
-Die Authentifizierung speichert Tokens ausschließlich im macOS-Keychain. SwiftData
-enthält Account-Metadaten und nicht geheime Lookup-Schlüssel. Angezeigte OAuth-Scopes
-stammen aus GitHubs Antwort; fehlende Scope-Header bei Fine-grained PATs bedeuten
-unbekannte Rechte, nicht automatisch `repo`, `workflow` oder `admin:org`.
+Authentication stores tokens exclusively in the macOS Keychain. SwiftData holds account metadata and nonsecret lookup keys. The displayed OAuth scopes come from GitHub's response. For fine-grained PATs with missing scope headers, permissions remain unknown.
 
-Neue Credentials erhalten einen eigenen Schlüssel aus unveränderlicher GitHub-ID
-und einer Versions-ID. Ein umbenannter oder erneut vergebener Login überschreibt
-dadurch keinen fremden Token. Bestehende Login-Schlüssel bleiben lesbar; erneutes
-Anmelden stellt den Account um und behält alte Schlüssel für gezielte Bereinigung.
-Die App veröffentlicht immer höchstens einen aktiven Account. Wizard, Runner-Sync,
-Label-Updates und Jobs verwenden dessen gespeicherten Schlüssel.
+New credentials get a unique key made from the immutable GitHub ID and a version ID. Renaming or reassigning a login therefore leaves other accounts' tokens intact. Existing login-based keys remain readable. Signing in again moves the account to the new format and retains old keys for targeted cleanup. The app exposes at most one active account at a time. The wizard, runner sync, label updates, and Jobs all use that account's stored key.
 
-Schließen des Login-Dialogs bricht Gerätecode-, PAT- und Polling-Anfragen ab.
-Verspätete Antworten dürfen weder Zwischenablage noch Account-Daten ändern.
-Bereits gespeicherte, noch nicht übernommene Credentials werden gezielt verworfen.
-Schlägt das Speichern der Metadaten fehl, werden nur die Auth-Änderungen restauriert;
-andere ausstehende Änderungen im gemeinsamen ModelContext bleiben erhalten.
+Closing the sign-in dialog cancels device-code, PAT, and polling requests. Late responses leave the clipboard and account data untouched. The app removes saved credentials that had yet to be adopted. If saving metadata fails, the app rolls back the authentication changes and preserves other pending changes in the shared model context.
 
-Abmelden entfernt zuerst aktuelle und frühere Credentials dieses Accounts, danach
-Metadaten und Erfolgs-Audit. Von anderen Accounts referenzierte Lookup-Schlüssel
-bleiben bestehen. Fehler werden angezeigt; es gibt keinen vorzeitigen Erfolgs-Audit.
-Eine währenddessen erneuerte Anmeldung bleibt durch eigene Credential-Version und
-Metadatenprüfung erhalten. Lokales Abmelden widerruft keine Tokens bei GitHub und
-stoppt keine bereits eingerichteten Runner-Dienste.
+Disconnecting first removes the account's current and previous credentials, then removes its metadata and records a success event in the audit log. Lookup keys referenced by other accounts are preserved. The app reports errors and records success only after completion. A concurrent sign-in is preserved through its separate credential version and a metadata check. Local sign-out leaves tokens valid on GitHub and installed runner services running.
 
-Automatisierte Regressionen prüfen unter anderem wiedervergebene Logins,
-Legacy-Cleanup, Abbruch direkt nach Keychain-Save, verspätete Antworten,
-Accountwechsel, parallele Abmeldung und Savefehler einschließlich eines späteren
-erfolgreichen Context-Saves. Die Keychain-Integration nutzt ausschließlich
-synthetische Werte in jeweils eigenen UUID-Testservices.
+Automated regression tests cover reassigned logins, legacy cleanup, cancellation immediately after saving to Keychain, late responses, account changes, concurrent sign-out, and save failures followed by a later successful context save. Keychain integration tests use synthetic values in separate UUID-based test services.
 
-„Auth & Tokens“ ist über die Einstellungen im Hauptfenster und über die native
-Settings Scene erreichbar. Der ausgewählte Account steht zuerst. Die Ansicht
-unterstützt Verbinden, erneute Anmeldung, Accountauswahl und bestätigtes Trennen.
-Sie lädt keine Token-Inhalte beim Öffnen und zeigt weder erfundene Ablaufdaten
-noch einen unimplementierten Touch-ID-Schalter. Auth-Anfragen verwenden die anhand
-der [GitHub-Dokumentation](https://docs.github.com/en/rest/about-the-rest-api/api-versions)
-verifizierte REST-Version `2026-03-10`; ungültige Token-Zeichen werden vor dem
-Aufbau eines HTTP-Credential-Headers verworfen.
+Open **Auth & Tokens** from Settings in the main window or from the native Settings scene. The selected account appears first. You can connect, sign in again, select an account, and confirm disconnection. Opening the view leaves token contents unread. It shows scope metadata where available. Token expiration and Touch ID controls are outside this view's scope. The API requests use REST version `2026-03-10`. Invalid token characters are rejected before the request constructs an HTTP credential header. [GitHub REST API versions](https://docs.github.com/en/rest/about-the-rest-api/api-versions)
 
-NSHostingView-Tests und geprüfte Render-Abbilder decken leere Ansichten und 80
-Accounts mit langen Namen/Rechten bei 620 und 900 Punkten, Deutsch/Englisch sowie
-Light/Dark ab. Die native Dialoginteraktion mit echten Accounts ist noch manuell
-abzunehmen:
+NSHostingView tests and reviewed renders cover empty views and 80 accounts with long names and permission lists at 620 and 900 points, in German and English and in Light and Dark appearances. Native dialogs still require manual acceptance with real accounts.
 
-- Hauptfenster: Einstellungen öffnen; zusätzlich ⌘, und den Auth-Tab prüfen.
-- Zwei Testaccounts verbinden, auswählen und prüfen, dass Jobs und Wizard den
-  ausgewählten Account verwenden. Erneute Anmeldung derselben Identität ersetzt
-  deren Zugangsdaten, eine andere Identität wird separat hinzugefügt.
-- PAT-/Geräteanmeldung starten, abbrechen und erneut öffnen; keine späte
-  Erfolgsmeldung, kein gelöschter oder unbeabsichtigt gewechselter Account.
-- „Account trennen …“ zunächst abbrechen, dann für einen Testaccount bestätigen.
-  Der andere Account und laufende Runner-Dienste bleiben erhalten.
-- Bei fehlenden OAuth-Scope-Headern bleiben Rechte ausdrücklich unbekannt; Tokens
-  und Ablaufdaten werden nicht vorgetäuscht.
+- Open Settings from the main window. Then press `⌘,` and open the Auth tab again.
+- Connect two test accounts, switch the selection, and verify that Jobs and the wizard use the selected account. Signing in again as the same identity replaces its credentials. Signing in under another identity adds a separate account.
+- Start PAT or device sign-in, cancel it, and reopen it. Verify that no late success message appears and the accounts and selection remain intact.
+- Choose **Disconnect account…**, cancel, then confirm disconnection for a test account. Verify that the other account and running runner services remain available.
+- If OAuth scope headers are missing, verify that permissions are shown as unknown. Verify that the view exposes no token values or guessed expiration dates.
 
-Offen sind die interaktive Abnahme und die übrigen Step-5-Bereiche, insbesondere
-Storage, vollständige Telemetrie und Audit-UI. Dieser Stand ist noch kein
-vollständiges v0.5.0.
+At this milestone, interactive acceptance and the remaining Step 5 features were still open, particularly storage, full telemetry, and the audit UI.

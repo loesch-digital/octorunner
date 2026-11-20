@@ -1,130 +1,66 @@
-# Runner-Status und macOS-Mitteilungen
+# Runner Status and macOS Notifications
 
-Stand: Implementierung auf dem Feature-Branch für v0.5.0; noch kein veröffentlichter Release.
+This guide records the v0.5.0 feature branch before release.
 
-Das Menüleistensymbol zeigt den zuletzt gemessenen **lokalen Prozesszustand**. Es ist keine Bestätigung der GitHub-Erreichbarkeit. Die App prüft alle 15 Sekunden die ausführbaren Listener-/Worker-Prozesse, ohne Runner-Ordner oder Protokolle dafür zu öffnen.
+The menu bar icon shows the last observed **local process state**. The reading is limited to the local Mac. Every 15 seconds, the app checks for running listener and worker executables without opening runner folders or logs.
 
-| Symbol | Bedeutung |
+| Icon | Meaning |
 | --- | --- |
-| Grüner Haken | Alle erfassten lokalen Runner sind aktiv. |
-| Blaue Kreispfeile | Mindestens ein lokaler Runner arbeitet oder startet neu. |
-| Orange Pause | Mindestens ein lokaler Runner ist gestoppt. |
-| Rotes Ausrufezeichen | Ein erfasster Runner hat einen Fehlerstatus. |
-| Graues Fragezeichen | Keine Runner, fehlgeschlagene Messung oder unvollständige/veraltete Statusdaten. |
+| Green checkmark | All observed local runners are active. |
+| Blue circular arrows | At least one local runner is working or restarting. |
+| Orange pause | At least one local runner is stopped. |
+| Red exclamation mark | An observed runner is in an error state. |
+| Gray question mark | There are no runners, the measurement failed, or status data is incomplete or stale. |
 
-Ein frischer Fehler-/Offline-Status hat Vorrang vor anderen Zuständen. Ohne vollständige frische Messungen wird nie grün angezeigt. Die Symbole unterscheiden sich auch ohne Farbwahrnehmung; VoiceOver erhält den Status als Text. Nach 60 Sekunden gelten Messungen als veraltet.
+A fresh error or offline status takes precedence over other states. Green requires complete, fresh measurements. The icons use distinct shapes, and VoiceOver reads the status as text. Measurements become stale after 60 seconds.
 
-Die App-Einstellungen sind über das Zahnrad im Hauptfenster und über `⌘,` erreichbar. Unter **Mitteilungen** lassen sich macOS-Mitteilungen einschalten und Online-/Offline-Ereignisse getrennt auswählen. Beim ersten Aktivieren wird die Systemerlaubnis angefragt. Hintergrundmessungen fragen keine Erlaubnis an. Banner, Verlauf und Ton unterliegen weiterhin den macOS-Systemeinstellungen.
+Open Settings from the gear in the main window or press `⌘,`. In **Notifications**, you can enable macOS notifications and select online and offline events individually. The app requests system permission the first time you enable notifications. Background measurements run without prompting for permission. macOS System Settings control banners, history, and sound.
 
-Online-/Offline-Mitteilungen beziehen sich auf lokale Prozesswechsel. Die erste Messung, wiederholte identische Messungen, Busy-/Idle-Wechsel und Messfehler erzeugen keine Meldungsflut. Nach einer fehlgeschlagenen Messung wird zunächst eine neue Ausgangslage erfasst. Neue Ereigniseinstellungen übernehmen bestehende Zustimmung und ausgeschaltete Ereignisse, aktivieren neue Ereignistypen aber nicht ungefragt.
+Online and offline notifications reflect local process transitions. The first measurement establishes a baseline. Identical follow-up measurements, busy/idle transitions, and measurement failures do not send notifications. After a measurement fails, the next successful measurement establishes a fresh baseline. New event settings preserve existing consent and disabled events. New event types require their own opt-in.
 
-**Fehlermeldungen sind bis zur tatsächlichen Crash-Erkennung in v0.6.0 ausdrücklich deaktiviert.** Die vorbereitete Ereignisverarbeitung kann Fehlerzustände verarbeiten; die aktuelle Prozessmessung kann aus dem Verschwinden eines fremden Prozesses keinen Exit-Code ableiten. Sie meldet deshalb keinen erfundenen Crash. Vollständige Crash-Erkennung, KeepAlive-/Quarantäne-Überwachung und der GitHub-Abgleich gehören zum nächsten Engine-Schritt.
+**At this milestone, runner error notifications are disabled pending crash detection in v0.6.0.** The event pipeline can handle error states. Process sampling can detect when an externally managed process disappears, with no exit code available. Full crash detection, KeepAlive and quarantine monitoring, and GitHub reconciliation are part of the next engine milestone.
 
-Die Überwachung startet mit dem App-Lebenszyklus, läuft bei geschlossenen Fenstern weiter und endet beim Beenden der App. Installierte Runner-LaunchAgents bleiben davon unabhängig. Ein separater Hintergrund-Agent ist damit nicht implementiert.
+Monitoring starts when the app launches, continues while its windows are closed, and ends when the app quits. Installed runner LaunchAgents run independently. Monitoring runs in the app process.
 
-## Speicherwarnungen
+## Low Disk Space Alerts
 
-Alle 30 Sekunden liest die App ausschließlich die Kapazitätsmetadaten des Volumes,
-auf dem das Home-Verzeichnis liegt. Es werden dafür keine Ordner aufgelistet oder
-Dokumente geöffnet. Gemessen wird die von macOS für wichtige Daten verfügbare
-Kapazität; sie kann auch von macOS freigebbaren Speicher enthalten. Werte bleiben
-lokal. Der App-Build enthält dafür ein Privacy-Manifest mit Apples Grund `85F4.1`.
+Every 30 seconds, the app reads only the capacity metadata of the volume that contains the home directory. The check touches no directory listings or documents. It measures the capacity macOS makes available for important data, which may include reclaimable space. Measurements stay on the Mac. The app's privacy manifest declares Apple's reason `85F4.1`.
 
-Der Ereignisschalter **Wenig freier Speicherplatz** und die allgemeine Zustimmung
-zu Mitteilungen müssen eingeschaltet sein. Die Warnung erfolgt unter der
-Storage-Policy-Grenze (derzeit standardmäßig 20 dezimale GB). Die Grenze ist im
-Tab „Cache & Storage“ konfigurierbar (siehe [Speicherbereinigung](15-cache-and-storage.md)). Pro
-Knappheitsphase erscheint eine Meldung. Erst bei mindestens 2 GB oberhalb der
-Grenze wird eine neue Phase möglich. Messfehler und veraltete Daten gelten nicht
-als Erholung; fehlgeschlagene Zustellungen können erneut versucht werden.
+Turn on both **Low disk space** and macOS notifications to receive alerts. The warning triggers below the storage policy threshold, which defaults to 20 decimal GB. Change the threshold in **Cache & Storage**. The app sends one alert per low-space period and resets once available capacity reaches at least 2 GB above the threshold. Failed or stale measurements leave the current period in effect. The app can retry failed deliveries. [Storage cleanup](15-cache-and-storage.md)
 
-Nach bewusstem Aktivieren kann bereits bestehender Speichermangel gemeldet
-werden. Es wird keine Systemerlaubnis automatisch angefragt und keine Datei
-gelöscht. Ein beendeter App-Prozess verschickt keine neuen Warnungen.
+Enabling the alert can report an existing shortage. The disk space check leaves files and system notification permissions untouched. The app must be running to send alerts.
 
-## Fehlgeschlagene lokale Jobs
+## Failed Local Jobs
 
-Nach Opt-in für **Lokaler Workflow-Job fehlgeschlagen** prüft die laufende App
-auch bei geschlossenen Fenstern jüngste GitHub-Runs. Sie verwendet das in der
-Historie konfigurierte Intervall (60–900 Sekunden) und dasselbe accountbezogene
-Rate-Limit-Budget. Ohne allgemeine Zustimmung oder ohne diesen Ereignisschalter
-werden durch den Monitor weder Zugangsdaten gelesen noch Requests gestartet.
-Eine offene Jobs-Ansicht kann zusätzlich ihre eigene Aktualisierung ausführen;
-die beiden Quellen teilen die Rate-Limit-Sperre, keinen vollständigen Request-Cache.
+When you enable **Local workflow job fails**, OctoRunner checks recent GitHub runs while the app is running, including while its windows are closed. The monitor uses the history polling interval (60–900 seconds) and the same per-account rate-limit budget. The monitor reads credentials and sends requests only when both macOS notifications and this event are enabled. An open Jobs view can also refresh independently. They share rate-limit enforcement, and each can fetch its own data.
 
-Repository-Runner liefern ihre Quellen aus dem gespeicherten Scope. Für
-Organisationsrunner werden die gewünschten Repositories ausdrücklich unter
-**Jobs → History sources** hinzugefügt. Nur eine passende GitHub-Runner-ID
-**und** ein gültiger Repository-/Organisationsscope belegen eine lokale Zuordnung.
-Namen allein, unbekannte IDs, mehrdeutige lokale Datensätze und das noch nicht
-vereinheitlichte Personal-Multi-Repo-Modell führen zu keiner Meldung.
+Repository runners get history sources from their saved scope. For organization runners, add the repositories explicitly under **Jobs → History sources**. A local match requires both a matching GitHub runner ID and a valid repository or organization scope. Name-only matches, unknown IDs, ambiguous local records, and the personal multi-repository model at this milestone are excluded from notifications.
 
-Der erste Check nach Start, Account-/Schlüsselwechsel oder erneutem Opt-in setzt
-die zeitliche Ausgangslage. Bereits abgeschlossene Fehler bleiben dabei still;
-die erste Ausgangslage kann bis zum nächsten eingestellten Poll dauern. Danach
-werden neue abgeschlossene Jobs mit `failure` oder `timed_out` gemeldet, sofern
-sie zum neuesten bekannten Attempt gehören. Abbrüche, übersprungene Jobs und
-unbekannte oder widersprüchliche Abschlusszeiten erzeugen keine Fehlermeldung.
-Die Mitteilung enthält den lokalen Runner-Namen und das Repository, keine
-Job-Ausgabe oder privaten Transportdiagnosen.
+The first check after launch, an account or credential change, or re-enabling notifications establishes the time baseline. Failures that already completed at that point remain silent. The first baseline can take until the next scheduled poll. Afterward, new completed jobs with `failure` or `timed_out` trigger notifications if they belong to the latest known attempt. Canceled or skipped jobs and jobs with unknown or inconsistent completion times are excluded. A notification contains the local runner name and repository. Job output and private transport diagnostics stay out of the notification.
 
-Erfolgreich gemeldete Job-Identitäten werden für das aktuelle Opt-in und ein
-rollierendes 24-Stunden-Fenster dedupliziert. Das berücksichtigt verspätet
-beobachtete ältere Jobs und identische Abschlusszeitpunkte. Zustellfehler dürfen
-erneut versucht werden. Auch ein Aus-/Einschalten zwischen zwei Polls verwirft
-die vorherige Ausgangslage und verspätete Antworten. Account-, Quellen- und
-Zustimmungsänderungen sowie Stop/Cancellation werden vor der Persistenz geprüft.
+The monitor deduplicates successfully reported job identities for the current opt-in and a rolling 24-hour window. This handles older jobs observed late and jobs with identical completion times. Failed deliveries can be retried. Turning the setting off and back on between polls discards the prior baseline and any late responses. The monitor checks for account, source, and consent changes, as well as shutdown and cancellation, before writing to the store.
 
-Dies ist ein begrenzter Poll der jüngsten zehn Runs pro Repository, keine
-verlustfreie Push-Zustellung aller Ereignisse. Während die App beendet ist,
-entstehen keine neuen Mitteilungen; hochfrequente Repositories oder längere
-Netz-/API-Ausfälle können Ereignisse außerhalb dieses Fensters schieben. Die
-vollständige ältere Historie bleibt bewusst über die Jobs-Ansicht ladbar.
+Polling covers the most recent ten runs per repository and can miss events outside that window. Alerts are generated while the app is running, and high-volume repositories or extended network or API outages can push events out of that window. Load older runs from the Jobs view.
 
-## Manuelle Abnahme
+## Manual Acceptance Testing
 
-1. Entwicklungsstand ohne Homebrew nach [Entwicklungs- und Abnahme-Anleitung](10-development-and-acceptance.md) bauen und starten.
-2. Bei kleiner und großer Fenstergröße lange Runner-Namen und viele Labels prüfen. **Live Log** öffnet das Protokoll gezielt; das Dashboard enthält keinen dauerhaften Logblock mehr.
-3. **New Runner** mit vielen Repositories öffnen, Fenster verkleinern und nach unten scrollen. Abbrechen/Erstellen bleiben sichtbar. Die Startanzahl entspricht Repositories × Instanzen.
-4. Mitteilungen bewusst aktivieren und in den macOS-Einstellungen zulassen. Einen ungefährlichen Test-Runner außerhalb laufender Jobs regulär starten/stoppen. Pro erkanntem Wechsel erscheint höchstens eine Meldung, entsprechend den Ereignisschaltern. Keine produktiven Jobs dafür abbrechen.
-5. Dashboard schließen: Statusüberwachung bleibt aktiv. OctoRunner beenden: Menüleisteneintrag und Überwachung enden. Anschließend regulär neu starten: keine Statusmeldungsflut.
-6. Jobfehler-Mitteilungen aktivieren, passenden Repository-Scope beziehungsweise
-   explizite Organisationsquelle konfigurieren und den ersten Check abwarten.
-   Einen ungefährlichen neuen Test-Workflow auf diesem lokalen Runner fehlschlagen
-   lassen. Erwartet: eine Meldung nach dem nächsten Poll, keine Wiederholung bei
-   identischen Folgesamples. Erfolgreiche und abgebrochene Jobs bleiben still.
+1. Build and launch the development version using the [development and acceptance guide](10-development-and-acceptance.md), without installing it through Homebrew.
+2. Check long runner names and many labels at small and large window sizes. **Live Log** opens the log on demand. The dashboard no longer keeps a log panel open.
+3. Open **New Runner** with many repositories, shrink the window, and scroll down. Cancel and Create should stay visible. The number of runners started should equal repositories × instances.
+4. Enable notifications and allow them in macOS System Settings. Start and stop a test runner with no active jobs using its normal controls. Expect at most one alert per detected transition, according to the event settings. Leave production jobs running.
+5. Close the dashboard and verify monitoring continues. Quit OctoRunner and verify the menu bar item and monitoring stop. Launch normally and check that startup does not generate a burst of notifications.
+6. Enable job failure notifications, configure a matching repository scope or explicit organization source, and wait for the first check. Run a new test workflow that fails on that local runner. Expect one alert after the next poll and no repeat on identical follow-up samples. Successful and canceled jobs should stay silent.
 
-Automatisch geprüft sind Pfade mit Leerzeichen, unbekannte/veraltete Daten, Statuspriorität, Ereignisfilter und Duplikate, ältere Einstellungen, echte Prozessabfrage und das Verwerfen verspäteter Ergebnisse nach Abbruch. Interaktive Mitteilungsdarstellung, VoiceOver und die tatsächliche Menüleiste müssen auf dem angemeldeten Desktop zusätzlich abgenommen werden.
+Automated tests cover paths with spaces, unknown and stale data, state priority, event filters and duplication, older preferences, real process sampling, and late results after cancellation. Verify notification presentation, VoiceOver, and the menu bar on a logged-in desktop.
 
-Speicherwarnungen sind mit injizierten Kapazitätsmessungen auf Grenzwerte,
-Hysterese, Opt-in, Wiederholungen, DE-Formatierung und verspätete Ergebnisse
-geprüft. Die native Volume-Abfrage und die periodische App-Lebenszyklus-Verkabelung
-sind dadurch noch nicht vollständig automatisch abgedeckt. Den Datenträger zur
-Abnahme nicht künstlich füllen; die tatsächliche Banner-Darstellung erfolgt im
-normalen Betrieb oder mit einem kontrollierten Entwicklungs-Testadapter.
-# Getrennte Runner-Zustände und Job-Ergebnisse
+Injected capacity measurements test thresholds, hysteresis, opt-in, retries, German formatting, and late results. The native volume query and periodic app lifecycle integration still require additional verification. Check the banner in normal use or with a controlled development test adapter so the disk can remain at its normal capacity.
 
-Der Runner-Zustand beschreibt die lokale Betriebsbereitschaft: IDLE/grün wartet
-auf Arbeit, RUNNING/blau führt einen Job aus. Ein fehlgeschlagener Workflow-Job
-verändert diesen Betriebszustand nicht.
+# Runner States and Job Results
 
-Dashboard und Menü zeigen deshalb separat den **letzten abgeschlossenen Job**
-mit Ergebnis, Abschlusszeit, Namen und Link zum GitHub-Lauf samt Versuch. Während
-einer laufenden Wiederholung bleibt das vorherige abgeschlossene Ergebnis sichtbar.
-Ohne belegbaren lokalen Job steht dort „Kein abgeschlossener Job geladen“.
+Runner state describes local readiness. Green **IDLE** means the runner is waiting for work. Blue **RUNNING** means it is executing a job. A workflow job failure leaves the runner's operational state unchanged.
 
-Zusätzlich zum Statuspunkt und OctoRunner-Logo erscheint bei nicht quittierten
-Job-Fehlern ein eigenes rotes Fehlersymbol in der Menüleiste. Dashboard und Menü
-bieten „Diese Fehler quittieren“ an. Das speichert die konkreten Job-Identitäten
-(Account, Repository, Run, Versuch, Job), statt nur einen Zeitcursor vorzustellen:
-später eintreffende ältere Jobs bleiben erkennbar. Quittieren löscht weder Historie
-noch das letzte Ergebnis und ändert keinen Runner-Zustand. Ältere Versuche werden
-beim Fehlerzähler durch den neuesten bekannten Versuch ersetzt.
+The dashboard and menu show the **last completed job** separately, with its result, completion time, name, and a GitHub link to the run and attempt. The previous completed result stays visible while a retry runs. If no local job can be verified, the app shows **No completed job loaded**.
 
-Die Anzeigen beziehen sich auf die **geladene GitHub-Historie**, nicht sämtliche
-Läufe eines Accounts. Vorhandenes opt-in Hintergrundpolling für Job-Mitteilungen
-bleibt erhalten; ohne dieses Opt-in lässt sich die Historie in „Jobs & Workflow-Läufe“
-bewusst aktualisieren. Es werden keine zusätzlichen Rechte angefordert und keine
-Runner-Logzeilen als verbindliche Job-Ergebnisse interpretiert. Zuordnung erfolgt
-über aktiven Account, Runner-ID und exakten Repository-/Organisationsscope;
-mehrdeutige Identitäten und reine Namensübereinstimmungen werden ausgeschlossen.
+Unacknowledged job failures show a separate red error icon in the menu bar alongside the status dot and OctoRunner logo. The dashboard and menu offer an action to acknowledge those failures. It records each job identity (account, repository, run, attempt, and job) so older jobs that arrive late can still be detected. Acknowledgment leaves history, the last result, and runner state intact. The failure count uses the latest known attempt.
+
+These displays reflect **loaded GitHub history**. Existing opt-in background polling continues for job notifications. You can also refresh the history in **Jobs & Workflow Runs** with polling disabled. Job results come from GitHub history under the existing permissions. Matching requires the active account, runner ID, and exact repository or organization scope. Ambiguous identities and name-only matches are excluded.

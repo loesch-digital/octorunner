@@ -1,82 +1,82 @@
-# v0.6 Prozessaufsicht und Parallelität Implementation Plan
+# v0.6 Process Supervision and Concurrency Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Native Umsetzung; bestehende Nutzerfreigabe zur anschließenden Implementierung beachten.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Use the existing authorization to continue with native implementation.
 
-**Goal:** Echte Start/Stop/Restart-Steuerung, Crash-Policies, Live-Logs und ein wirksames Limit für von OctoRunner verwaltete Runner liefern.
+**Goal** — Provide working start, stop, and restart controls, crash policies, live logs, and an enforceable limit for runners managed by OctoRunner.
 
-**Architecture:** Ein Supervisor-Actor besitzt den Lebenszyklus direkt verwalteter Prozesse. launchd-Betrieb wird ausdrücklich getrennt; zwei unabhängige Eigentümer dürfen niemals denselben Listener starten. Keine GitHub-Jobannahmegarantie aus einer lokalen Einstellung ableiten.
+**Architecture** — A supervisor actor owns the lifecycle of directly managed processes. Keep launchd mode under its own ownership and ensure each listener has exactly one owner. GitHub owns job assignment.
 
-**Tech Stack:** Swift 6, SwiftUI, SwiftData, SPM, macOS ServiceManagement; bestehende Python-/GitHub-Actions-Werkzeuge.
+**Tech stack** — Swift 6, SwiftUI, SwiftData, SPM, macOS ServiceManagement, and the existing Python and GitHub Actions tools.
 
-**Spec:** `docs/01-architecture-and-modules.md` ADR-01/03, `docs/05-step-03-runner-wizard-and-engine.md`, `docs/06-step-04-dashboard-detail-and-menubar.md`, Nutzerumfang v0.6; verbindliche Umfangsentscheidung vom 19.11.2026: globales Parallelitätslimit erst v0.6.
+**Spec** — ADR-01 and ADR-03 in `docs/01-architecture-and-modules.md`, `docs/05-step-03-runner-wizard-and-engine.md`, `docs/06-step-04-dashboard-detail-and-menubar.md`, and the user-approved v0.6 scope. The November 19, 2026 scope decision places the global concurrency limit in v0.6.
 
 ## Global Constraints
 
-Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen unter `Packages/OctoRunnerKit/Sources/`; Testdateinamen liegen unter `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/`. Neue Dateien werden jeweils dort angelegt.
+Source paths such as `RunnerEngine/...` and `CoreModels/...` are relative to `Packages/OctoRunnerKit/Sources/`. Test filenames are relative to `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/`. Create new files in the corresponding directories.
 
-- macOS 15+, Swift 6 Strict Concurrency, SwiftUI und SwiftData; keine Versionsanhebung durch das CI-Image.
-- Vor Änderungen die vier Repo-Skills und einschlägigen `references/*.md` lesen. `AGENTS.md` gilt uneingeschränkt.
-- Jede Produktionsänderung beginnt mit einem nachweislich roten Regressionstest; anschließend grün und Refactor. Swift: `swift test --package-path Packages/OctoRunnerKit --no-parallel`; Python: `python3 -m unittest discover -s scripts/tests`.
-- Feature-Branch, semantische Commits, PR. Nach Push PR-CI vollständig grün abwarten, dann Merge und main-CI vollständig grün abwarten. Keine überlappende nächste Feature-Umsetzung bei roter/laufender CI.
-- Keine Secrets in Logs, Modellen oder Exporten; keine vorsorgliche Dokumente-Abfrage. SwiftData-Defaults, SQLite-Headerprüfung und Cancellation vor Modellzugriffen beibehalten.
-- Neue Controls: Label/Hint, Tastaturbedienung, OctoTheme; WCAG 2.2 AA in Hell/Dunkel. NSHostingView für schmale/breite Ansichten, DE/EN.
-- Konkrete Werkzeug-/API-Versionen unmittelbar vor Änderung anhand offizieller Quellen verifizieren.
+- Target macOS 15+ with Swift 6 strict concurrency, SwiftUI, and SwiftData. Preserve the minimum supported version when selecting the CI image.
+- Read the four repo skills and relevant `references/*.md` files before making changes. Follow `AGENTS.md`.
+- Start every production change with a regression test that demonstrably fails, then make it pass and refactor. Run Swift tests with `swift test --package-path Packages/OctoRunnerKit --no-parallel` and Python tests with `python3 -m unittest discover -s scripts/tests`.
+- Use a feature branch, semantic commits, and a PR. After pushing, wait for all PR CI checks to pass before merging, then wait for all main CI checks to pass before starting the next feature.
+- Keep secrets out of logs, models, and exports. Access Documents only when needed. Preserve SwiftData defaults, SQLite header checks, and cancellation checks before model access.
+- Give new controls labels and hints, keyboard support, and OctoTheme styling. Meet WCAG 2.2 AA in Light and Dark appearances. Use NSHostingView to check narrow and wide layouts in German and English.
+- Verify exact tool and API versions against official sources immediately before changing them.
 
 ## Review Focus
 
-1. Gleichzeitiges Start/Stop und verspätete Exit-Callbacks dürfen keinen fremden Prozess treffen (Task 1).
-2. Dauerabstürze dürfen keine Restart-Schleife erzeugen (Task 2).
-3. Absenken des Limits darf aktive Jobs nicht abbrechen (Task 3).
-4. Langsame Log-Consumer und Dateirotation dürfen Speicher nicht unbegrenzt wachsen lassen (Task 4).
-5. GUI-Ende darf weder Headless-Fortsetzung noch aktiven Supervisor vortäuschen (Task 1/3).
+1. Concurrent start and stop calls and delayed exit callbacks must target only the intended process (Task 1).
+2. Quarantine repeated crashes before a runner enters an endless restart loop (Task 2).
+3. Preserve active jobs when lowering the limit (Task 3).
+4. Bound memory during file rotation and when log consumers fall behind (Task 4).
+5. Show which processes continue after GUI shutdown and whether a supervisor is active (Tasks 1 and 3).
 
-### Task 1: Prozessbesitz und Steuerung
+### Task 1: Process Ownership and Control
 
-**Files:** Modify `Packages/OctoRunnerKit/Sources/RunnerEngine/RunnerSupervisorActor.swift`; Create `RunnerProcessControlling.swift`, `ManagedRunnerProcess.swift` im selben Ordner; Test `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/RunnerSupervisorTests.swift`; Modify ADR-01.
+**Files** — Modify `Packages/OctoRunnerKit/Sources/RunnerEngine/RunnerSupervisorActor.swift` and ADR-01. Create `RunnerProcessControlling.swift` and `ManagedRunnerProcess.swift` in the same source directory. Test in `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/RunnerSupervisorTests.swift`.
 
-**Interfaces:** Neue Sendable-Snapshots statt SwiftData-Objekten über Actor-Grenzen. Supervisor-API: `start(runnerID: UUID) async throws`, `stop(runnerID: UUID) async throws`, `restart(runnerID: UUID) async throws`; Prozessadapter liefert identifizierbare Exit-Ereignisse pro Startgeneration.
+**Interfaces** — Pass new Sendable snapshots across actor boundaries. The supervisor exposes `start(runnerID: UUID) async throws`, `stop(runnerID: UUID) async throws`, and `restart(runnerID: UUID) async throws`. The process adapter identifies exit events by launch generation.
 
-- [x] Eigentumsmatrix für direkte Child-Prozesse, bestehende LaunchAgents und importierte externe Listener dokumentieren. Der direkte Modus übernimmt laufende fremde Listener erst nach verifizierter Migration.
-- [x] Doppelstart, verspäteten Exit einer früheren Generation, abgebrochenen Start und fremde Prozesse mit Fake-Prozess-Tests abdecken.
-- [x] Graceful Drain, Fristablauf und separat bestätigten erzwungenen Stopp testen. Der Quit-Dialog erklärt, welche Runner weiterlaufen. Vor freiwilligem Stopp und Quit wird der lokale Jobzustand erneut geprüft.
-- [x] Direkten Prozessadapter ohne blockierendes `waitUntilExit` implementieren. Der Exit bleibt der Startgeneration zugeordnet und wird erst nach Ende der eigenen Prozessgruppe gemeldet. Native Tests verwenden kurzlebige Prüfprozesse.
-- [x] App-Controls für direkte Runner mit bestätigter PID, Laufzeit, Status und Audit anbinden. Speicherbereinigung und Prozessstart verwenden eine gemeinsame Verzeichnissperre.
-- [x] PR und main-CI für die direkte Prozessaufsicht vollständig grün prüfen.
-- [x] LaunchAgent-Diagnose aus Screenshot 07 in Einstellungen und Runner-Details ergänzen. Die installierte Plist mit Syntaxprüfung zur Ansicht anbieten und einen entladenen, nachweislich eigenen Dienst wieder laden. Ein geladener Dienst kann weiterlaufen. Tests decken fehlende, fremde und während der Prüfung ersetzte Definitionen ab.
+- [x] Documented the ownership matrix for direct child processes, existing LaunchAgents, and imported external listeners. Direct mode takes ownership of external listeners only after a verified migration.
+- [x] Used fake processes to test duplicate starts, late exits from earlier generations, canceled startup, and unrelated processes.
+- [x] Tested graceful drain, deadlines, and separately confirmed force stops. The quit dialog explains which runners keep running. Recheck local job state before a voluntary stop or quit.
+- [x] Implemented the direct process adapter without blocking on `waitUntilExit`. The exit remains associated with the launch generation and is reported only after its process group has ended. Native tests use short-lived test processes.
+- [x] Connected app controls for direct runners with confirmed PID, uptime, status, and audit entries. Storage cleanup and startup share a directory lock.
+- [x] Verified all PR and main CI checks passed for direct process supervision.
+- [x] Added the LaunchAgent diagnostics from screenshot 07 to Settings and runner details. Show the installed plist with its syntax validation result and allow reloading a verified OctoRunner service that is unloaded. A loaded service can keep running. Tests cover missing, unrelated, and replaced definitions.
 
-### Task 2: Restart, Throttle und Quarantäne
+### Task 2: Restart, Throttling, and Quarantine
 
-**Files:** Create `RunnerEngine/RunnerRestartScheduler.swift`; Modify `CoreModels/RunnerRuntimePolicy.swift`, `RunnerEngine/RunnerSupervisorActor.swift`, `AppShellFeature/Settings/FailoverSettingsTab.swift`; Test `RunnerRestartPolicyTests.swift` unter den bestehenden Tests.
+**Files** — Create `RunnerEngine/RunnerRestartScheduler.swift`. Modify `CoreModels/RunnerRuntimePolicy.swift`, `RunnerEngine/RunnerSupervisorActor.swift`, and `AppShellFeature/Settings/FailoverSettingsTab.swift`. Test in `RunnerRestartPolicyTests.swift`.
 
-**Interfaces:** Scheduler konsumiert Exitcode, Generation und RunnerRuntimePolicy; injizierte monotone Uhr, keine Echtzeit-Sleeps in Unit-Tests. Ergebnis: Restart-Termin oder Quarantäne; manuelle Freigabe eigener Befehl.
+**Interfaces** — The scheduler uses the exit code, generation, RunnerRuntimePolicy, and an injected monotonic clock. Unit tests use the injected clock to advance time. The scheduler returns a restart time or quarantine, and a separate command releases quarantine.
 
-- [x] Always/On Non-Zero/Manual, freiwilligen Stopp, Verzögerung und die exakte Quarantänegrenze testen. Nach 60 Sekunden Laufzeit beginnt die Fehlerzählung von vorn. Auch schnelle, erfolgreiche Exits zählen bei Always zur Grenze.
-- [x] Battery Saver mit `ProcessInfo.isLowPowerModeEnabled` verdrahten. Neue Starts warten auf das Ende des Stromsparmodus. Laufende Jobs können weiterlaufen. Eine aufgeschobene Startanforderung lässt sich abbrechen.
-- [x] Die Richtlinien auf direkt verwaltete Runner anwenden. Crash und Quarantäne erzeugen Audit-Ereignisse und verwenden die vorhandene, abschaltbare Runner-Fehlermeldung in den macOS-Mitteilungen.
-- [x] Quarantäne und aufgeschobene Starts in den Runner-Details anzeigen. Das letzte Workflow-Ergebnis bleibt als eigene Information sichtbar.
-- [x] Vollständige PR- und main-CI für Recovery abwarten ([PR #36](https://github.com/loesch-digital/octorunner/pull/36), [main-CI](https://github.com/loesch-digital/octorunner/actions/runs/44623341585)).
+- [x] Tested Always, On Non-Zero, and Manual policies, voluntary stops, delays, and the exact quarantine threshold. Reset the failure count after 60 seconds of runtime. Rapid successful exits also count under Always.
+- [x] Connected Battery Saver to `ProcessInfo.isLowPowerModeEnabled`. New starts wait for Low Power Mode to end. Running jobs can continue, and users can cancel deferred starts.
+- [x] Applied policies to directly managed runners. Crashes and quarantine create audit events and use the existing optional macOS runner error notification.
+- [x] Show quarantine and deferred starts in runner details with the latest workflow result displayed separately.
+- [x] Waited for all PR and main CI checks to pass for recovery. [PR #36](https://github.com/loesch-digital/octorunner/pull/36) · [Main CI](https://github.com/loesch-digital/octorunner/actions/runs/44623341585)
 
-### Task 3: Globales Parallelitätslimit
+### Task 3: Global Concurrency Limit
 
-**Files:** Create `RunnerEngine/RunnerAdmissionController.swift`; Modify `CoreModels/AppPreferencesStore.swift`, `RunnerEngine/RunnerSupervisorActor.swift`, passende Settings-Seite; Test `RunnerAdmissionTests.swift`.
+**Files** — Create `RunnerEngine/RunnerAdmissionController.swift`. Modify `CoreModels/AppPreferencesStore.swift`, `RunnerEngine/RunnerSupervisorActor.swift`, and the relevant Settings page. Test in `RunnerAdmissionTests.swift`.
 
-**Interfaces:** `RunnerAdmissionController` verwaltet reservierte/aktive Slots anhand stabiler Runner-IDs; Start kann nur mit gültiger Reservierung stattfinden. FIFO wartender eigener Runner, bereits aktive Jobs behalten ihren Slot bis zum sicheren Ende.
+**Interfaces** — `RunnerAdmissionController` tracks reserved and active slots by stable runner ID. Starting requires a valid reservation. Serve waiting managed runners in FIFO order and hold slots for active jobs until they can finish safely.
 
-- [x] Die Starts und Freigaben mit zwei isolierten Prozess-Fixtures prüfen. Die GitHub-Referenz unten beschreibt Risiken persistenter Runner beim Herunterfahren und empfiehlt ephemere Runner für Autoskalierung.
-- [x] Die Vertragsgrenze in [Einstellungen, Telemetrie und Jobs](../../07-step-05-settings-telemetry-and-jobs.md) dokumentieren. Das Limit gilt für direkt verwaltete Runner. Die Workflow-Zuweisung liegt bei GitHub.
-- [x] Regressionstests für gleichzeitige Starts, fehlgeschlagene Starts, Absenken und Anheben des Limits, Generationen beim Abbrechen und Reservierungen nach dem Stromsparmodus.
-- [x] Den gespeicherten Wert mit Supervisor und Ausfallsicherung verbinden. Das Limit und den Wartestatus in der Oberfläche anzeigen.
-- [x] Vollständige PR- und main-CI für das Parallelitätslimit abwarten ([PR #37](https://github.com/loesch-digital/octorunner/pull/37), [main-CI](https://github.com/loesch-digital/octorunner/actions/runs/44629969576)).
+- [x] Tested starts and slot releases with two isolated process fixtures. The GitHub reference below describes shutdown risks for persistent runners and recommends ephemeral runners for autoscaling.
+- [x] Documented the limits in [Settings, Telemetry, and Jobs](../../07-step-05-settings-telemetry-and-jobs.md). The limit applies to directly managed runners. GitHub assigns workflows.
+- [x] Added regression tests for concurrent and failed starts, raising and lowering the limit, cancellation by generation, and reservations after Low Power Mode.
+- [x] Connected the stored value to the supervisor and failover policy. Show the limit and waiting status in the UI.
+- [x] Waited for all PR and main CI checks to pass for the concurrency limit. [PR #37](https://github.com/loesch-digital/octorunner/pull/37) · [Main CI](https://github.com/loesch-digital/octorunner/actions/runs/44629969576)
 
-### Task 4: Live-Logs und Dialog 05
+### Task 4: Live Logs and Dialog 05
 
-**Files:** Modify `RunnerEngine/RunnerLogStreamerActor.swift`, `AppShellFeature/RunnerConsoleLogSheet.swift`; Create `RunnerLogStreamingTests.swift` unter den Tests.
+**Files** — Modify `RunnerEngine/RunnerLogStreamerActor.swift` and `AppShellFeature/RunnerConsoleLogSheet.swift`. Create `RunnerLogStreamingTests.swift`.
 
-**Interfaces:** Begrenzter AsyncStream von Logzeilen; direkter Modus aus Pipes, Headless-Modus aus ereignisgesteuerter Datei-Beobachtung. Bisherige Log-Level-/Zeitstempelmodelle weiterverwenden.
+**Interfaces** — Bound the AsyncStream of log lines. Direct mode reads pipes and headless mode observes file events. Reuse the existing log level and timestamp models.
 
-- [x] Screenshot 05 abgleichen. Regressionen für geteilte UTF-8-Zeichen, stdout/stderr, begrenzten Puffer, Rotation/Truncation und Freigabe der Dateideskriptoren abdecken.
-- [x] Den einmaligen Dateiausschnitt durch Live-Quellen ersetzen. Suche, Schweregrad, Auto-Scroll, Pause, Kopieren und Export umsetzen. Erkannte Zugangsdaten vor der Pufferung für den Export maskieren.
-- [x] NSHostingView schmal/breit prüfen. Review-Befunde zu Dateirotation, Exportkontext und Freigabe der Deskriptoren mit Regressionstests beheben.
-- [x] Vollständige PR- und main-CI für die Live-Logs abwarten. [PR #38](https://github.com/loesch-digital/octorunner/pull/38) und [CI auf main](https://github.com/loesch-digital/octorunner/actions/runs/44635943478) sind grün. Migration und Sync folgen vor dem v0.6-Tag.
+- [x] Compared behavior with screenshot 05. Covered regressions for split UTF-8 characters, stdout and stderr, bounded buffers, rotation and truncation, and file descriptor cleanup.
+- [x] Replaced one-time file excerpts with live sources. Added search, severity filters, automatic scrolling, pause, copy, and export. Redact detected credentials before buffering data for export.
+- [x] Verified narrow and wide layouts with NSHostingView. Fixed review findings on file rotation, export context, and descriptor cleanup with regression tests.
+- [x] Waited for all PR and main CI checks to pass for live logs. Migration and sync follow before the v0.6 tag. [PR #38](https://github.com/loesch-digital/octorunner/pull/38) · [Main CI](https://github.com/loesch-digital/octorunner/actions/runs/44635943478)
 
-**Technische Grundlage:** [GitHub Self-hosted runner reference](https://docs.github.com/en/actions/reference/runners/self-hosted-runners): Empfehlungen für ephemere Runner und Einschränkungen persistenter Runner beim Herunterfahren. Optionaler Hintergrund-Agent ist ein gesonderter ADR und kein stiller Pflichtbestandteil dieses Plans.
+GitHub documents its recommendations for ephemeral runners and shutdown limits for persistent runners. The optional background agent has a separate ADR. [GitHub self-hosted runner reference](https://docs.github.com/en/actions/reference/runners/self-hosted-runners)

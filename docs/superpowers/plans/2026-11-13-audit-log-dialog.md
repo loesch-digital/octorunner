@@ -1,24 +1,25 @@
-# Audit-Log-Dialog — v0.5.0
+# Audit Log Dialog for v0.5.0
 
-Der freigegebene Plan verlangt Filter nach Kategorie/Schwere/Runner und Export.
-Die Umsetzung bleibt bei SwiftData, bestehenden Theme-Karten und DE/EN. Ein
-Toolbar-Button öffnet eine resizable Sheet-Ansicht; keine neue Sidebar-Rubrik.
+The approved plan calls for category, severity, and runner filters, plus export.
+The dialog uses SwiftData and the existing theme cards and supports German and
+English. A toolbar button opens a resizable sheet.
 
-1. Tests zuerst rot: reale SwiftData-Filter, begrenztes Laden, DTO-Export mit
-   Unicode/ISO-Datum, NSHostingView für Empty/volle Listen in Light/Dark.
-2. Dynamischer FetchDescriptor nur mit gespeicherten Feldern. Initial 200
-   Ereignisse, „Mehr laden“ schrittweise; neueste zuerst. Keine unbeschränkte
-   Startabfrage. Filter und Suche laufen in der Datenbank.
-3. Auswahl zeigt sämtliche Ereignisdetails inkl. Vorher/Nachher. Export friert
-   die angezeigten Zeilen als Value-Snapshot ein, JSON über nativen Save-Dialog.
-   Kein automatischer Ordnerzugriff und kein Clipboard-/Netzwerkexport.
-4. App-Start/-Ende und Update-Start/-Fehler ergänzen; vorhandene Auth-, Import-
-   und Konfigurationsereignisse bleiben erhalten. Crash-Erkennung gehört zum
-   Supervisor-Schritt v0.6.0 und wird hier nicht als geliefert dargestellt.
-5. DE/EN, Accessibility und Resize-Captures; Swift/Python/Build. Ein unabhängiges
-   Branch-Review, PR-CI, Merge und main-CI abwarten.
+1. Start with failing tests for real SwiftData filters, bounded loading, DTO
+   export with Unicode and ISO dates, and NSHostingView rendering for empty and
+   populated lists in Light and Dark appearances.
+2. Build the dynamic FetchDescriptor using stored fields only. Load the 200 most
+   recent events first and let users load more in batches. Run filtering and
+   search in the database.
+3. Show all details for the selected event, including before and after values.
+   Snapshot the displayed rows as values and export JSON through the native save
+   dialog. Limit export to the file the user selects in the dialog.
+4. Add events for app startup and shutdown, and for update starts and failures.
+   Preserve existing authentication, import, and configuration events. Crash
+   detection is planned for the v0.6.0 supervisor.
+5. Verify German and English, accessibility, and screenshots at multiple sizes.
+   Run the Swift and Python tests and the build. Get an independent branch
+   review, wait for PR CI to pass, merge, and verify CI on main.
 
-Entscheidung: Export heißt ausdrücklich „Angezeigte Ereignisse exportieren“.
-Damit exportiert er exakt den sichtbaren gefilterten Ausschnitt, statt unbemerkt
-mehr Datensätze oder Daten aus anderen Filtern zu speichern. Mehr laden erweitert
-auch den Export. Historische Daten und gespeicherte Texte werden nicht verändert.
+Label the export action “Export Displayed Events.” It exports exactly the
+current filtered set, including any additional events the user has loaded. The
+export reads historical records and stored text without modifying them.

@@ -1,39 +1,44 @@
-# Runner-Zustand und Job-Ergebnis
+# Runner Status and Job Result
 
-Vom Nutzer bestätigte Darstellung: Runner bleibt IDLE/grün oder RUNNING/blau,
-auch wenn ein Job fehlschlägt. Separat erscheinen letzter abgeschlossener lokaler
-Job, Ergebnis, Abschlusszeit und sicherer GitHub-Link. Menüleiste erhält ein
-zusätzliches Fehlersymbol für nicht quittierte Fehler der geladenen Historie.
-Quittierung bleibt über App-Neustarts erhalten und verändert keine Job-Ergebnisse.
+The user approved keeping runner availability at IDLE (green) or RUNNING
+(blue) even when a job fails. Show the most recent completed local job, its
+result and completion time, and a safe GitHub link on their own. Add a menu bar
+error icon for unacknowledged failures in the loaded history. Acknowledgments
+persist across app restarts and leave the job results intact.
 
-## Umsetzung
+## Implementation
 
-1. Roter NSHostingView-Test: aktiver lokaler Runner mit fehlgeschlagenem Job
-   muss in der Menüansicht zusätzlich zur grünen Bereitschaft einen roten
-   Job-Hinweis zeigen (Light/Dark).
-2. Getestete Auswahl aus GitHub-Snapshots: aktiver Account, exakte Runner-ID und
-   Repository-/Organisationsscope, eindeutige lokale Identität, neuester Versuch.
-   Keine Zuordnung anhand von Namen und keine fremden Account-Daten.
-3. Gemeinsame SwiftData-Quelle und persistente Quittierung; separate Anzeige
-   im Dashboard und Menü, zusätzliches Symbol neben dem unveränderten Statuslogo.
-   Kein TimelineView im Menüleistenlabel.
-4. DE/EN, VoiceOver, schmale Layouts und echte NSHostingView-Captures prüfen.
-5. Swift-/Python-Suite, Debug-Build, PR, CI abwarten, Merge und main-CI prüfen.
+1. Start with a failing NSHostingView test in Light and Dark appearances. The
+   menu must display a red job-failure indicator alongside the green ready
+   status for an active local runner with a failed job.
+2. Test selection from GitHub snapshots. Match the active account, exact runner
+   ID, repository or organization scope, and unambiguous local identity, then
+   select the latest attempt. Use IDs and scope to establish ownership.
+3. Use the shared SwiftData source and persist acknowledgments. Show results
+   separately in the dashboard and menu, with an additional icon next to the
+   existing status logo. Keep the menu bar label free of TimelineView.
+4. Verify German and English, VoiceOver, narrow layouts, and screenshots
+   rendered using NSHostingView.
+5. Run the Swift and Python suites and the debug build. Open a PR, wait for CI
+   to pass, merge, and verify CI on main.
 
-## Grenzen und anschließender Plan
+## Data Limits and Next Step
 
-Keine Logzeilen als verbindliches Job-Ergebnis; vorhandene GitHub-Historie wird
-wiederverwendet. Ohne geladene Daten bleibt das letzte Ergebnis unbekannt.
-Vorhandenes opt-in Hintergrundpolling und Mitteilungsrechte bleiben erhalten;
-die Jobs-Ansicht erlaubt bewusstes Aktualisieren auch ohne Mitteilungen.
-Danach weiter mit fehlendem Cache-&-Storage-Tab des v0.5.0-Plans.
+Use the existing GitHub history as the source of job results. Show the latest
+result as unknown until history has loaded. Keep the existing opt-in background
+polling and notification permissions. The Jobs view also supports an explicit
+refresh with notifications disabled. Continue with the missing Cache & Storage
+tab in the v0.5.0 plan.
 
-## Lokale Validierung
+## Local Verification
 
-- NSHostingView-Regression zuerst rot in Light und Dark (fehlender roter Hinweis).
-- Laufende Wiederholung und Singularübersetzung ebenfalls zuerst rot reproduziert.
-- 241 Swift-Tests / 50 Suites und 18 Python-Tests grün; Debug-App gebaut.
-- Captures der Menüansicht und Runner-Zeile in beiden Erscheinungsbildern geprüft.
-- Readonly-Review ohne wichtige Findings; Query-Hülle im Menülabel ohne
-  Zustandsmutation und ohne TimelineView. Lokaler interaktiver Scene-Start bleibt
-  gesonderte Abnahme; Renderingtests ersetzen diese Aussage nicht.
+- The NSHostingView regression first failed in Light and Dark appearances
+  because the red indicator was missing.
+- Tests also reproduced the in-progress retry and singular translation issues
+  before their fixes.
+- All 241 Swift tests across 50 suites and all 18 Python tests passed. The
+  debug app built successfully.
+- Reviewed screenshots of the menu and runner row in both appearances.
+- An independent read-only review found no significant issues. The query wrapper
+  in the menu label reads state and avoids TimelineView. A local interactive
+  launch of the scene still needs separate acceptance testing.

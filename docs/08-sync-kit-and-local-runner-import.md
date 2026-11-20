@@ -105,25 +105,22 @@ In `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/SyncKitTests.swift`:
 
 ---
 
-## 4. Audit-Log Datenmodell (`AuditLogEntity` & `AuditLogRecorder`)
+## 4. Audit log data model (`AuditLogEntity` and `AuditLogRecorder`)
 
-Für Konfigurationsänderungen, Runner-Lifecycle-Events (Auto-Import, Provisioning, Löschung) und System-/Auth-Ereignisse enthält `CoreModels` die dedizierte SwiftData-Tabelle **`AuditLogEntity`**:
+`CoreModels` uses a dedicated SwiftData table, **`AuditLogEntity`**, for configuration changes, runner lifecycle events such as automatic import, provisioning, and deletion, and system and authentication events.
 
-| Feld | Typ | Beschreibung |
+| Field | Type | Description |
 | :--- | :--- | :--- |
-| `id` | `UUID` | Eindeutige Event-ID (`= UUID()`) |
-| `timestamp` | `Date` | Zeitstempel des Ereignisses (`= Date.now`) |
+| `id` | `UUID` | Unique event ID (`= UUID()`) |
+| `timestamp` | `Date` | Event time (`= Date.now`) |
 | `categoryRaw` / `category` | `AuditEventCategory` | `.authentication`, `.runnerLifecycle`, `.configuration`, `.appUpdate`, `.system` |
 | `severityRaw` / `severity` | `AuditEventSeverity` | `.info`, `.warning`, `.critical` |
-| `title` | `String` | Kurzer Event-Titel (z. B. `"Local Runner Auto-Imported"`, `"Runner Labels Updated"`) |
-| `summary` | `String` | Detailbeschreibung (**Bewusst `summary` statt `description` genannt**, da `description` in `@Model`-Klassen laut `swiftdata-pro` verboten ist) |
-| `actorAccountLogin` | `String?` | Ausführender GitHub-Account (z. B. `"loesch-digital"`) |
-| `targetRunnerName` | `String?` | Betroffene Runner-Instanz (z. B. `"macbook-pro-frank"`) |
-| `previousValue` | `String?` | Alter Konfigurationswert vor der Änderung (für Diff-Ansicht im späteren Audit-Dialog) |
-| `newValue` | `String?` | Neuer Konfigurationswert nach der Änderung |
+| `title` | `String` | Short event title, such as `"Local Runner Auto-Imported"` or `"Runner Labels Updated"` |
+| `summary` | `String` | Detailed description. The field name follows the `swiftdata-pro` rule that reserves `description` in `@Model` classes. |
+| `actorAccountLogin` | `String?` | GitHub account that performed the action, such as `"loesch-digital"` |
+| `targetRunnerName` | `String?` | Affected runner instance, such as `"macbook-pro-frank"` |
+| `previousValue` | `String?` | Configuration value before the change, for the planned audit dialog’s diff view |
+| `newValue` | `String?` | Configuration value after the change |
 
 > [!NOTE]
-> **Einhaltung von `swiftdata-pro` (`references/indexing.md` & `references/core-rules.md`):**
-> - Auf `AuditLogEntity` wird bewusst **kein `#Index`** gesetzt, da `swiftdata-pro` für schreibintensive Logging-Tabellen explizit vom Indexing abrät (*"if data is read rarely and updated frequently (such as logging), indexes may be a bad choice"*).
-> - Alle Properties besitzen Property-Level-Defaultwerte, damit Lightweight-Migrationen (`OctoRunnerPersistence.makeSharedContainer()`) niemals fehlschlagen.
-
+> Following `swiftdata-pro` (`references/indexing.md` and `references/core-rules.md`), `AuditLogEntity` omits `#Index` because frequent writes and infrequent reads make indexing a poor fit for logging tables. All properties have property-level defaults to support lightweight migrations in `OctoRunnerPersistence.makeSharedContainer()`.

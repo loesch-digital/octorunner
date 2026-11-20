@@ -1,68 +1,69 @@
-# OctoRunner — Concept & Step-by-Step Implementation Plan
+# OctoRunner Architecture and Implementation Plan
 
 <img src="./assets/app_icon.png" width="110" align="right" alt="OctoRunner App Icon" />
 
-**OctoRunner** (`OctoRunner.app`, Bundle-ID: `io.octorunner.macos`) ist eine native macOS Desktop-Applikation (macOS 15.0+ Sequoia, Apple Silicon / Universal 2, Swift 6.0 Strict Concurrency), mit der lokale **GitHub Actions Self-Hosted Runner** (insbesondere für iOS/macOS/Xcode-Builds) über `launchd` verwaltet, überwacht und skaliert werden.
+**OctoRunner** (`OctoRunner.app`, bundle ID `io.octorunner.macos`) is a native macOS app for managing, monitoring, and scaling local **GitHub Actions self-hosted runners** with `launchd`, especially for iOS, macOS, and Xcode builds. The design targets macOS 15 Sequoia or later, Apple Silicon and Universal 2 builds, and Swift 6 strict concurrency.
 
-## 1. Kernprinzipien & Leitlinien
+## 1. Design Principles
 
-- **Modernster Tech-Stack:** Swift 6.0+ (`Complete` Strict Concurrency), SwiftUI 6 (`@Observable`, `NavigationSplitView`, `MenuBarExtra`, `Settings`), SwiftData (`@Model`), Apple Keychain (Data Protection Keychain + Touch ID / `SecAccessControl`) & `ServiceManagement` (`SMAppService` / `launchd` User LaunchAgents).
-- **Strikte Modularisierung:** Ein lokales Multi-Target Swift Package (`Packages/OctoRunnerKit`) trennt Datenmodelle, Security/Keychain, GitHub REST/OAuth API, Runner-Engine (`launchd` & Binary-Management), Hardware-Telemetrie und UI-Komponenten sauber voneinander.
-- **Iteratives Release-Driven Development:** Jede Ausbaustufe (`v0.1.0`, `v0.2.0`, `v0.3.0`, ...) liefert ein **vollständig ausführbares, signiertes und über Homebrew Cask installierbares Release**, gesteuert über `release-it` + `Fastlane` (`match` & `notarytool`).
-- **Integrierte Agent Skills (`.agents/skills/`):**
-  - [`swiftui-pro`](../.agents/skills/swiftui-pro/SKILL.md) — Moderne SwiftUI APIs, HIG-Konformität, Accessibility & Performance
-  - [`swift-security-expert`](../.agents/skills/swift-security-expert/SKILL.md) — Sichere Keychain-Speicherung (`SecItem`, Biometrie, Token-Lifecycle, Zero Secrets in `UserDefaults`)
-  - [`swiftdata-pro`](../.agents/skills/swiftdata-pro/SKILL.md) — `@Model` Schema-Design, `@Relationship` Delete-Rules, sichere `#Predicate`-Abfragen & Indexing
-  - [`swift-concurrency-pro`](../.agents/skills/swift-concurrency-pro/SKILL.md) — Actor-Isolation, Reentrancy-Schutz, Structured Concurrency (`TaskGroup`), `AsyncStream` & Cancellation
+- **Native stack**. Swift 6.0+ with complete strict concurrency, SwiftUI 6 (`@Observable`, `NavigationSplitView`, `MenuBarExtra`, and `Settings`), SwiftData (`@Model`), Apple Keychain (Data Protection Keychain, Touch ID, and `SecAccessControl`), and ServiceManagement (`SMAppService` and per-user `launchd` LaunchAgents).
+- **Modular design**. The local multi-target Swift package `Packages/OctoRunnerKit` separates data models, security and Keychain, GitHub REST and OAuth, the runner engine (launchd and binary management), host telemetry, and UI.
+- **Release milestones**. Each milestone (`v0.1.0`, `v0.2.0`, `v0.3.0`, and so on) targets a runnable, signed release installable through Homebrew Cask. The release design uses `release-it`, Fastlane Match, and Apple's `notarytool`.
+- **Repository agent skills** under `.agents/skills/`.
+  - Modern SwiftUI APIs, macOS Human Interface Guidelines, accessibility, and performance. [swiftui-pro](../.agents/skills/swiftui-pro/SKILL.md)
+  - Keychain storage (`SecItem`, biometrics, token lifecycle, and keeping secrets out of `UserDefaults`). [swift-security-expert](../.agents/skills/swift-security-expert/SKILL.md)
+  - `@Model` schema design, `@Relationship` delete rules, safe `#Predicate` queries, and indexing. [swiftdata-pro](../.agents/skills/swiftdata-pro/SKILL.md)
+  - Actor isolation, reentrancy protection, structured concurrency (`TaskGroup`), `AsyncStream`, and cancellation. [swift-concurrency-pro](../.agents/skills/swift-concurrency-pro/SKILL.md)
 
 ---
 
-## 2. Dokumentations-Struktur (`docs/`)
+## 2. Documentation Index
 
-Das Gesamtkonzept ist nach Architektur, Infrastruktur und den einzelnen Release-Meilensteinen (aufgeteilt nach Dialogen/Screens) gegliedert:
+The documents cover architecture, infrastructure, and the features and screens planned for each milestone.
 
-| Dokument | Fokus & Inhalt | Ziel-Release |
+| Document | Focus | Milestone |
 | :--- | :--- | :---: |
-| **[01-architecture-and-modules.md](./01-architecture-and-modules.md)** | System-Architektur, Swift 6 Module (`OctoRunnerKit`), SwiftData Schema, Concurrency-Design & Localization (`DE`/`EN`) | Fundament |
-| **[02-design-system-and-hig.md](./02-design-system-and-hig.md)** | macOS HIG Design System, Farben (Dark/Light + ANSI Terminal), Typografie & Komponenten-Spezifikation | Fundament |
-| **[03-step-01-infrastructure-homebrew-release.md](./03-step-01-infrastructure-homebrew-release.md)** | **Step 1:** XcodeGen Setup, Fastlane (`match` Developer ID + Notarization), `release-it` Automation, GitHub Releases & Homebrew Tap (`homebrew-octorunner`) | **`v0.1.0`** |
-| **[04-step-02-github-auth-device-flow.md](./04-step-02-github-auth-device-flow.md)** | **Step 2:** Einmaliges GitHub OAuth App Setup (Client ID ohne Secret), OAuth Device Flow (4 States) + PAT Fallback + Keychain (`swift-security-expert`) | **`v0.2.0`** |
-| **[05-step-03-runner-wizard-and-engine.md](./05-step-03-runner-wizard-and-engine.md)** | **Step 3:** Add Runner Setup Wizard (Dialog 3), Auto-Download & Caching der GitHub Runner Binary (`osx-arm64`), `config.sh` & `launchd` Agent Registrierung | **`v0.3.0`** |
-| **[06-step-04-dashboard-detail-and-menubar.md](./06-step-04-dashboard-detail-and-menubar.md)** | **Step 4:** Main Dashboard (Dialog 2), Advanced Runner Config & Labels (Dialog 4), Live ANSI Log Stream (Dialog 5) & macOS MenuBar Popover (Dialog 6) | **`v0.4.0`** |
-| **[07-step-05-settings-telemetry-and-jobs.md](./07-step-05-settings-telemetry-and-jobs.md)** | **Step 5:** Settings Suite (Dialoge 7a–7e: General, launchd, Storage/Pruning, Auth, Notifications), Jobs Queue (Dialog 8) & Apple Silicon Telemetry (Dialog 9) | **`v0.5.0`** |
-| **[08-sync-kit-and-local-runner-import.md](./08-sync-kit-and-local-runner-import.md)** | **`SyncKit`:** Discovery verwalteter Runner, bewusster Import externer Ordner, Live-PID-Erkennung und GitHub-Abgleich | **`v0.2.4` / `v0.3.0`** |
-| **[09-pipeline-privacy-and-test-audit.md](./09-pipeline-privacy-and-test-audit.md)** | Pipeline-Prüfung, bedarfsgesteuerter Ordnerzugriff, minimale GitHub-Rechte und offene Testlücken | **`v0.4.4`** |
-| **[10-development-and-acceptance.md](./10-development-and-acceptance.md)** | Entwicklungsstand aus Xcode abnehmen; Release-ZIP ohne Homebrew installieren | Abnahme |
-| **[11-runner-status-and-notifications.md](./11-runner-status-and-notifications.md)** | Lokaler Menüleistenstatus, bedarfsgesteuerte macOS-Mitteilungen und Abnahmeschritte | In Arbeit für **`v0.5.0`** |
-| **[12-jobs-history-and-metrics.md](./12-jobs-history-and-metrics.md)** | Jobs-API, Persistenzmigration und Definition der Kennzahlen | In Arbeit für **`v0.5.0`** |
-| **[13-accounts-and-credentials.md](./13-accounts-and-credentials.md)** | Account-Identität, Credential-Lifecycle und Abbruch-/Fehlerfälle | In Arbeit für **`v0.5.0`** |
-| **[14-runner-archive-integrity.md](./14-runner-archive-integrity.md)** | Verpflichtende SHA-256-Prüfung und öffentliche Release-Digests ohne zusätzliche Token-Rechte | In Arbeit für **`v0.5.0`** |
-| **[15-cache-and-storage.md](./15-cache-and-storage.md)** | Verwaltete Runner-Speicheranalyse, sichere Bereinigung und automatische Richtlinien | In Arbeit für **`v0.5.0`** |
-| **[16-audit-log.md](./16-audit-log.md)** | Lokale Ereignishistorie, Filter, Details und JSON-Export | In Arbeit für **`v0.5.0`** |
-| **[17-host-telemetry.md](./17-host-telemetry.md)** | Host-Messkarten, Geräte-I/O und kontogetrenntes API-Budget | In Arbeit für **`v0.5.0`** |
-| **[18-remaining-delivery-plan.md](./18-remaining-delivery-plan.md)** | Aktueller Arbeitsstand und konkrete Teilpläne; Parallelitätslimit ab v0.6 | **v0.5–v0.7** |
+| **[01-architecture-and-modules.md](./01-architecture-and-modules.md)** | System architecture, Swift 6 modules (`OctoRunnerKit`), SwiftData schema, concurrency design, and German and English localization | Foundation |
+| **[02-design-system-and-hig.md](./02-design-system-and-hig.md)** | macOS design system, Light and Dark palettes, ANSI terminal colors, typography, and components | Foundation |
+| **[03-step-01-infrastructure-homebrew-release.md](./03-step-01-infrastructure-homebrew-release.md)** | Step 1 plan for XcodeGen, Developer ID signing with Fastlane Match, notarization, `release-it`, GitHub Releases, and the `homebrew-octorunner` tap | **`v0.1.0`** |
+| **[04-step-02-github-auth-device-flow.md](./04-step-02-github-auth-device-flow.md)** | Step 2 plan for GitHub OAuth app setup with a client ID and no client secret, four-state device flow, PAT fallback, and Keychain | **`v0.2.0`** |
+| **[05-step-03-runner-wizard-and-engine.md](./05-step-03-runner-wizard-and-engine.md)** | Step 3 plan for the New Runner wizard (screen 3), automatic runner binary downloads and caching (`osx-arm64`), `config.sh`, and launchd registration | **`v0.3.0`** |
+| **[06-step-04-dashboard-detail-and-menubar.md](./06-step-04-dashboard-detail-and-menubar.md)** | Step 4 plan for the dashboard (screen 2), runner configuration and labels (screen 4), live ANSI logs (screen 5), and menu bar popover (screen 6) | **`v0.4.0`** |
+| **[07-step-05-settings-telemetry-and-jobs.md](./07-step-05-settings-telemetry-and-jobs.md)** | Step 5 plan for Settings (screens 7a–7e for General, launchd, storage and pruning, authentication, and notifications), job queue (screen 8), and Apple Silicon telemetry (screen 9) | **`v0.5.0`** |
+| **[08-sync-kit-and-local-runner-import.md](./08-sync-kit-and-local-runner-import.md)** | SyncKit discovery of managed runners, explicit import from external folders, live PID detection, and GitHub reconciliation | **`v0.2.4` / `v0.3.0`** |
+| **[09-pipeline-privacy-and-test-audit.md](./09-pipeline-privacy-and-test-audit.md)** | Pipeline review, on-demand folder access, minimum GitHub permissions, and test coverage gaps | **`v0.4.4`** |
+| **[10-development-and-acceptance.md](./10-development-and-acceptance.md)** | Verify development builds in Xcode and install the release ZIP without Homebrew | Acceptance |
+| **[11-runner-status-and-notifications.md](./11-runner-status-and-notifications.md)** | Local menu bar status, opt-in macOS notifications, and acceptance steps | **`v0.5.0`** development |
+| **[12-jobs-history-and-metrics.md](./12-jobs-history-and-metrics.md)** | Jobs API, persistence migration, and metrics definitions | **`v0.5.0`** development |
+| **[13-accounts-and-credentials.md](./13-accounts-and-credentials.md)** | Account identity, credential lifecycle, cancellation, and failure cases | **`v0.5.0`** development |
+| **[14-runner-archive-integrity.md](./14-runner-archive-integrity.md)** | Required SHA-256 verification and public release digests without additional token permissions | **`v0.5.0`** development |
+| **[15-cache-and-storage.md](./15-cache-and-storage.md)** | Managed runner storage analysis, safe cleanup, and automatic policies | **`v0.5.0`** development |
+| **[16-audit-log.md](./16-audit-log.md)** | Local event history, filters, details, and JSON export | **`v0.5.0`** development |
+| **[17-host-telemetry.md](./17-host-telemetry.md)** | Host measurement cards, device I/O, and per-account API budgets | **`v0.5.0`** development |
+| **[18-remaining-delivery-plan.md](./18-remaining-delivery-plan.md)** | Verified progress and remaining plans, with runner concurrency enforcement starting in v0.6 | **v0.5–v0.7** |
 
 ---
 
-## 3. Release-Roadmap (Immer ausführbar & testbar)
+## 3. Release Roadmap
 
 ```mermaid
 flowchart LR
     v01["v0.1.0: App Shell + Fastlane + release-it + Homebrew Cask"] --> v02["v0.2.0: GitHub Device Flow + PAT + Keychain"]
-    v02 --> v03["v0.3.0: Add Runner Wizard + Binary Auto-Download + launchd"]
-    v03 --> v04["v0.4.0: Main Dashboard + Live Logs + Config + MenuBar"]
-    v04 --> v05["v0.5.0: Settings (6 Tabs) + Jobs History + Host Telemetry"]
+    v02 --> v03["v0.3.0: New Runner Wizard + Automatic Binary Downloads + launchd"]
+    v03 --> v04["v0.4.0: Dashboard + Live Logs + Configuration + Menu Bar"]
+    v04 --> v05["v0.5.0: Settings (6 Tabs) + Job History + Host Telemetry"]
     v05 --> v06["v0.6.0: Supervisor + Migration + SyncKit"]
-    v06 --> v07["v0.7.0: Lokalisierung + Accessibility + Release-Politur"]
+    v06 --> v07["v0.7.0: Localization + Accessibility + Release Readiness"]
 ```
 
-Nach v0.7.0 endet der freigegebene Versionsplan. v1.0.0 erfordert eine ausdrückliche Absprache.
+Each milestone targets a runnable and testable release. The approved roadmap ends at v0.7.0. Starting v1.0.0 requires explicit agreement.
 
-### Wie wir vorgehen (Workflow pro Meilenstein):
-1. **Umsetzung nach Plan-Dokument** (z.B. Start mit Step 1: `03-step-01-infrastructure-homebrew-release.md`).
-2. **Code-Review gegen die 4 Agent Skills** (`swiftui-pro`, `swift-security-expert`, `swiftdata-pro`, `swift-concurrency-pro`).
-3. **Lokaler Build, Tests und interaktive Abnahme** des Branches [direkt aus Xcode](./10-development-and-acceptance.md), ohne Homebrew-Installation der App.
-4. **PR-CI abwarten, PR mergen und main-CI abwarten.**
-5. **Release & Bereitstellung** via `npm run release`: `release-it` erstellt Versionscommit und Tag; der Tag startet den GitHub-Workflow für Build, Signierung, Notarisierung, GitHub Release und Homebrew-Tap. Den vollständigen Release-Lauf abwarten und anschließend Homebrew-Upgrade und Gatekeeper prüfen. Das signierte ZIP kann auch ohne Homebrew installiert werden.
+### Milestone Workflow
 
-- [GitHub-PR-Verknüpfung und Actions-Details — ergänzter v0.5-Umfang](superpowers/plans/2026-11-19-workflow-github-details.md)
+1. Implement the milestone using its plan, starting with `03-step-01-infrastructure-homebrew-release.md`.
+2. Review the code using the four repository agent skills.
+3. Build, test, and verify the branch interactively in Xcode without installing the app through Homebrew. [Development and acceptance guide](./10-development-and-acceptance.md)
+4. Wait for PR CI to pass, merge the pull request, and wait for main CI to pass.
+5. Run `npm run release`. `release-it` creates the version commit and tag. The tag triggers the GitHub build, signing, notarization, GitHub Release, and Homebrew tap update. After the workflow completes, verify the Homebrew upgrade and Gatekeeper approval. The signed ZIP also supports direct installation.
+
+- [GitHub pull request links and Actions details added to v0.5](superpowers/plans/2026-11-19-workflow-github-details.md)

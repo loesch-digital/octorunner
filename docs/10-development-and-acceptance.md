@@ -1,20 +1,20 @@
-# Entwicklungsstand auf dem Mac abnehmen
+# Testing OctoRunner on a Mac
 
-Eine Abnahme braucht keine Homebrew-Installation der App:
+You can test a development build or signed release before installing it through Homebrew.
 
-| Zweck | Weg | Prüfung |
+| What to test | Method | What it verifies |
 | --- | --- | --- |
-| Unveröffentlichter Branch | Debug-Build aus Xcode | Aktueller Quellstand, Debugger und Logs |
-| Fertiges Release ohne Homebrew | Signiertes ZIP aus GitHub Releases | Ausgelieferte App, Signatur und Notarisierung |
-| Abschließender Installationstest | Homebrew-Upgrade | Cask, Download, Prüfsumme und Upgrade |
+| An unpublished branch | Debug build from Xcode | Current source, debugger, and logs |
+| A published release | Signed ZIP from GitHub Releases | Distributed app, signature, and notarization |
+| Final installation | Homebrew upgrade | Cask, download, checksum, and upgrade |
 
-## 1. Lokal aus Xcode starten
+## 1. Run locally from Xcode
 
-Voraussetzungen sind ein vollständiges aktuelles stabiles Xcode und XcodeGen. Am 2026-11-11 geprüft: Xcode 27.2 mit Swift 6.4.2; siehe [Toolchain-Prüfung](09-pipeline-privacy-and-test-audit.md). XcodeGen lässt sich auch ohne Homebrew installieren; die [offizielle Anleitung](https://github.com/yonaskolb/XcodeGen#installing) beschreibt Make und Swift Package Manager.
+Install the full current stable Xcode and XcodeGen. The November 11, 2026 check used Xcode 27.2 with Swift 6.4.2. See the [toolchain audit](09-pipeline-privacy-and-test-audit.md). XcodeGen also supports installation with Make and Swift Package Manager. [XcodeGen installation instructions](https://github.com/yonaskolb/XcodeGen#installing).
 
-1. Die installierte OctoRunner-App über **Quit** vollständig beenden; das Schließen des Dashboard-Fensters reicht nicht.
-2. Den abzunehmenden Branch auschecken und den Commit mit `git rev-parse HEAD` festhalten.
-3. Im Repo Tests ausführen und das Projekt erzeugen:
+1. Fully exit the installed OctoRunner app using **Quit**. Closing the dashboard leaves the app running.
+2. Check out the branch you want to test and record its commit using `git rev-parse HEAD`.
+3. In the repository, run the tests and generate the project.
 
    ```sh
    swift test --package-path Packages/OctoRunnerKit --no-parallel
@@ -23,17 +23,17 @@ Voraussetzungen sind ein vollständiges aktuelles stabiles Xcode und XcodeGen. A
    xcodegen generate
    ```
 
-4. `OctoRunner.xcodeproj` in Xcode öffnen. Scheme **OctoRunner**, Ziel **My Mac**, Run-Konfiguration **Debug** wählen.
-5. Für einen lokalen Start ohne Entwicklerzertifikat bei Bedarf im Target unter **Signing & Capabilities** das Zertifikat **Sign to Run Locally** wählen. Lokale Änderungen am generierten Projekt werden bei `xcodegen generate` überschrieben; dauerhafte Projekteinstellungen gehören in `project.yml`.
-6. Mit **⌘R** bauen und starten. Mit **⌘.** den Debugger-Lauf beenden. Den regulären Quit-Dialog zusätzlich über **Quit** in der App prüfen.
+4. Open `OctoRunner.xcodeproj` in Xcode. Select the **OctoRunner** scheme, **My Mac** destination, and **Debug** run configuration.
+5. For a local run without a developer certificate, select **Sign to Run Locally** in the target’s **Signing & Capabilities** section if needed. Put persistent project settings in `project.yml` because `xcodegen generate` overwrites changes to the generated project.
+6. Press **⌘R** to build and run. Press **⌘.** to stop the debugger session. Separately test the normal Quit dialog through **Quit** in the app.
 
-Die App startet aus Xcodes Build-Verzeichnis und wird nicht nach `/Applications` installiert. Dafür sind weder Match-Secrets noch Notarisierung nötig. [Apple beschreibt „Sign to Run Locally“ als Ad-hoc-Signierung](https://developer.apple.com/documentation/technotes/tn3127-inside-code-signing-requirements).
+Xcode runs the app in place from its build directory. Match secrets and notarization are unnecessary for this local run. [Apple’s documentation on ad hoc signing for Sign to Run Locally](https://developer.apple.com/documentation/technotes/tn3127-inside-code-signing-requirements).
 
-**Die Daten sind derzeit nicht isoliert:** Debug und Release verwenden dieselbe Bundle-ID `io.octorunner.macos`, denselben SwiftData-Speicher, dieselben Preferences und Keychain-Service-Namen. Runner-Aktionen und Änderungen wirken auf den vorhandenen Bestand. Einen Modus mit Beispieldaten gibt es bisher nicht. Für isolierte Abnahmen einen separaten macOS-Testbenutzer mit eigenen Test-Runnern verwenden. Keychain- oder Ordnerfreigaben können wegen der abweichenden lokalen Signatur erneut nötig sein; Debug-Freigaben belegen nicht das Verhalten des signierten Releases.
+**Debug and release builds share app data.** Both use the `io.octorunner.macos` bundle ID, SwiftData store, preferences, and Keychain service names. Runner actions and changes affect existing data. Use a separate macOS test account with its own test runners for an isolated run. The app has no sample data mode. The local signature may require separate Keychain or folder permissions, and the signed release needs its own permission checks.
 
-### Alternativ im Terminal bauen
+### Build from Terminal
 
-Nach der Projekterzeugung:
+After generating the project, run the following command.
 
 ```sh
 xcodebuild -project OctoRunner.xcodeproj \
@@ -46,31 +46,46 @@ xcodebuild -project OctoRunner.xcodeproj \
   build
 ```
 
-Danach liegt die App unter `DerivedData/Development/Build/Products/Debug/OctoRunner.app` und kann im Finder geöffnet werden. Auch hierfür zuerst die installierte App beenden. Lokale Ad-hoc-Builds sind nicht zur Weitergabe an andere Macs bestimmt.
+Quit the installed app, then open `DerivedData/Development/Build/Products/Debug/OctoRunner.app` in Finder. Local ad hoc builds are for testing on the build Mac.
 
-## 2. Signiertes Release ohne Homebrew starten
+## 2. Run a signed release from GitHub
 
-1. Unter [GitHub Releases](https://github.com/loesch-digital/octorunner/releases) das gewünschte `OctoRunner-<Version>-arm64.zip` herunterladen. Der aktuelle Release-Build erfordert Apple Silicon und macOS 15 oder neuer.
-2. ZIP entpacken und eine laufende OctoRunner-App vollständig beenden.
-3. Die entpackte App im Finder öffnen. Sie kann vor der Installation aus dem entpackten Ordner geprüft werden. Für die normale Installation die App nach `/Applications` ziehen; beim späteren Wechsel zu Homebrew eine vorhandene manuelle Installation berücksichtigen.
-4. Developer-ID-Freigabe prüfen, beispielsweise für die installierte App:
+1. Download the desired `OctoRunner-<Version>-arm64.zip` from [GitHub Releases](https://github.com/loesch-digital/octorunner/releases). The release build requires Apple silicon and macOS 15 or later.
+2. Extract the ZIP and fully quit any running OctoRunner instance.
+3. Open the extracted app in Finder to test it in place. For normal installation, drag it to `/Applications`. If you later switch to Homebrew, account for the existing manual installation.
+4. Check Developer ID approval. For an installed app, run this command.
 
    ```sh
    spctl --assess --type execute -vv /Applications/OctoRunner.app
    ```
 
-Erwartet wird `accepted` mit `source=Notarized Developer ID`. Bei Ablehnung die Ursache untersuchen; weder Quarantäneattribute löschen noch Gatekeeper abschalten.
+The expected output is `accepted` with `source=Notarized Developer ID`. If the check rejects the app, investigate the cause with quarantine attributes and Gatekeeper in place.
 
-## 3. Abnahme vor der Veröffentlichung
+### Update recovery
 
-Die lokale Abnahme des Feature-Branches erfolgt vor Merge und Release-Tag. Commit, macOS, Xcode-Version und Testergebnis festhalten. Anschließend bleiben grüne PR-CI, grüne main-CI und der signierte Release-Lauf verbindlich. Das finale Homebrew-Upgrade prüft den zusätzlichen Vertriebsweg.
+Use the [shared Homebrew tap](https://github.com/loesch-digital/homebrew-tap) or the signed ZIP for the first upgrade from v0.6 or earlier. The updater in the installed version controls how that upgrade is handled.
 
-Für den aktuellen Patch prüfen:
+OctoRunner v0.7 and later keep the previous app bundle on the installation volume until the replacement reports that it opened the local database and finished launching. If startup fails, the installer restores the previous app and its SQLite database and sidecar files. This preserves the separately stored runner workspaces, logs, and LaunchAgent files. During installation, wait for OctoRunner to reopen automatically.
 
-- Start ohne vorsorglichen Dokumente-Zugriff; externe Runner erst über **Import Folder…** auswählen, externe Logs erst bewusst öffnen oder aktualisieren.
-- **Dashboard** oben rechts im Menüleistenfenster mehrfach verwenden, auch bei minimiertem oder geschlossenem Fenster: genau ein Dashboard.
-- Fenster schließen: Menüleisteneintrag bleibt. **Quit** abbrechen: App bleibt. **Quit** bestätigen: App und Menüleisteneintrag verschwinden.
-- Runner mit installiertem LaunchAgent laufen weiter. Für nicht migrierte importierte Runner erklärt der Quit-Dialog die Einschränkung.
-- GitHub-Login und Runner-Verwaltung mit den benötigten Rechten; fehlende Token-Scope-Header dürfen keine erfundenen Freigaben anzeigen.
+If OctoRunner asks for manual recovery, leave both bundles and the backup files in place. The update record is `~/Library/Application Support/io.octorunner.macos-update/pending.json`. The previous bundle may be in a hidden `.octorunner-update-*` folder beside the installed app. The SQLite backup is in a hidden `.octorunner-store-backup-*` folder beside `octorunner.store`. Copy these files to a safe location before repairing the installation or starting another version. [Report a recovery issue](https://github.com/loesch-digital/octorunner/issues).
 
-Prüfstand am 2026-11-11: Der Debug-Build über den obigen CLI-Befehl war erfolgreich. Für v0.4.4 waren 37 Swift-Tests, 9 Python-Tests, PR-/main-CI, Release mit Notarisierung, Homebrew-Upgrade und Gatekeeper erfolgreich. Der Nutzer hat anschließend genau ein Dashboard trotz fünfmaligem Öffnen, Schließen/Wiederöffnen, Quit, normalen Neustart ohne Dokumente-Abfrage und die deaktivierten Vorschau-Schalter bestätigt. Der neue externe Ordnerimport und das Weiterlaufen konkreter Runner sind damit noch nicht separat belegt. Die Computersteuerung meldet weiterhin `cgWindowNotFound`; der Xcode-Connector wartet auf eine Freigabe über sein Menüleistensymbol. Ein erfolgreicher Build wird nicht als erfolgreicher interaktiver Start ausgegeben.
+For local acceptance, download the original v0.5.2 and v0.6.0 Apple Silicon ZIPs into the same test directory. This runs the actual signature and Gatekeeper checks and exercises replacement and simulated failed startup on disposable copies.
+
+```sh
+OCTORUNNER_SIGNED_UPDATE_FIXTURES=/path/to/releases \
+  swift test --package-path Packages/OctoRunnerKit --no-parallel --filter AppUpdateRecoveryTests
+```
+
+## 3. Acceptance before release
+
+Test the feature branch locally before merging and tagging a release. Record the commit, macOS version, Xcode version, and results. PR CI, main CI, and the signed release workflow must then pass. A final Homebrew upgrade verifies the additional distribution path.
+
+Check these behaviors for the patch covered by this guide.
+
+- Startup proceeds without a Documents access prompt. Select external runners through **Import Folder…** and open or refresh external logs explicitly.
+- Select **Dashboard** at the top right of the menu bar popover several times, including while the window is minimized or closed. Exactly one dashboard should open.
+- Closing the window leaves the menu bar item visible. Canceling **Quit** leaves the app running. Confirming **Quit** closes the app and removes its menu bar item.
+- Runners with an installed LaunchAgent continue running. For imported runners that have yet to migrate, the Quit dialog explains the limitation.
+- GitHub sign-in and runner management work with the required permissions. The app treats absent token scope headers as unknown permissions.
+
+On November 11, 2026, the Debug build succeeded with the Terminal command above. For v0.4.4, 37 Swift tests, 9 Python tests, PR and main CI, the notarized release, the Homebrew upgrade, and Gatekeeper all passed. The user then confirmed that five Dashboard requests opened exactly one window, closing and reopening worked, **Quit** worked, a normal restart skipped the Documents prompt, and all three preview toggles were disabled. Live checks were still pending for a new external folder import and continued operation of specific runners. The computer control tool still returned `cgWindowNotFound`, and the Xcode connector awaited permission through its menu bar icon. The CLI result verified the build, and the user supplied the interactive results.

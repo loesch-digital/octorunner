@@ -1,54 +1,50 @@
-# Host-Telemetrie
+# Host Telemetry
 
-> **Umfang aktualisiert am 19.11.2026:** Auf Nutzerentscheidung kommt das globale Parallelitätslimit erst in v0.6. Frühere Zuordnungen zu v0.5 in diesem Dokument sind damit überholt. Aktueller Arbeitsstand und konkrete Folgepläne: [Restliche Umsetzung](./18-remaining-delivery-plan.md).
+> **Scope updated November 19, 2026.** The global runner concurrency limit moved to v0.6 by user decision. References to v0.5 for that work are historical. [Remaining delivery plan](./18-remaining-delivery-plan.md)
 
-**Host-Telemetrie** in der Seitenleiste zeigt die verfügbaren lokalen Messwerte. Die Ansicht aktualisiert sich bei geöffnetem Bildschirm alle 1, 5 oder 15 Sekunden; **Telemetrie aktualisieren** fordert eine neue Messung an. Beim Verlassen endet die periodische Messung dieser Ansicht.
+Select **Host Telemetry** in the sidebar to see available local measurements. The view refreshes every 1, 5, or 15 seconds while open. **Refresh telemetry** takes a new measurement. Leaving the view stops its periodic measurements.
 
-- **CPU:** Gesamtauslastung aus zwei Mach-Zählerständen sowie erkannte Performance-/Effizienz-Kernanzahlen. Die erste Messung benötigt einen zweiten Zählerstand. Eine Auslastung je Kerntyp wird ohne verifizierbare Zuordnung der CPU-Indizes nicht behauptet.
-- **Arbeitsspeicher:** Physischer Gesamtspeicher, belegter Speicher sowie App-, Wired- und komprimierter Speicher aus VM-Statistiken. Das sind hostweite Werte; Dateisystem-Caches sind keine RAM-Kategorie. Ein unbekannter Messwert erscheint als Gedankenstrich.
-- **Speicher und I/O:** Verfügbare und gesamte Kapazität des Benutzer-Volumes. Der Read-/Write-Durchsatz stammt aus den verfügbaren `IOBlockStorageDriver`-Statistiken des Hosts und ist ausdrücklich keine Messung eines einzelnen APFS-Volumes. Neue Geräte, fehlende Messungen und Zählerrücksetzungen erzeugen keine künstlichen Spitzen. Die Cache-Größenanalyse bleibt in **Einstellungen → Cache & Speicher**.
-- **GitHub-API:** Letzte beim Laden der Jobs beobachtete Rate-Limit-Header des aktiven Kontos einschließlich Messalter und Reset-Zeit. Bei einem Kontowechsel wird nur die Beobachtung dieses Kontos gezeigt. Zum Aktualisieren die Jobs-Ansicht neu laden; diese Telemetrieansicht verbraucht selbst keine zusätzlichen GitHub-API-Abfragen. Alte Antworten überschreiben keine neueren Beobachtungen.
+- **CPU** shows total utilization from two Mach counter readings and the detected performance and efficiency core counts. The first reading needs a second sample before utilization can be calculated. Per-type utilization requires a verified mapping of CPU indices and is unavailable here.
+- **Memory** shows total physical memory, memory in use, and app, wired, and compressed memory from host-wide VM statistics. The card excludes file system caches as a RAM category. An unknown measurement appears as a dash.
+- **Storage and I/O** shows available and total capacity on the user volume. Read and write throughput uses the host's available `IOBlockStorageDriver` statistics across block devices. The calculation handles new devices, missing samples, and counter resets without reporting artificial spikes. Analyze cache sizes in **Settings → Cache & Storage**.
+- **GitHub API** shows the last rate-limit headers observed by Jobs for the active account, including measurement age and reset time. Switching accounts shows only the selected account's observation. Refresh Jobs to update the measurement. Host Telemetry uses no additional GitHub API requests. Older responses cannot overwrite newer observations.
 
-Die Abfragen lesen Systemzähler, Geräte-Metadaten und Volume-Kapazität. Sie durchsuchen weder den Dokumente-Ordner noch Runner-Arbeitsverzeichnisse. Fehlende Messmöglichkeiten werden nicht durch Beispieldaten ersetzt.
+Queries read system counters, device metadata, and volume capacity. They leave Documents and runner work directories untouched. An unavailable reading stays unknown.
 
-Die Karten übernehmen die Hauptbereiche von [Screenshot 09](./assets/screens/09_host_telemetry.png), passen sich aber der Fensterbreite an. Der Prozessinspektor je Runner ist enthalten; dieser Stand ist noch nicht die vollständige v0.5.0.
+The cards follow the main sections of the mockup and adapt to the window width. The per-runner process inspector is included at this point in v0.5.0 development. [Screenshot 09](./assets/screens/09_host_telemetry.png)
 
-## Verifikation
+## Verification
 
-Unit-Tests decken Geräte-Deltas, neue/entfernte Geräte, Zählerrücksetzungen, fehlende Messungen und Zeit-Baselines ab. Weitere Tests prüfen die echte Übernahme der API-Header aus Jobs und die Kontotrennung. NSHostingView-Aufnahmen prüfen fehlende und vorhandene Messwerte bei schmaler/breiter Darstellung in DE/EN und Hell/Dunkel. Ein nativer UI-Test prüft Navigation, Messkarten und die Aktualisierung.
+Unit tests cover device deltas, device additions and removals, counter resets, missing samples, and time baselines. Other tests verify that Jobs supplies actual API headers and that account observations stay isolated. NSHostingView renders cover available and missing values in narrow and wide layouts, in German and English and Light and Dark appearances. A native UI test checks navigation, measurement cards, and refresh. [Apple's IOBlockStorageDriver statistics](https://developer.apple.com/documentation/iokit/ioblockstoragedriver_h_user-space/defines) · [Apple's system capabilities documentation](https://developer.apple.com/documentation/kernel/1387446-sysctlbyname/determining_system_capabilities)
 
-API-Grundlagen: [Apple: IOBlockStorageDriver statistics](https://developer.apple.com/documentation/iokit/ioblockstoragedriver_h_user-space/defines), [Apple: System capabilities](https://developer.apple.com/documentation/kernel/1387446-sysctlbyname/determining_system_capabilities).
+## Per-Runner Process Inspector
 
-## Prozessinspektor je Runner
+Below the host cards, **Processes by Runner** lists uniquely matched `Runner.Listener` and `Runner.Worker` processes and their identifiable child processes under the same macOS user. Use the dropdown to filter by runner. PID, process name, runner, CPU, resident memory, and uptime refresh at the selected interval. **Details** opens a snapshot with the start time, parent PID, user ID, executable, and measurement time.
 
-Unter den Host-Karten zeigt **Prozesse je Runner** eindeutig zugeordnete `Runner.Listener`-/`Runner.Worker`-Prozesse sowie deren erreichbare Kindprozesse desselben macOS-Benutzers. Ein Dropdown filtert nach Runner. PID, Prozessname, Runner, CPU, residenter Speicher und Laufzeit werden im gewählten Messintervall aktualisiert. **Details** öffnet eine lesbare Momentaufnahme einschließlich Startzeit, Eltern-PID, Benutzer-ID, ausführbarer Datei und Messzeitpunkt.
+CPU utilization uses two cumulative libproc samples and monotonic elapsed time. The app converts Mach ticks to seconds with `mach_timebase_info`. A fully utilized core is 100%, so values can exceed 100%. A dash indicates the first sample, missing counters, a reused PID, or a counter reset. Matching excludes unreadable or missing processes, incomplete parent chains, other users' processes, and duplicate runner paths. The inspector reads process metadata without process arguments, environment variables, or runner directory scans.
 
-Die CPU-Auslastung entsteht aus zwei kumulativen libproc-Zählerständen und monotoner verstrichener Zeit. Mach-Ticks werden mit `mach_timebase_info` in Sekunden umgerechnet; 100 % entsprechen einem ausgelasteten Kern, deshalb sind Werte über 100 % möglich. Die erste Messung, fehlende Zähler, eine wiederverwendete PID oder ein Zählerreset liefern einen Gedankenstrich. Fehlende bzw. nicht lesbare Prozesse, unvollständige Elternketten, fremde Benutzer und doppelte Runnerpfade werden nicht stillschweigend zugeordnet. Weder Prozessargumente noch Umgebungsvariablen werden gelesen. Es werden keine Runnerordner durchsucht.
+**Terminate…** asks you to confirm the process, PID, runner, and effect on active jobs. The app then checks the current process tree, PID and start time, user, executable, and parent PID again. It sends only `SIGTERM` to that individual process. The app excludes its own GUI PID and system PIDs. The POSIX API can only address a PID, so a small race remains between the last identity check and the signal.
 
-**Beenden …** zeigt zuerst eine Bestätigung mit Prozess, PID, Runner und Auswirkung auf aktive Jobs. Danach werden der aktuelle Prozessbaum, PID plus Startzeit, Benutzer, ausführbare Datei und Eltern-PID erneut geprüft. Die Anfrage sendet ausschließlich `SIGTERM` an diesen einzelnen Prozess; sie beendet keine Prozessgruppe und bietet keinen automatischen `SIGKILL`-Rückfall. Die eigene GUI-PID und System-PIDs sind ausgeschlossen. Die POSIX-Schnittstelle ist nicht atomar an eine Prozessidentität gebunden; zwischen letzter Prüfung und Signal bleibt ein kleines Betriebssystem-Rennen möglich.
+The app records the intent in the audit log before requesting termination. It then records **Process termination signal sent** or **Process termination refused or failed**. An interrupted request may leave only the intent entry. A successfully sent signal records delivery of the request. The process can still be running, and a LaunchAgent can restart it. Canceling the view stops further SwiftData access.
 
-Ein Audit-Intent wird vor der Anfrage explizit gespeichert. Danach folgt entweder **Process termination signal sent** oder **Process termination refused or failed**. Eine unterbrochene Anfrage kann beim vorbereiteten Eintrag bleiben; dieser bestätigt keinen Signalversand. Auch ein erfolgreiches Signal bestätigt keinen Prozessausgang. Ein LaunchAgent kann den Prozess neu starten. Nach einem Abbruch der Ansicht wird kein SwiftData-Zugriff fortgesetzt.
+### Comparison With Screenshot 09
 
-### Abgleich mit Screenshot 09
+The process list implements the main functions with native rows that wrap as needed. A `CoreSimulatorService` appears only if its actual parent chain proves the association. A service reparented to `launchd` may therefore be absent. The app reports verified processes, core counts, and VM categories. It uses public libproc and Darwin interfaces for process metadata and signals under the existing GitHub permissions.
 
-Die Hauptfunktionen der Prozessliste sind vorhanden, mit umbruchfähigen nativen Zeilen statt einer breiten, fest dimensionierten Tabelle. Ein `CoreSimulatorService` wird nur dann gezeigt, wenn seine wirkliche Elternkette die Zuordnung belegt; Namensähnlichkeit reicht nicht. Wieder unter `launchd` eingeordnete Dienste lassen sich dadurch gegebenenfalls nicht zuordnen. Einen erfundenen 60-Hz-IPC-Watchdog, simulierte P-/E-Lastwerte oder angebliche RAM-Kategorien für Dateicaches zeigt die App nicht. Prozessmetadaten und Signale verwenden die öffentlichen libproc-/Darwin-Schnittstellen und benötigen keine zusätzlichen GitHub-Rechte.
+On November 19, 2026, the global runner concurrency limit moved to v0.6 alongside start, stop, restart, and crash and KeepAlive policies. v0.5 follows the updated acceptance plan.
 
-Die tatsächlich durchgesetzte globale Runner-Concurrency gehört nach Nutzerentscheidung vom 19.11.2026 gemeinsam mit Start/Stop/Restart und Crash-/KeepAlive-Policies zu v0.6. Der v0.5-Abschluss folgt dem neuen Abnahmeplan.
+### Technical References and Tests
 
-### Technische Quellen und Prüfung
+- Public process metadata calls. [Apple's libproc interface](https://github.com/apple-oss-distributions/xnu/blob/main/libsyscall/wrappers/libproc/libproc.h)
+- Cumulative user and system time from `recount_times_mach` and resident memory. [Apple XNU's `fill_taskprocinfo`](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/kern/bsd_kern.c)
+- Unit tests cover unique matches, unrelated and other users' processes, duplicate roots and PIDs, cyclic parent chains, start time verification, CPU deltas and resets, changed identity or association before SIGTERM, and cancellation.
+- Native libproc and SIGTERM tests use only a dedicated process created by the test.
+- NSHostingView tests cover empty and populated lists and the detail view at 680 and 1,100 points, in German and English and Light and Dark appearances. CI also runs native UI tests for navigation and the runner dropdown.
 
-- [Apple libproc-Schnittstelle](https://github.com/apple-oss-distributions/xnu/blob/main/libsyscall/wrappers/libproc/libproc.h): öffentliche Prozess-Metadatenaufrufe.
-- [Apple XNU, fill_taskprocinfo](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/kern/bsd_kern.c): kumulative User-/System-Zeit aus `recount_times_mach` und residenter Speicher.
-- Unit-Tests: eindeutige Zuordnung, fremde/unabhängige Prozesse, doppelte Wurzeln/PIDs, zyklische Elternketten, Startzeitprüfung, CPU-Deltas/Reset, geänderte Identität/Zuordnung vor SIGTERM und Cancellation.
-- Native libproc-/SIGTERM-Prüfung ausschließlich mit einem isolierten, im Test erzeugten Prozess; keine bestehenden Runner werden beendet.
-- NSHostingView: leere/gefüllte Liste und Detailansicht, 680/1100 Punkte, DE/EN, Hell/Dunkel; zusätzliche native UI-Prüfung für Navigation und Runner-Dropdown in CI.
+## Memory Pressure and Thermal State
 
-## Speicherdruck und thermischer Zustand
+The memory card shows current **Memory pressure** (Normal, Elevated, or Critical). The CPU card shows **Thermal state** (Normal, Slightly elevated, High, or Critical). Both refresh at the selected interval and on manual refresh. A failed or unknown reading replaces the prior value with **Unavailable**. Memory pressure comes from its own system reading.
 
-Die RAM-Karte zeigt den aktuellen **Speicherdruck** (Normal / Erhöht / Kritisch); die CPU-Karte den getrennten **thermischen Zustand** (Normal / Leicht erhöht / Hoch / Kritisch). Beide werden im gewählten Intervall und bei manueller Aktualisierung neu gemessen. Eine fehlende oder unbekannte Messung ersetzt den vorherigen Wert durch **Nicht verfügbar**. Der Speicherdruck wird weder aus der RAM-Auslastung noch aus der Temperatur abgeleitet.
+The read-only sysctl `kern.memorystatus_vm_pressure_level` provides Dispatch flags **1, 2, and 4**. Missing, denied, incorrectly sized, and unknown future values remain unknown. Thermal state comes from `ProcessInfo.thermalState`, a system-wide stress level. These checks use public interfaces and require no settings changes or additional permissions. [Apple XNU's sysctl output and Dispatch mapping](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_memorystatus_notify.c) · [Apple's ProcessInfo.ThermalState documentation](https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum)
 
-Der lesende sysctl `kern.memorystatus_vm_pressure_level` liefert Dispatch-Flags **1/2/4**, nicht die internen Kernel-Stufen. Der Aufruf ist best-effort: fehlende, verweigerte, falsch dimensionierte oder zukünftige Werte bleiben unbekannt. Der thermische Zustand stammt aus `ProcessInfo.thermalState`; er ist eine systemweite Belastungsstufe, keine Temperatur in Grad. Es werden keine privaten Sensor-/SMC-Schnittstellen genutzt, keine Systemwerte geändert und keine zusätzlichen Zugriffsrechte angefordert.
-
-Quellen: [Apple XNU: sysctl-Ausgabe und Dispatch-Umwandlung](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_memorystatus_notify.c), [Apple: ProcessInfo.ThermalState](https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum).
-
-Tests sichern die Stufenabbildung, voneinander unabhängige Werte, unbekannte/fehlende Folgemessungen und lokalisierte Statusbezeichnungen ab. Die Karten werden mit erhöhten Zuständen sowie ohne Messwerte bei 680/1100 Punkten, DE/EN und Hell/Dunkel per NSHostingView gerendert. Die native CI prüft beide Statuszeilen. Es wird kein echter Speicher-/Temperaturstress für Tests erzeugt.
+Tests cover level mapping, independent readings, missing and unknown follow-up readings, and localized labels. NSHostingView renders cover elevated and unavailable states at 680 and 1,100 points, in German and English and Light and Dark appearances. Native CI checks both status rows. Tests simulate pressure and thermal states.

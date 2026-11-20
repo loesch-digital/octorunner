@@ -1,70 +1,70 @@
-# v0.7 Politur und letzte geplante Version Implementation Plan
+# v0.7 Polish and Final Planned Release Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Native Umsetzung; bestehende Nutzerfreigabe zur anschließenden Implementierung beachten.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Use the existing authorization to continue with native implementation.
 
-**Goal:** Alle gelieferten Dialoge zugänglich, konsistent lokalisiert und gegen reale Updates geprüft als v0.7.0 liefern.
+**Goal** — Ship v0.7.0 with accessible, consistently localized dialogs and verify the update path with real releases.
 
-**Architecture:** Bestehende Funktionen werden systematisch abgenommen. Update-Installation bekommt überprüfbare Fehler-/Rollbackzustände; neue Funktionen werden nur aufgenommen, wenn sie zum ausdrücklich freigegebenen Umfang gehören.
+**Architecture** — Run acceptance checks on existing functionality. Make update failures and rollback states verifiable. Limit new functionality to the explicitly approved scope.
 
-**Tech Stack:** Swift 6, SwiftUI, SwiftData, SPM, macOS ServiceManagement; bestehende Python-/GitHub-Actions-Werkzeuge.
+**Tech stack** — Swift 6, SwiftUI, SwiftData, SPM, macOS ServiceManagement, and the existing Python and GitHub Actions tools.
 
-**Spec:** `docs/02-design-system-and-hig.md`, Screens 01–09, `docs/10-development-and-acceptance.md`, `docs/release-signing.md`, Nutzerumfang v0.7; verbindliche Umfangsentscheidung vom 19.11.2026: globales Parallelitätslimit erst v0.6.
+**Spec** — `docs/02-design-system-and-hig.md`, screens 01–09, `docs/10-development-and-acceptance.md`, `docs/release-signing.md`, and the user-approved v0.7 scope. The November 19, 2026 scope decision places the global concurrency limit in v0.6.
 
 ## Global Constraints
 
-Pfadkonvention: Quellpfade wie `RunnerEngine/...` oder `CoreModels/...` liegen unter `Packages/OctoRunnerKit/Sources/`; Testdateinamen liegen unter `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/`. Neue Dateien werden jeweils dort angelegt.
+Source paths such as `RunnerEngine/...` and `CoreModels/...` are relative to `Packages/OctoRunnerKit/Sources/`. Test filenames are relative to `Packages/OctoRunnerKit/Tests/OctoRunnerKitTests/`. Create new files in the corresponding directories.
 
-- macOS 15+, Swift 6 Strict Concurrency, SwiftUI und SwiftData; keine Versionsanhebung durch das CI-Image.
-- Vor Änderungen die vier Repo-Skills und einschlägigen `references/*.md` lesen. `AGENTS.md` gilt uneingeschränkt.
-- Jede Produktionsänderung beginnt mit einem nachweislich roten Regressionstest; anschließend grün und Refactor. Swift: `swift test --package-path Packages/OctoRunnerKit --no-parallel`; Python: `python3 -m unittest discover -s scripts/tests`.
-- Feature-Branch, semantische Commits, PR. Nach Push PR-CI vollständig grün abwarten, dann Merge und main-CI vollständig grün abwarten. Keine überlappende nächste Feature-Umsetzung bei roter/laufender CI.
-- Keine Secrets in Logs, Modellen oder Exporten; keine vorsorgliche Dokumente-Abfrage. SwiftData-Defaults, SQLite-Headerprüfung und Cancellation vor Modellzugriffen beibehalten.
-- Neue Controls: Label/Hint, Tastaturbedienung, OctoTheme; WCAG 2.2 AA in Hell/Dunkel. NSHostingView für schmale/breite Ansichten, DE/EN.
-- Konkrete Werkzeug-/API-Versionen unmittelbar vor Änderung anhand offizieller Quellen verifizieren.
+- Target macOS 15+ with Swift 6 strict concurrency, SwiftUI, and SwiftData. Preserve the minimum supported version when selecting the CI image.
+- Read the four repo skills and relevant `references/*.md` files before making changes. Follow `AGENTS.md`.
+- Start every production change with a regression test that demonstrably fails, then make it pass and refactor. Run Swift tests with `swift test --package-path Packages/OctoRunnerKit --no-parallel` and Python tests with `python3 -m unittest discover -s scripts/tests`.
+- Use a feature branch, semantic commits, and a PR. After pushing, wait for all PR CI checks to pass before merging, then wait for all main CI checks to pass before starting the next feature.
+- Keep secrets out of logs, models, and exports. Access Documents only when needed. Preserve SwiftData defaults, SQLite header checks, and cancellation checks before model access.
+- Give new controls labels and hints, keyboard support, and OctoTheme styling. Meet WCAG 2.2 AA in Light and Dark appearances. Use NSHostingView to check narrow and wide layouts in German and English.
+- Verify exact tool and API versions against official sources immediately before changing them.
 
 ## Review Focus
 
-1. Lange deutsche Texte und viele Runner dürfen Controls nicht unzugänglich machen (Task 1).
-2. VoiceOver und Tastatur dürfen keine reine Farb-/Hover-Funktion vorfinden (Task 1).
-3. Fehlende Rechte/Netzwerk/Runner dürfen nicht wie Erfolg oder leere Erstinstallation aussehen (Task 2).
-4. Beschädigtes Update darf funktionsfähige Installation nicht ersetzen (Task 2).
-5. Erststart nach Update mit altem Store muss funktionieren oder kontrolliert zurückfallen (Task 2).
+1. Keep controls reachable with long German strings and many runners (Task 1).
+2. Make features available via VoiceOver and the keyboard, with alternatives to color and hover (Task 1).
+3. Distinguish missing permissions, network access, or runners from success and a fresh installation (Task 2).
+4. Preserve the working installation if the update is corrupt (Task 2).
+5. Verify first launch after an update with an older store and handle rollback if launch fails (Task 2).
 
-### Task 1: Lokalisierung, Layout und Accessibility
+### Task 1: Localization, Layout, and Accessibility
 
-**Files:** `AppShellFeature/Resources/Localizable.xcstrings`, betroffene Views/OctoTheme; bestehende `ResponsiveLayoutTests.swift`, `AppShellUITests.swift`, `RunnerStatusColorTests.swift` und zusätzliche gezielte Accessibility-Tests im bestehenden Testtarget.
+**Files** — `AppShellFeature/Resources/Localizable.xcstrings`, the affected views and OctoTheme, the existing `ResponsiveLayoutTests.swift`, `AppShellUITests.swift`, and `RunnerStatusColorTests.swift`, and targeted accessibility tests in the existing test target.
 
-**Interfaces:** Gemeinsame Statusbezeichnungen: Verfügbarkeit getrennt von letztem Jobresultat; Running blau in App und Menü, kein erneutes SwiftUI-MenuBar-Invalidierungsproblem.
+**Interfaces** — Use shared status labels and show availability separately from the latest job result. Running is blue in the app and menu. Guard against regressions in SwiftUI menu bar invalidation.
 
-- [ ] Screens 01–09 pro Dialog abgleichen, Funktionen statt Pixelkopie dokumentieren. String-Katalog auf fehlende DE/EN-Texte und Plural-/Formatfehler prüfen.
-- [ ] Für jede gefundene Lücke zuerst roten Test: lange Namen/Labels, viele Wizard-Runner, schmale/breite Fenster, Settings-Suche, leer/Fehler/geladen; dann gezielt korrigieren.
-- [ ] VoiceOver-Lesereihenfolge, Fokus, Tastaturaktionen und Kontrast in Hell/Dunkel prüfen. Status nie allein über Farbe vermitteln. NSHostingView ergänzt die manuelle VoiceOver-Abnahme.
-- [ ] Tests/Build grün, Review, Commit und beide CI-Gates.
+- [ ] Compare each dialog with screens 01–09 and document how its features correspond to the designs. Check the string catalog for missing German and English strings and pluralization and formatting errors.
+- [ ] For each gap, start with a failing test and apply a targeted fix. Cover long names and labels, many wizard runners, narrow and wide windows, Settings search, and empty, error, and loaded states.
+- [ ] Verify VoiceOver reading order, focus, keyboard actions, and contrast in Light and Dark appearances. Provide status cues in addition to color. Use NSHostingView checks alongside manual VoiceOver acceptance.
+- [ ] Pass tests and build, review, commit, and pass both CI gates.
 
-### Task 2: Fehlerbehandlung und echter Update-Rückfall
+### Task 2: Error Handling and Update Rollback
 
-**Files:** `GitHubAPI/AppUpdaterActor.swift`, zugehörige UI/Update-Installation, `OctoRunnerPersistence.swift`; bestehende `AppUpdatePrereleaseTests.swift` und neue `AppUpdateRecoveryTests.swift` im Testtarget.
+**Files** — `GitHubAPI/AppUpdaterActor.swift`, the associated UI and update installer, `OctoRunnerPersistence.swift`, the existing `AppUpdatePrereleaseTests.swift`, and a new `AppUpdateRecoveryTests.swift` in the test target.
 
-**Interfaces:** Zustände prüfen/downloaden/validieren/installieren/neu starten/fehlgeschlagen/wiederherstellen; letzte funktionierende Installation erst nach validierter Ersatzinstallation freigeben. Keine Secrets oder vorsorglichen Ordnerzugriffe.
+**Interfaces** — Expose checking, downloading, validating, installing, restarting, failed, and recovering states. Keep the last working installation until the replacement has been installed and validated. Keep secrets out of the update state and access folders only as needed.
 
-- [ ] Rote Tests für kaputtes Archiv, fehlende Schreibrechte, falsche App-Identität, abgebrochenen Austausch, Startfehler und bestehenden SQLite-Store; keine Rückmigration eines produktiven Stores behaupten.
-- [ ] Sichere Staging-/Validierungs-/Rollback-Schritte ergänzen; Version/Signatur/Gatekeeper, atomarer Dateiaustausch soweit möglich und Wiederanlaufzustand nach Prozessende prüfen.
-- [ ] Mit einem echten signierten vorhandenen Release in separater Testinstallation Updatestart und Rückfall prüfen. Produktive App und Runner nicht als zerstörbare Fixtures verwenden. Falls ein irreversibles Schema-Upgrade vorliegt, Backup-/Recovery-Vertrag vor Anwendung explizit festlegen.
-- [ ] Grün, Review, Commit und beide CI-Gates.
+- [ ] Add failing tests for a corrupt archive, missing write permissions, mismatched app identity, interrupted replacement, failed launch, and an existing SQLite store. Document recovery limits for production stores.
+- [ ] Add safe staging, validation, and rollback. Verify version, signatures, Gatekeeper, atomic file replacement where supported, and the recovery state after process exit.
+- [ ] Test update initiation and rollback from an existing signed release in a separate test installation. Use disposable fixtures. If a schema upgrade is irreversible, define the backup and recovery behavior before migrating the store.
+- [ ] Pass tests, review, commit, and pass both CI gates.
 
-### Task 3: Dokumentation und v0.7.0
+### Task 3: Documentation and v0.7.0
 
-**Files:** `README.md`, `docs/README.md`, `docs/18-remaining-delivery-plan.md`, `docs/assets/screens/`, `docs/releases/v0.7.0.md`.
+**Files** — `README.md`, `LICENSE`, `docs/README.md`, `docs/18-remaining-delivery-plan.md`, `docs/assets/screens/`, and `docs/releases/v0.7.0.md`.
 
-**Interfaces:** Konsumiert verifizierte v0.6 und Task 1/2; liefert aktuelle Nutzerdoku und unveränderliches signiertes Release.
+**Interfaces** — Use verified v0.6 and the results of Tasks 1 and 2 to deliver current public documentation and an immutable signed release.
 
-- [ ] Öffentliche `README.md` ausschließlich auf Englisch erstellen (Nutzerentscheidung 19.11.2026). Aufbau und Verständlichkeit an https://github.com/podman-desktop/podman-desktop orientieren: Produktname/kurzer Nutzen, reales App-Screenshot als Einstieg, übersichtliche Navigation und Features mit passenden Screenshots. Keine Funktionen als fertig ausweisen, die noch geplant sind.
-- [ ] Installation mit geprüften Copy-and-paste-Befehlen für Homebrew (Tap/Cask) und alternativ signiertem Release-ZIP beschreiben; Voraussetzungen macOS/Architektur, Updates und erster Start erklären. Keine Gatekeeper-Umgehungen empfehlen.
-- [ ] Quick Start: GitHub verbinden, minimale Rechte je Funktion, Runner hinzufügen/importieren, Workflow-Labels `runs-on` konfigurieren und Status/Jobs ansehen. GUI-/LaunchAgent-Lebensdauer sowie Grenzen von Neustart und Parallelität klar benennen.
-- [ ] Entwicklungsabnahme ohne Homebrew über Xcode und vorhandene lokale Startskripte dokumentieren, einschließlich Voraussetzungen und tatsächlich geprüfter Build-/Testbefehle. Auf ausführliche Entwickler-/Architekturdoku verlinken statt deren Inhalt in die README zu kopieren.
-- [ ] Aktuelle echte App-Screenshots für Dashboard, Runner-Assistent, Details/Logs, Jobs/Workflow und Einstellungen aufnehmen, ohne Tokens/private Daten; Mockups in `docs/assets/screens/` nur als Designvorlage verwenden. Bilder mit englischen Alt-Texten, funktionierenden relativen Links und angemessener Größe einbinden.
-- [ ] Verifizierte CI-/Release-Badges, Release-/Support-/Lizenzlinks ergänzen, soweit tatsächlich vorhanden. README nur einmal auf Englisch, keine parallelen Übersetzungen. Alle Links, Homebrew-/ZIP-Schritte und Bilddateien vor Release prüfen.
-- [ ] `docs/README.md`, Lieferplan und Release Notes auf tatsächlichen Funktionsstand bringen.
-- [ ] Vollständige Tests, nativer Build, grüne PR-/main-CI. `npx release-it 0.7.0 --ci`, danach Release-Lauf, Homebrew-Installation, App-Start und Gatekeeper vollständig prüfen.
-- [ ] Deutsche Abschlussübersicht mit offenen Einschränkungen und höchstens drei manuellen Punkten liefern.
-- [ ] **STOPP nach v0.7.0:** Nutzer ausdrücklich fragen, ob und wann v1.0.0 erscheinen soll. Kein v1.0.0-Tag und keine automatische Fortsetzung.
+- [ ] Write the public `README.md` in US English. Follow the structure and clarity of [Podman Desktop](https://github.com/podman-desktop/podman-desktop) with the product name, a brief description, an actual app screenshot near the top, clear navigation, and screenshots for relevant features. Describe only shipped features as available.
+- [ ] Provide verified copy-and-paste Homebrew tap and cask commands and instructions for installing the signed release ZIP. Explain macOS and architecture requirements, updates, and first launch. Follow the standard Gatekeeper flow.
+- [ ] Write a quick start for connecting GitHub, granting the minimum permissions for each feature, adding or importing a runner, setting workflow `runs-on` labels, and viewing runner status and jobs. Explain GUI and LaunchAgent lifetimes and the limits of restarts and concurrency.
+- [ ] Document development acceptance without Homebrew using Xcode and the existing local launch scripts. Include requirements and verified build and test commands. Link the detailed developer and architecture documentation from the README.
+- [ ] Capture current app screenshots of the dashboard, runner wizard, details and logs, jobs and workflows, and settings. Keep tokens and private data out of screenshots. Use the mockups in `docs/assets/screens/` as design references. Give images US English alt text, working relative links, and appropriate dimensions.
+- [ ] Add verified CI and release badges and links for releases, support, and licensing where they exist. Publish a single US English README and use Apache-2.0 for the project license. Check all links, Homebrew and ZIP steps, and image files before release.
+- [ ] Bring `docs/README.md`, the delivery plan, and release notes up to the verified feature state. Use US English for all public-facing material, including release notes.
+- [ ] Run the full tests and native build and wait for PR and main CI to pass. Run `npx release-it 0.7.0 --ci`, then verify the release run, Homebrew installation, app launch, and Gatekeeper.
+- [ ] Provide a German completion summary for the user with open limitations and up to three manual checks.
+- [ ] **Stop after v0.7.0.** Ask the user whether and when to release v1.0.0. Wait for their decision before tagging v1.0.0 or continuing.

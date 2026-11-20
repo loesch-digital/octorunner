@@ -1,51 +1,22 @@
-# Integritätsprüfung der Runner-Archive
+# Runner Archive Integrity
 
-Stand: Feature-Branch für v0.5.0, noch nicht veröffentlicht.
+This guide records the v0.5.0 feature branch before release.
 
-Vor der Nutzung eines Archivs benötigt OctoRunner eine gültige SHA-256-Prüfsumme.
-Leere oder fehlerhafte Prüfsummen gelten nicht als erfolgreiche Verifikation.
-Die Bytes werden sowohl bei vorhandenen Cache-Dateien als auch bei neuen
-Downloads geprüft. Die Berechnung liest jeweils höchstens 64 KiB pro Block und
-berücksichtigt Task-Abbrüche zwischen den Blöcken.
+OctoRunner requires a valid SHA-256 checksum before using an archive. Empty or malformed checksums fail verification. The app verifies the bytes of cached files and new downloads. It hashes blocks of up to 64 KiB and checks for task cancellation between blocks.
 
-Die Quelle wird folgendermaßen bestimmt:
+The app determines the expected checksum as follows.
 
-1. Die Download-Metadaten müssen ein offizielles macOS-ARM64-Archiv unter
-   `github.com/actions/runner/releases/download/<Tag>/<Dateiname>` identifizieren.
-   Pfadbestandteile, fremde Ziele, URL-Zugangsdaten und Query-Parameter werden
-   nicht akzeptiert.
-2. Eine mitgelieferte gültige `sha256_checksum` wird verwendet.
-3. Fehlt sie, fragt OctoRunner den exakt zugehörigen öffentlichen Release über
-   `api.github.com/repos/actions/runner/releases/tags/<Tag>` ab. Dafür wird kein
-   Account-Token gesendet; zusätzliche OAuth-Rechte sind nicht erforderlich.
-4. Release-Tag, stabiler Veröffentlichungsstatus, Asset-Name, Download-URL und
-   Asset-Status müssen übereinstimmen. Genau ein passendes Asset mit gültigem
-   `sha256:`-Digest ist erforderlich. Erfolgreiche Auflösungen werden begrenzt im
-   Speicher zwischengespeichert.
+1. Download metadata must identify an official macOS ARM64 archive at `github.com/actions/runner/releases/download/<Tag>/<Filename>`. The app rejects unexpected path components, external destinations, URL credentials, and query parameters.
+2. If the metadata includes a valid `sha256_checksum`, use it.
+3. If the checksum is missing, fetch the exact public release from `api.github.com/repos/actions/runner/releases/tags/<Tag>`. The request is anonymous and requires no additional OAuth permissions.
+4. Check that the release tag, stable publication status, asset name, download URL, and asset state match. Require exactly one matching asset with a valid `sha256:` digest. Cache successful resolutions in a bounded in-memory cache.
 
-Bei fehlenden, widersprüchlichen oder nicht erreichbaren Metadaten bricht die
-Einrichtung ab. Ein unbestätigtes Archiv wird nicht installiert. Die
-Vertrauensbasis bilden die GitHub-API über TLS und die offiziellen
-`actions/runner`-Release-Daten. Die Prüfung liefert keine zusätzliche unabhängige
-Herausgeber-Attestierung.
+Missing, inconsistent, or unreachable metadata stops setup before installation. Verification trusts the GitHub API over TLS and the official `actions/runner` release data. It provides no independent publisher attestation.
 
-Ein beschädigter neuer Download ersetzt keinen bestehenden Cache-Eintrag.
-Temporäre Dateien werden nach der Prüfung aufgeräumt. Fehlertexte übernehmen
-weder private Transportdiagnosen noch Download-URLs, die durch Weiterleitungen
-temporäre Zugangsdaten enthalten könnten.
+A corrupt download leaves the existing cache entry intact. Temporary files are cleaned up after verification. Error messages omit private transport diagnostics and download URLs that could contain temporary credentials after a redirect.
 
-## Verifikation
+## Verification
 
-Die Tests verwenden unabhängige SHA-256-Vektoren (`abc` und eine Million `a`),
-kontrollierte HTTP-Metadaten sowie einen echten lokalen HTTP-Server für
-erfolgreiche, beschädigte und fehlgeschlagene Downloads. Fehlende Prüfsummen,
-Pfad-/URL-Grenzen, anonyme Requests, falsche Releases, doppelte Assets,
-Rate-Limit-/HTTP-Fehler und verspätete Antworten nach Abbruch sind abgedeckt.
-Es werden ausschließlich synthetische Test-Zugangsdaten verwendet.
+Tests use independent SHA-256 vectors (`abc` and one million `a` characters), controlled HTTP metadata, and a real local HTTP server for successful, corrupt, and failed downloads. They cover missing checksums, path and URL restrictions, anonymous requests, incorrect releases, duplicate assets, rate-limit and HTTP errors, and late responses after cancellation. Tests use only synthetic credentials.
 
-Die Absicherung der verwalteten Verzeichnisse gegen Symlinks und parallele
-Dateisystemänderungen bleibt Teil der noch offenen Storage-/Pruning-Arbeiten.
-Diese Integritätsprüfung ersetzt jene Verzeichnis- und Lebenszyklusregeln nicht.
-
-Grundlagen: [Runner-Download-API](https://docs.github.com/en/rest/actions/self-hosted-runners),
-[Release- und Asset-Metadaten](https://docs.github.com/en/rest/releases/releases).
+At this stage, protecting managed directories against symlinks and concurrent file system changes remained part of the storage and pruning work. Archive verification addresses the archive's content. [Runner download API](https://docs.github.com/en/rest/actions/self-hosted-runners) · [Release and asset metadata](https://docs.github.com/en/rest/releases/releases)

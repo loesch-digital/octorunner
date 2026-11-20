@@ -1,62 +1,62 @@
-# GitHub-Verknüpfung und Actions-Details Implementation Plan
+# GitHub Links and Actions Details Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Nutzer hat native Umsetzung bereits autorisiert; keine neue allgemeine Freigabe erforderlich.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. The user has authorized native implementation.
 
-**Goal:** In Jobs den zugehörigen PR erkennen, direkt zu PR/Run/Job auf GitHub wechseln und Workflow-/Job-/Step-Zustände mit verfügbaren Logs nachvollziehen können.
+**Goal** — Show the associated pull request in Jobs, link directly to the PR, run, and job on GitHub, and show workflow, job, and step states along with available logs.
 
-**Architecture:** Bestehende accountbezogene History-Pipeline erweitern. GitHub-REST-Daten bleiben die Quelle; lokale Runner-Logs aus v0.6 sind davon getrennt. Read-only Funktionen benötigen keine neuen Schreibrechte. Kein HTML-Scraping der Actions-Webseite.
+**Architecture** — Extend the existing account-scoped history pipeline. Read workflow data from the GitHub REST API. The v0.6 local runner log stream is separate. These read-only features require only the relevant read permissions.
 
-**Tech Stack:** macOS 15+, Swift 6 Strict Concurrency, SwiftUI, SwiftData, vorhandener GitHubActionsClient und Keychain-Lookup.
+**Tech stack** — macOS 15+, Swift 6 strict concurrency, SwiftUI, SwiftData, and the existing GitHubActionsClient and Keychain lookup.
 
-**Spec:** Nutzerfrage vom 19.11.2026 zur PR-Verknüpfung und Actions-Sicht; docs/07 Dialog 8, docs/assets/screens/08_jobs_workflow_runs.png, docs/12-jobs-history-and-metrics.md.
+**Spec** — The November 19, 2026 request for PR links and Actions details, dialog 8 in docs/07, docs/assets/screens/08_jobs_workflow_runs.png, and docs/12-jobs-history-and-metrics.md.
 
 ## Global Constraints
 
-- AGENTS.md, vier Repo-Skills und relevante Referenzen vor Code beachten. Bestehende Native-/Branch-/TDD-/CI-Regeln gelten.
-- Zuerst den bereits geprüften Abschlusszweig fertigstellen: keine Vermischung neuer Jobs-Produktionsänderungen mit dessen noch nicht bestandener PR-/main-CI. Dieser Plan ist eine zusätzliche v0.5-Abhängigkeit vor dem stabilen Release.
-- Kein automatisches Mehrrecht für neue reine Anzeige. Rechtebedarf pro REST-Endpunkt anhand aktueller offizieller GitHub-Dokumentation prüfen; nicht aus OAuth-Scope-Headern raten.
-- Keine Tokens, signierten Download-URLs oder privaten Log-Inhalte in Diagnoseausgaben/Audit schreiben. Logs nur bewusst öffnen, nicht automatisch beim Start herunterladen.
-- ModelContext/Modelle bleiben auf MainActor; neue Model-Properties mit Defaults, echte Alt-Store-Migration testen und SQLite-Headerprüfung erhalten.
-- Fehlende PR-Metadaten sind „nicht verfügbar“, nicht „kein PR“, sofern die API den Zusammenhang nicht sicher liefert. Push-/Dispatch-Runs benötigen keinen erfundenen PR.
-- Keine pixelgenaue Kopie oder Schreibaktionen wie Rerun/Cancel implizit aus „Actions-Sicht“ ableiten. Web-Links bleiben für vollständige GitHub-Funktionen erhalten.
+- Follow AGENTS.md, the four repo skills, and their relevant references before changing code. Apply the existing native implementation, branching, TDD, and CI rules.
+- Finish the reviewed acceptance branch and wait for PR and main CI to pass before starting production changes for Jobs. This plan is an additional dependency for the stable v0.5 release.
+- Keep the existing permission boundary for read-only views. Check each REST endpoint's requirements against current official GitHub documentation. Treat OAuth scope headers as observations only.
+- Keep tokens, signed download URLs, and private log contents out of diagnostics and audit records. Download logs only when the user opens them.
+- Keep ModelContext and its models on MainActor. Give new model properties defaults, test migration with a real older store, and keep the SQLite header check.
+- When the API cannot establish whether a PR exists, show the metadata as unavailable. Show a PR for push and dispatch runs only when its association is verified.
+- Implement the relevant read-only Actions details in the native design. Keep links to GitHub for full web functionality, including Rerun and Cancel.
 
 ## Review Focus
 
-1. Fork-PRs: falsches Repository darf keinen irreführenden PR-Link erzeugen (Task 1).
-2. Neuer Run-Attempt: alte Jobs/Steps/Logs dürfen nicht dem aktuellen Versuch zugeordnet werden (Task 2/3).
-3. Kontowechsel/Teardown: verspätete Antworten dürfen weder Persistenz noch UI verändern (alle Tasks).
-4. Leere oder begrenzte API-Antwort: fehlende Daten dürfen nicht als erfolgreiche/leere vollständige Ausführung erscheinen (Task 2/3).
-5. Große Logs oder Redirects: begrenzter Speicher, Credential-Isolation und sichtbare Kürzung statt unbeschränktem Download (Task 3).
+1. Validate the repository for fork PRs before creating links (Task 1).
+2. Keep jobs, steps, and logs scoped to the exact run attempt (Tasks 2 and 3).
+3. Prevent late responses from changing persistence or UI after an account switch or teardown (all tasks).
+4. Show missing data explicitly when API responses are empty or limited (Tasks 2 and 3).
+5. Bound memory, isolate credentials across redirects, and show truncation for large logs (Task 3).
 
-### Task 1: PR-Bezug vom API-DTO bis zur Oberfläche
+### Task 1: PR Association from API DTO to UI
 
-**Files:** Modify `Packages/OctoRunnerKit/Sources/GitHubAPI/GitHubWorkflowRunDTO.swift`, `Sources/CoreModels/JobRunEntity.swift`, `Sources/CoreModels/WorkflowHistoryEntry.swift`, `Sources/CoreModels/WorkflowHistoryFilter.swift`, `Sources/AppShellFeature/WorkflowHistoryStore.swift`, `Sources/AppShellFeature/WorkflowRunHistoryRow.swift`, `Sources/AppShellFeature/WorkflowHistoryPresentation.swift` (Sources jeweils unter Packages/OctoRunnerKit). Create GitHubWorkflowPullRequestDTO.swift und WorkflowPullRequestReference.swift in den passenden Modulen. Tests: neue WorkflowPullRequestTests.swift und vorhandene Decoding-/Persistence-/Layout-Tests.
+**Files** — Modify `Packages/OctoRunnerKit/Sources/GitHubAPI/GitHubWorkflowRunDTO.swift`, `Sources/CoreModels/JobRunEntity.swift`, `Sources/CoreModels/WorkflowHistoryEntry.swift`, `Sources/CoreModels/WorkflowHistoryFilter.swift`, `Sources/AppShellFeature/WorkflowHistoryStore.swift`, `Sources/AppShellFeature/WorkflowRunHistoryRow.swift`, and `Sources/AppShellFeature/WorkflowHistoryPresentation.swift`. All source paths are under Packages/OctoRunnerKit. Create GitHubWorkflowPullRequestDTO.swift and WorkflowPullRequestReference.swift in the appropriate modules. Add WorkflowPullRequestTests.swift and use the existing decoding, persistence, and layout tests.
 
-**Interfaces:** `GitHubWorkflowRunDTO.pullRequests: [GitHubWorkflowPullRequestDTO]?`; Referenz enthält positive Nummer und explizites Basis-Repository. DTO -> validierte `[WorkflowPullRequestReference]` -> persistierte optionale JSON-Data mit Default nil -> unveränderlicher History-Snapshot. Validierte Links akzeptieren nur HTTPS github.com, passendes Basis-Repo und `/pull/<positive number>` ohne Userinfo/Query/Fragment.
+**Interfaces** — `GitHubWorkflowRunDTO.pullRequests: [GitHubWorkflowPullRequestDTO]?`. A reference contains a positive number and an explicit base repository. Convert the DTO into validated `[WorkflowPullRequestReference]`, store it as optional JSON data defaulting to nil, and expose it in the immutable history snapshot. Accept only HTTPS github.com links for the matching base repository and `/pull/<positive number>`, without user information, a query, or a fragment.
 
-- [ ] RED: API `pull_requests` mit PR #12, Push-Run ohne Feld, explizit leer, mehrere PRs und Fork-Head/Base dekodieren; negative Nummer/unpassender Host/Pfad werden nicht verlinkt. API-Dokumentation klärt welche Run-Antworten PRs auslassen; falls nötig gezielt Commit-PR-Lookup mit eindeutiger Zuordnung, sonst unbekannt lassen.
-- [ ] RED: Persistenz-Roundtrip, gleicher Run in zwei Accounts/Attempts, Refresh und verspätete Antwort nach Kontowechsel. Bestehenden Disk-Store öffnen, Account-/Runner-Daten bleiben erhalten.
-- [ ] GREEN: Referenzen ohne zusätzlichen automatischen Netzwerkaufruf durch bestehende Pipeline führen. Zeile zeigt PR #12 als Link; Branch/Commit/Trigger bleiben getrennt. Suche findet PR-Nummer. NSHostingView DE/EN Hell/Dunkel schmal/breit, lange Titel und mehrere PRs.
-- [ ] Vollständige Swift-/Python-Tests, nativer App-Build, unabhängiger Review, semantischer Commit, PR-CI, Merge und main-CI vollständig grün abwarten.
+- [ ] RED — Test decoding API `pull_requests` with PR #12, push runs with the field omitted, an explicitly empty field, multiple PRs, and fork head and base. Reject links for negative numbers or incorrect hosts or paths. Check official API documentation for which run responses omit PRs. If needed, look up PRs by commit and link only a confirmed match. Otherwise keep the association unknown.
+- [ ] RED — Test persistence round trips, the same run across accounts and attempts, refresh, and a late response after an account switch. Open an existing on-disk store and verify account and runner data survive.
+- [ ] GREEN — Pass references through the existing pipeline without an additional automatic request. Show PR #12 as a link and keep branch, commit, and trigger separate. Find PRs by number in search. Check NSHostingView in German and English, Light and Dark appearances, and narrow and wide layouts, with long titles and multiple PRs.
+- [ ] Run the full Swift and Python tests and native app build. Get an independent review, commit semantically, wait for PR CI, merge, and wait for all main CI checks to pass.
 
-### Task 2: Workflow-/Job-/Step-Detailansicht
+### Task 2: Workflow, Job, and Step Details
 
-**Files:** Modify GitHubWorkflowJobDTO.swift, GitHubActionsClient.swift und WorkflowRunHistoryRow.swift; create GitHubWorkflowStepDTO.swift (GitHubAPI), WorkflowRunDetailModel.swift, WorkflowRunDetailView.swift und WorkflowJobStepView.swift (AppShellFeature); Tests WorkflowRunDetailTests.swift plus native Navigationstest.
+**Files** — Modify GitHubWorkflowJobDTO.swift, GitHubActionsClient.swift, and WorkflowRunHistoryRow.swift. Create GitHubWorkflowStepDTO.swift in GitHubAPI and WorkflowRunDetailModel.swift, WorkflowRunDetailView.swift, and WorkflowJobStepView.swift in AppShellFeature. Add WorkflowRunDetailTests.swift and a native navigation test.
 
-**Interfaces:** `GitHubWorkflowJobDTO.steps: [GitHubWorkflowStepDTO]?`; Step enthält Nummer, Name, Status, Conclusion und echte optionale Start-/Endzeiten. Detail-Selektion ist unveränderlich `(accountID, repository, runID, attempt, jobID?)`. Modell lädt Details für genau diesen Attempt, verwirft überholte Generationen und beendet Refresh bei Teardown; bestehendes RateBudget respektieren.
+**Interfaces** — `GitHubWorkflowJobDTO.steps: [GitHubWorkflowStepDTO]?`. A step has a number, name, status, conclusion, and actual optional start and end times. The detail selection is an immutable `(accountID, repository, runID, attempt, jobID?)`. Load details for that exact attempt, discard stale generations, stop refresh at teardown, and respect the existing RateBudget.
 
-- [ ] RED: gemischte Step-Zustände (queued/running/succeeded/failed/skipped/cancelled/unknown), null-Zeitstempel, fehlendes steps-Feld und Attempt-Wechsel. Fehlende Zeiten erzeugen keine fiktive Dauer. Ein Jobfehler ersetzt nicht die Anzeige anderer Jobs.
-- [ ] RED: Details öffnen, Job auswählen, Run/Job/PR-Weblinks sowie Tastatur-/VoiceOver-Bedienung; Teardown und Kontowechsel während Antwort verwerfen Daten. 403/404/429 und unvollständige Pagination bleiben sichtbar.
-- [ ] GREEN: kompakte Run-Zusammenfassung, ausklappbare Jobs, Step-Liste mit Nummer/Status/Dauer und bestätigter Aktualität. Kein pauschales „live“ für historische oder veraltete Daten. Responsive Detailansicht statt dauerhaft eingeblendeter großer Console.
-- [ ] Vollständige Tests/Build/Review/PR-/main-CI wie Task 1.
+- [ ] RED — Test mixed step states (queued, running, succeeded, failed, skipped, cancelled, and unknown), null timestamps, missing steps, and changes in attempt. Show duration only when timestamps support it, and keep other jobs visible when one fails.
+- [ ] RED — Test opening details, selecting a job, run, job, and PR links, and keyboard and VoiceOver use. Discard incoming data after teardown or account switch. Show 403, 404, 429, and incomplete pagination.
+- [ ] GREEN — Show a compact run summary, expandable jobs, and steps with number, status, duration, and verified freshness. Mark historical or stale data accordingly. Make the detail view responsive and open the console on demand.
+- [ ] Run the full tests, build, review, and PR and main CI as in Task 1.
 
-### Task 3: Verfügbare Job-Logs und v0.5-Release-Gate
+### Task 3: Available Job Logs and the v0.5 Release Gate
 
-**Files:** Create GitHubJobLogLoader.swift (GitHubAPI), WorkflowJobLogModel.swift und WorkflowJobLogView.swift (AppShellFeature); extend DetailView, Tests GitHubJobLogLoaderTests.swift und WorkflowJobLogTests.swift; docs/12 und docs/releases/v0.5.0.md aktualisieren.
+**Files** — Create GitHubJobLogLoader.swift in GitHubAPI and WorkflowJobLogModel.swift and WorkflowJobLogView.swift in AppShellFeature. Extend DetailView, add GitHubJobLogLoaderTests.swift and WorkflowJobLogTests.swift, and update docs/12 and docs/releases/v0.5.0.md.
 
-**Interfaces:** `loadJobLog(selection: WorkflowJobLogSelection) async throws -> WorkflowJobLogSnapshot`; Snapshot enthält Text, Beobachtungszeit und `isTruncated`. Maximale Anzeige 1 MiB UTF-8, Download per begrenztem Stream statt `data(for:)` eines unbeschränkten Archivs. Job-spezifischer Endpoint nach aktueller offizieller API-Dokumentation; Redirects isolieren Authorization vom externen Downloadhost. Keine signierten URLs persistieren. Aufrufen erst nach bewusster Log-Auswahl.
+**Interfaces** — `loadJobLog(selection: WorkflowJobLogSelection) async throws -> WorkflowJobLogSnapshot`. The snapshot contains text, observation time, and `isTruncated`. Cap the displayed UTF-8 text at 1 MiB and enforce a streaming download limit. Use the bounded stream for job archives to avoid loading an entire archive with `data(for:)`. Use the job-specific endpoint documented in the current official API. Keep Authorization on the GitHub host across redirects and signed URLs out of persistence. Load a log only when the user selects it.
 
-- [ ] RED: 401/403, abgelaufene oder noch nicht verfügbare Logs, laufender Job, Redirect auf externen Downloadhost ohne Authorization-Weitergabe, Cancellation, verspätete Antwort, übergroßer Stream, UTF-8 über Chunkgrenze und binäre Antwort. Lokaler Stub-Server wird mit bestehender asynchroner PythonTestServer-Hilfe beendet, nie synchron auf Swift-Executor warten.
-- [ ] GREEN: verfügbare Logs lesbar/selektierbar; explizit „noch nicht verfügbar“, „gekürzt“ und „zuletzt geladen“ anzeigen. Kein vorgetäuschter REST-Live-Stream. Direkter Actions-Link als funktionierender Fallback, kein stiller Empty-State bei Fehler.
-- [ ] Snapshot-/Hosting-Tests mit langen Zeilen und schmalem Fenster; native Auswahltest. Kein automatischer Download/Export privater Logs. Lokales Runner-Livestreaming bleibt v0.6.
-- [ ] Vollständige Tests, Build, Review, PR-/main-CI; erst danach Task 2 des v0.5-Abschlussplans (Release) zulassen. Release-Notizen und Abnahmematrix nennen PR-/Step-/Log-Funktionen nur nach tatsächlicher Integration.
+- [ ] RED — Test 401 and 403 responses, expired or pending logs, running jobs, redirects that omit Authorization to the external download host, cancellation, late responses, oversized streams, UTF-8 characters split across chunks, and binary responses. Shut down the local stub server with the existing asynchronous PythonTestServer helper to keep the Swift executor unblocked.
+- [ ] GREEN — Make available logs readable and selectable. Explicitly display “Not yet available,” “Truncated,” and “Last loaded.” Show REST logs as snapshots with a direct Actions link for fallback, and surface errors.
+- [ ] Add snapshot and hosting checks for long lines and narrow windows and a native selection test. Require user action to download or export private logs. Local runner live streaming belongs to v0.6.
+- [ ] Complete tests, build, review, and PR and main CI before starting Task 2 of the v0.5 acceptance plan. Mention PR, step, and log features in the release notes and acceptance matrix once integrated.

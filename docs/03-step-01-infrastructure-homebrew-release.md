@@ -1,15 +1,14 @@
-# 03 — Step 1: Infrastruktur, Fastlane, `release-it` & Homebrew Cask (`v0.1.0`)
+# 03 — Step 1: Infrastructure, Fastlane, `release-it`, and Homebrew Cask (`v0.1.0`)
 
-**Ziel von Step 1 (`v0.1.0`):**  
-Ein von Tag 1 an automatisierter Build-, Signier-, Release- und Installations-Workflow. Am Ende von Step 1 kompiliert `OctoRunner.app` (mit dem Basis-App-Shell-Fenster, dem neuen App-Icon aus Stitch und `MenuBarExtra`), wird über **Fastlane** (mit deinem bestehenden `match`-Setup) gebaut & signiert, über **`release-it`** als Version `v0.1.0` auf GitHub veröffentlicht und lässt sich direkt per **`brew install --cask <user>/octorunner/octorunner`** installieren und starten.
+Step 1 (`v0.1.0`) sets up an automated build, signing, release, and installation workflow. The `OctoRunner.app` build contains the basic app window, the Stitch app icon, and a `MenuBarExtra`. Fastlane uses the existing `match` setup to build and sign the app. `release-it` publishes `v0.1.0` on GitHub, and `brew install --cask <user>/octorunner/octorunner` installs it.
 
 ---
 
-## 1. Übersicht der Deployment-Pipeline
+## 1. Deployment pipeline
 
 ```mermaid
 sequenceDiagram
-    participant Dev as Entwickler (Lokal / CI)
+    participant Dev as Developer (local / CI)
     participant RI as release-it (npm run release)
     participant FL as Fastlane (mac lane)
     participant Match as Fastlane Match (Git/Keychain)
@@ -17,63 +16,64 @@ sequenceDiagram
     participant GH as GitHub Releases (octorunner)
     participant Tap as Homebrew Tap Repo (homebrew-octorunner)
 
-    Dev->>RI: npm run release (Version 0.1.0)
+    Dev->>RI: npm run release (version 0.1.0)
     RI->>FL: hooks: before:release -> bundle exec fastlane mac build_release version:0.1.0
-    FL->>Match: Hole "Developer ID Application" Zertifikat (oder Ad-Hoc Fallback)
+    FL->>Match: Fetch Developer ID Application certificate (or use ad hoc signing)
     FL->>FL: xcodegen generate && build_mac_app (OctoRunner.app)
-    FL->>Apple: notarize (xcrun notarytool) & staple (optional via Flag)
-    FL->>FL: Erstelle dist/OctoRunner-0.1.0-arm64.zip & berechne SHA256
-    RI->>GH: Git Tag v0.1.0 + GitHub Release + Upload OctoRunner-0.1.0-arm64.zip
+    FL->>Apple: Notarize (xcrun notarytool) and staple (optional flag)
+    FL->>FL: Create dist/OctoRunner-0.1.0-arm64.zip and calculate SHA-256
+    RI->>GH: Create Git tag v0.1.0 and GitHub Release with OctoRunner-0.1.0-arm64.zip
     RI->>Tap: hooks: after:release -> Update Casks/octorunner.rb (version + sha256) & git push
 ```
 
 ---
 
-## 2. Was wo konfiguriert werden muss (Checkliste für dich & uns)
+## 2. Setup checklist
 
-### 2.1 GitHub Repositories: Sichtbarkeit (`public` vs. `private`) & Self-Hosted Runner
-Bei der Analyse deines Accounts (`@loesch-digital`) und deines laufenden lokalen Runners (`/Users/frank/Documents/apps/actions-runner`) sind 3 wichtige Punkte aufgefallen:
+### 2.1 GitHub repository visibility and self-hosted runners
 
-1. **Warum dein aktueller Runner (`macbook-pro-frank`) für `octorunner` noch nicht greift:**
-   - Dein aktuell laufender Runner unter `/Users/frank/Documents/apps/actions-runner/.runner` ist ein **Repository-Runner**, der exklusiv auf `https://github.com/loesch-digital/itemflux-ios-app` registriert ist.
-   - Da `@loesch-digital` ein **Personal GitHub Account** ist (keine GitHub Organization), erlaubt GitHub leider keine Account-weiten Runner über alle privaten Repos hinweg — jeder Runner wird pro Repository registriert.
-   - **Unsere Lösung für Step 1:** Wir legen für `loesch-digital/octorunner` direkt eine zweite, schlanke Runner-Instanz (z.B. `macbook-pro-octorunner`) an, die die bereits heruntergeladene Binary aus `/Users/frank/Documents/apps/actions-runner` per APFS Copy-on-Write (`cp -cR`) nutzt! *(Und genau dieses Problem — mehrere Repo-Runner auf einem Mac bequem parallel zu verwalten — löst `OctoRunner` ab `v0.3.0` ja dann per Klick in der GUI!)*
-2. **Muss das Repo `public` sein für Homebrew Cask & GitHub Actions?**
-   - **Option A (Empfohlen & am einfachsten für Homebrew): `loesch-digital/octorunner` + `loesch-digital/homebrew-octorunner` auf `PUBLIC` stellen:**
-     - **Vorteil 1 (Homebrew):** `brew install --cask loesch-digital/octorunner/octorunner` kann die Release-ZIP-Datei (`OctoRunner-0.1.0-arm64.zip`) direkt und **ohne Authentifizierung/Token** von GitHub Releases herunterladen.
-     - **Vorteil 2 (GitHub Actions):** In einem Public Repo sind sogar GitHub-gehostete macOS-Runner (`macos-15` M-Series) komplett kostenlos unbegrenzt nutzbar, falls dein MacBook mal zugeklappt ist.
-   - **Option B (`octorunner` bleibt `PRIVATE`, nur `homebrew-octorunner` ist `PUBLIC`):**
-     - Wenn der Quellcode von `octorunner` privat bleiben soll, können wir die kompilierten Release-ZIPs (`OctoRunner-0.1.0-arm64.zip`) bei `release-it` einfach als GitHub Release im öffentlichen **`loesch-digital/homebrew-octorunner`** Tap-Repo hochladen! Dann bleibt dein Code 100% privat, aber jeder (und Homebrew) kann das Cask ohne Token-Gefrickel installieren.
-3. **GitHub Actions Workflow (`.github/workflows/ci-release.yml`):**
-   - Wir richten in Step 1 direkt `.github/workflows/ci.yml` ein, der bei jedem Push/PR auf Feature-Branches (`feat/*`) auf deinem lokalen Runner (`runs-on: [self-hosted, macos, arm64]`) automatisch `swift test` und den Xcode-Build prüft.
+The initial setup reviewed `@loesch-digital` and its local runner at `/Users/frank/Documents/apps/actions-runner`.
 
-### 2.2 Im Apple Developer Account / Fastlane `match`
-Da du **`fastlane match`** bereits in einer anderen App im Einsatz hast:
-- **Wichtig für macOS außerhalb des App Stores:** Für Homebrew Casks wird der Zertifikatstyp **`developer_id`** (`Developer ID Application: Dein Name (TEAM_ID)`) benötigt (nicht `appstore` oder `development`).
-- **Kein Provisioning Profile zwingend nötig:** Eine macOS App ohne CloudKit/Push-Notifications braucht für die Developer-ID-Signierung + Notarisierung nicht zwingend ein Provisioning Profile, sondern nur das `Developer ID Application` Zertifikat im Keychain + `Hardened Runtime`.
-- **So binden wir dein bestehendes Match-Repo ein:**
-  - In `fastlane/Matchfile` tragen wir deine bestehende `git_url` und `team_id` ein.
-  - Falls in deinem Match-Repo bereits ein `developer_id`-Zertifikat liegt: `fastlane match developer_id --readonly` lädt es sofort herunter.
-  - Falls dort bisher nur iOS (`appstore`/`development`) liegt: Einmalig `fastlane match developer_id` ausführen, und Fastlane legt das macOS-Zertifikat im selben Match-Repo an.
-  - **Flexibler Dev-Fallback für sofortiges Testen:** Unser `Fastfile` unterstützt zusätzlich einen Parameter `skip_notarization:true`, sodass du jederzeit auch ohne Wartezeit auf den Apple Notary Server in 15 Sekunden ein lokales Release `0.1.0` bauen und testen kannst!
+1. **Register a runner for OctoRunner.**
+   - The existing `macbook-pro-frank` runner is registered exclusively to `https://github.com/loesch-digital/itemflux-ios-app`, as recorded in `/Users/frank/Documents/apps/actions-runner/.runner`.
+   - GitHub registers runners at the repository level for personal accounts such as `@loesch-digital`. An organization can use a runner across its repositories.
+   - Step 1 adds a second runner for `loesch-digital/octorunner`, such as `macbook-pro-octorunner`. It reuses the previously downloaded binary in `/Users/frank/Documents/apps/actions-runner` with APFS copy-on-write cloning (`cp -cR`). The OctoRunner UI adds support for managing multiple repository runners on the same Mac in `v0.3.0`.
+2. **Choose repository visibility.**
+   - **Option A — Make both `loesch-digital/octorunner` and `loesch-digital/homebrew-octorunner` public.** This is the simplest Homebrew setup. `brew install --cask loesch-digital/octorunner/octorunner` can download `OctoRunner-0.1.0-arm64.zip` from GitHub Releases without authentication. This milestone also planned to use the free, unlimited standard GitHub-hosted `macos-15` M-series runners for the public repository when the local runner was unavailable.
+   - **Option B — Keep `octorunner` private and make only `homebrew-octorunner` public.** Configure `release-it` to upload compiled ZIPs such as `OctoRunner-0.1.0-arm64.zip` to a GitHub release in the public `loesch-digital/homebrew-octorunner` tap. The source stays private and Homebrew can download the cask without a token.
+3. **Set up GitHub Actions.**
+   - The initial CI plan uses `.github/workflows/ci.yml` to run `swift test` and check the Xcode build for feature branch (`feat/*`) pushes and pull requests. It targets the local runner using `runs-on: [self-hosted, macos, arm64]`.
+
+### 2.2 Apple Developer account and Fastlane `match`
+
+- **Developer ID for distribution outside the App Store.** The Homebrew cask uses a `developer_id` certificate (`Developer ID Application: Your Name (TEAM_ID)`).
+- **Provisioning profiles and Hardened Runtime.** An app without capabilities such as CloudKit and push notifications can sign and notarize using the **Developer ID Application** certificate in the Keychain and Hardened Runtime without a provisioning profile.
+- **Reuse the existing Match repository.**
+  - Set the existing `git_url` and `team_id` in `fastlane/Matchfile`.
+  - If the repository already contains a `developer_id` certificate, run `fastlane match developer_id --readonly` to download it.
+  - If the repository contains only iOS certificates (`appstore` or `development`), run `fastlane match developer_id` once to create the macOS certificate in the same repository.
+  - The Fastfile’s local testing option, `skip_notarization:true`, lets you build and test release `0.1.0` without waiting for Apple’s notarization service.
 
 ---
 
-## 3. Konfigurationsdateien im Projekt (`octorunner`)
+## 3. Project configuration files
 
 ### 3.1 `project.yml` (XcodeGen)
-Generiert deterministisch `OctoRunner.xcodeproj` ohne Merge-Konflikte:
-- **Target:** `OctoRunner` (`platform: macOS`, `deploymentTarget: "15.0"`)
-- **Settings:**
+
+XcodeGen generates `OctoRunner.xcodeproj` deterministically from these settings.
+
+- The **OctoRunner** target uses `platform: macOS` and `deploymentTarget: "15.0"`.
+- The following build settings apply.
   - `PRODUCT_BUNDLE_IDENTIFIER: io.octorunner.macos`
   - `SWIFT_VERSION: "6.0"`
   - `SWIFT_STRICT_CONCURRENCY: complete`
   - `ENABLE_HARDENED_RUNTIME: YES`
   - `CODE_SIGN_ENTITLEMENTS: App/OctoRunner.entitlements`
-- **Local Package Dependency:** `Packages/OctoRunnerKit`
+- The local package dependency is `Packages/OctoRunnerKit`.
 
 ### 3.2 `App/OctoRunner.entitlements`
-Da die App `launchctl`, `git`, `xcodebuild` und Subprozesse (`run.sh` / `Runner.Listener`) steuert, ist die App **nicht** in der restriktiven App-Store-Sandbox eingesperrt, nutzt aber **Hardened Runtime** für die Apple-Notarisierung:
+
+The app runs `launchctl`, `git`, `xcodebuild`, and runner subprocesses such as `run.sh` and `Runner.Listener`. The configuration disables App Sandbox for those operations and enables Hardened Runtime for notarization.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -95,7 +95,8 @@ Da die App `launchctl`, `git`, `xcodebuild` und Subprozesse (`run.sh` / `Runner.
 ```
 
 ### 3.3 `fastlane/Fastfile`
-Definiert die macOS-Lanes für Build, Signierung, Notarisierung und ZIP-Packaging:
+
+The macOS lanes build, sign, notarize, and package the app as a ZIP.
 
 ```ruby
 default_platform(:mac)
@@ -148,8 +149,9 @@ platform :mac do
 end
 ```
 
-### 3.4 `.release-it.json` & `scripts/update-homebrew-cask.sh`
-Steuert Versionierung (`0.1.0`, `0.2.0`...), Changelog-Generierung, den Fastlane-Aufruf, den GitHub-Release-Asset-Upload und das Update des Homebrew Casks:
+### 3.4 `.release-it.json` and `scripts/update-homebrew-cask.sh`
+
+The release configuration manages version numbers such as `0.1.0` and `0.2.0`, generates the changelog, calls Fastlane, uploads GitHub release assets, and updates the Homebrew cask.
 
 ```json
 {
@@ -178,7 +180,8 @@ Steuert Versionierung (`0.1.0`, `0.2.0`...), Changelog-Generierung, den Fastlane
 }
 ```
 
-### 3.5 Homebrew Cask Template (`Casks/octorunner.rb` im Tap-Repo)
+### 3.5 Homebrew cask template (`Casks/octorunner.rb` in the tap repository)
+
 ```ruby
 cask "octorunner" do
   version "0.1.0"
@@ -205,15 +208,15 @@ end
 
 ---
 
-## 4. Umfang der ausführbaren Version `v0.1.0` (Was du nach Step 1 testen kannst)
+## 4. What to test in `v0.1.0`
 
-Nach Abschluss von Step 1 hast du bereits eine echte, installierbare macOS-App (`v0.1.0`):
-1. **App-Icon & Branding:** Das metallische Infinity-Gear Icon aus deinem Stitch-Design ist in allen macOS-Auflösungen (`16x16` bis `1024x1024`) im `Assets.xcassets` hinterlegt.
-2. **DesignSystem Modul (`OctoRunnerKit`):** Farben, Fonts, Window-Chrome und Status-Pills aus `02-design-system-and-hig.md`.
-3. **Hauptfenster & MenuBar-Item Shell:** Startet mit dem macOS 3-Spalten-Rahmen (`NavigationSplitView`), dem Status-Footer (`daemon: ready | Apple Silicon native`) und dem `MenuBarExtra`-Icon in der oberen macOS-Menüleiste.
-4. **Installation & Update per Homebrew:**
+1. **App icon and branding.** `Assets.xcassets` includes the metallic infinity gear icon from the Stitch design at every macOS resolution from `16x16` through `1024x1024`.
+2. **Design system in `OctoRunnerKit`.** The module uses the colors, fonts, window chrome, and status badges from `02-design-system-and-hig.md`.
+3. **Main window and menu bar item.** The app opens a macOS three-column `NavigationSplitView` with a footer showing `daemon: ready | Apple Silicon native` and a `MenuBarExtra` icon.
+4. **Homebrew installation and updates.**
+
    ```bash
-   brew tap <dein-user>/octorunner
+   brew tap <your-user>/octorunner
    brew install --cask octorunner
    open -a OctoRunner
    ```
