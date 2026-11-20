@@ -15,7 +15,7 @@ echo "Computed SHA256 for v${VERSION}: ${SHA256}"
 TAP_DIR=$(mktemp -d)
 trap 'rm -rf "$TAP_DIR"' EXIT
 
-gh repo clone loesch-digital/homebrew-octorunner "$TAP_DIR"
+gh repo clone loesch-digital/homebrew-tap "$TAP_DIR"
 mkdir -p "$TAP_DIR/Casks"
 
 cat > "$TAP_DIR/Casks/octorunner.rb" <<EOF
@@ -44,29 +44,12 @@ cask "octorunner" do
 end
 EOF
 
-cat > "$TAP_DIR/README.md" <<EOF
-# Homebrew Tap for OctoRunner
-
-Install **OctoRunner** (\`v${VERSION}\`) on macOS (Apple Silicon, macOS 15+):
-
-\`\`\`bash
-brew tap loesch-digital/octorunner
-brew install --cask octorunner
-\`\`\`
-
-Upgrade to the latest version:
-
-\`\`\`bash
-brew update && brew upgrade --cask octorunner
-\`\`\`
-EOF
-
 cd "$TAP_DIR"
-git add Casks/octorunner.rb README.md
+git add Casks/octorunner.rb
 if git diff --cached --quiet; then
   echo "Homebrew cask already up to date."
 else
   git commit -m "chore(cask): update octorunner to v${VERSION}"
   git push origin HEAD:main
-  echo "Successfully updated loesch-digital/homebrew-octorunner Cask to v${VERSION}!"
+  echo "Successfully updated loesch-digital/tap/octorunner to v${VERSION}!"
 fi

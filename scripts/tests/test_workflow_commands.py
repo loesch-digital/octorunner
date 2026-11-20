@@ -24,6 +24,16 @@ def workflow_run(workflow, step):
 
 
 class WorkflowCommandTests(unittest.TestCase):
+    def test_homebrew_publishers_only_stage_the_octorunner_cask(self):
+        workflow = workflow_run("release.yml", "Update Homebrew Tap (loesch-digital/tap)")
+        script = (ROOT / "scripts/update-homebrew-cask.sh").read_text()
+        for publisher in (workflow, script):
+            with self.subTest(publisher=publisher.splitlines()[0]):
+                self.assertIn("loesch-digital/homebrew-tap", publisher)
+                self.assertEqual(re.findall(r"^git add (.+)$", publisher, re.MULTILINE),
+                                 ["Casks/octorunner.rb"])
+                self.assertNotIn("README.md", publisher)
+
     def test_build_workflows_use_the_same_current_toolchain(self):
         for workflow in ("ci.yml", "release.yml"):
             with self.subTest(workflow=workflow):
