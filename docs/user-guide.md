@@ -47,8 +47,10 @@ Open **OctoRunner → Settings** or press **⌘,**. Use Settings search to find 
 
 ### Local background monitoring
 
-In **Autostart & Background**, enable **Monitor local runners after quitting**. If macOS requests approval, allow OctoRunner under **System Settings → General → Login Items & Extensions**. Quit OctoRunner with **⌘Q** to hand local process monitoring to the background service. Opening OctoRunner brings monitoring back into the app.
+In **Autostart & Background**, enable **Monitor local runners after quitting**. Quit OctoRunner with **⌘Q** to hand local process monitoring to the background helper. Opening OctoRunner brings monitoring back into the app.
 
-The service observes registered runner processes on your Mac. GitHub refreshes and OctoRunner notifications run while the app is open. Runner LaunchAgents continue according to their own configuration. To stop background monitoring, turn it off in OctoRunner or disable its background item in macOS. Before an in-app update, OctoRunner unregisters the service so the app can safely replace its bundle. Turn the setting back on afterward if you want it to continue.
+On macOS 27 and later, use **Stop Running in Background** in OctoRunner’s Dock menu to stop the current monitoring session. After you sign in again, monitoring starts when you open OctoRunner. Enable **Launch at Login** if you want that to happen automatically. On earlier macOS versions, approve or disable the helper under **System Settings → General → Login Items & Extensions**.
+
+The helper observes registered runner processes on your Mac. GitHub refreshes and OctoRunner notifications run while the app is open. Runner LaunchAgents follow their own configuration. OctoRunner stops its background helper before replacing the app during an in-app update. Turn the monitoring setting back on after the update if you want it to continue.
 
 If GitHub lists workflow write access under **Existing access** for OctoRunner, that permission is part of a prior OAuth grant. Revoke OctoRunner under **GitHub Settings → Applications → Authorized OAuth Apps** before reconnecting if you want to replace the prior grant. For monitoring a selected private repository, use a fine-grained token with **Actions: Read** and add **Pull requests: Read** if you want PR lookup. [Manage authorized OAuth apps](https://docs.github.com/en/apps/oauth-apps/using-oauth-apps/reviewing-your-authorized-oauth-apps)

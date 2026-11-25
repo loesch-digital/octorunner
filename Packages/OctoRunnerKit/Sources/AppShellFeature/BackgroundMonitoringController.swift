@@ -60,6 +60,12 @@ public final class BackgroundMonitoringController {
         } else if state == .enabled {
             let configuration = try MonitoringConfigurationExporter.configuration(in: context)
             try store.writeConfiguration(configuration)
+            do {
+                try await service.startMonitoring(revision: configuration.revision)
+            } catch {
+                try store.removeConfiguration()
+                throw error
+            }
         }
     }
 }

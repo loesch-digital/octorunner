@@ -96,6 +96,10 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate, Obser
             do {
                 try await services.supervisor.shutdownForQuit()
                 do {
+                    if #available(macOS 27.0, *), services.backgroundMonitoring.state == .enabled,
+                       !AppUpdateHandoff.isUpdatePending {
+                        sender.setActivationPolicy(.regular)
+                    }
                     try await services.backgroundMonitoring.prepareToQuit(
                         in: modelContainer.mainContext,
                         updating: AppUpdateHandoff.isUpdatePending
@@ -126,7 +130,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate, Obser
     }
 
     public func applicationDidUpdate(_ notification: Notification) {
-        guard !isPreview else { return }
+        guard !isPreview, !isQuitRequestPending else { return }
         // Re-evaluate after AppKit processes window and preference changes, including
         // when the dashboard is closed. A visible Settings window also keeps its Dock icon.
         services.integration.applyDockVisibility(hasVisibleDashboard: hasVisibleWindow(in: .shared))

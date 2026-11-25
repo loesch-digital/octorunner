@@ -4,6 +4,8 @@ Status: Draft for review.
 
 OctoRunner can continue monitoring registered runners after the user quits the app. The user explicitly enables this per macOS account. On macOS 27, verify that the system associates the running helper with OctoRunner and presents its native Dock status. Support macOS 15 and later with status in App Settings and System Settings.
 
+For the local-only build on macOS 27 and later, OctoRunner launches its bundled helper during Command-Q so macOS can associate the remaining process with the Dock entry. **Stop Running in Background** ends that monitoring session. After a new login, OctoRunner starts monitoring when the app opens, including through its existing optional login setting. Earlier macOS versions retain the separately registered LaunchAgent. GitHub monitoring and notifications run in the foreground in this build.
+
 ## User experience
 
 - **App Settings → Autostart & Background** includes an off-by-default **Keep monitoring after quitting** switch. Login launch for the GUI remains a separate setting. Explain that enabling background monitoring registers a per-user service that can start at login, regardless of whether the dashboard opens.

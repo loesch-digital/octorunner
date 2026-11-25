@@ -12,9 +12,10 @@ public struct LocalBackgroundMonitor: Sendable {
     }
 
     /// Call from the process holding the monitoring lease.
-    public func refresh(at measurementTime: Date? = nil) async throws {
+    public func refresh(at measurementTime: Date? = nil, requiringRevision expectedRevision: UUID? = nil) async throws {
         try Task.checkCancellation()
-        guard let configuration = try store.readConfiguration() else { return }
+        guard let configuration = try store.readConfiguration(),
+              expectedRevision == nil || configuration.revision == expectedRevision else { return }
 
         let statuses: [UUID: RunnerStatus]
         do {

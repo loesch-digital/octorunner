@@ -17,7 +17,7 @@ struct BackgroundMonitoringSettingsCard: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .accessibilityLabel(Text("Monitor local runners after quitting", bundle: .module))
-                .accessibilityHint(Text("Registers a macOS background item for your account.", bundle: .module))
+                .accessibilityHint(Text("Keep checking local runner processes after you quit OctoRunner.", bundle: .module))
                 .accessibilityIdentifier("local-background-monitoring")
                 .disabled(monitoring.isApplying)
                 status(for: monitoring)

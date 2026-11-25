@@ -28,6 +28,12 @@
 - A separate Developer ID–signed probe packaged the standalone agent under its LaunchAgent. After the registration process exited, the agent observed a synthetic runner as ready and then offline after its listener exited. Unregistration removed the test service.
 - The local checkpoint uses the existing signing certificate with no Keychain Sharing entitlement. App packaging, opt-in, the native Dock UI, and signed GitHub access are subsequent checkpoints.
 
+### macOS 27.2 Dock acceptance
+
+- The signed OctoRunner build handed off a registered local runner and continued to update its observation after Command-Q. The Dock entry disappeared. macOS still listed the enabled LaunchAgent under OctoRunner in Background Items, while Launch Services no longer listed the app.
+- A separate, time-limited test app started its bundled worker directly and then quit. Launch Services retained the app with `exited-with-subordinates`, the same state observed for Podman Desktop on this Mac. A second probe with a signed nested login item left the helper running without retaining its host app in Launch Services. The nested login item was unregistered after the test.
+- Verify the shipped app by quitting with Command-Q, confirming the native Dock subtitle, and choosing **Stop Running in Background** in the Dock context menu. Confirm the worker exits, observations stop advancing, and the independently managed runner continues. Reopen OctoRunner and verify the state shown in Settings.
+
 ## 2. Share monitoring inputs and coordinate ownership
 
 Files: `Packages/OctoRunnerKit/Package.swift`, a new `BackgroundMonitoringKit` target, and new `BackgroundMonitoringRuntimeTests.swift` in `OctoRunnerKitTests`. Reuse existing process samplers, GitHub clients, state transition policies, and job result matching.
