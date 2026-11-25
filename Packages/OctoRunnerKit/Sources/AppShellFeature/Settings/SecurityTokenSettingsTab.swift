@@ -23,43 +23,7 @@ public struct SecurityTokenSettingsTab: View {
     SettingsPage(
       "Auth & Tokens", subtitle: "Manage GitHub identities and review local credential security."
     ) {
-      SettingsCard(
-        "Connected GitHub accounts", symbol: "person.crop.circle",
-        subtitle: "Connect an identity and choose which account OctoRunner uses."
-      ) {
-        Button {
-          showingAuthentication = true
-        } label: {
-          Label {
-            Text("Connect GitHub account…", bundle: .module)
-          } icon: {
-            Image(systemName: "person.badge.plus")
-          }
-        }
-        .disabled(accountSession.isBusy)
-        .accessibilityLabel(Text("Connect GitHub account…", bundle: .module))
-        .accessibilityHint(
-          Text("Opens GitHub device login or personal access token validation.", bundle: .module))
-        if accounts.isEmpty {
-          Text(
-            "No GitHub accounts connected. Connect an account to manage runners and load workflow history.",
-            bundle: .module
-          )
-          .foregroundStyle(OctoTheme.secondaryText).fixedSize(horizontal: false, vertical: true)
-        }
-        if accountSession.isBusy {
-          ProgressView { Text("Removing local credentials…", bundle: .module) }
-            .accessibilityLabel(Text("Removing local credentials…", bundle: .module))
-        }
-        if let error = actionError ?? accountSession.error?.localizedMessage(locale: locale) {
-          Label(error, systemImage: "exclamationmark.triangle")
-            .foregroundStyle(OctoTheme.errorRed).fixedSize(horizontal: false, vertical: true)
-        }
-        Text(
-          "The selected account is used for GitHub requests. Its token is checked when used; selection alone does not confirm current permissions.",
-          bundle: .module)
-        .font(.callout).foregroundStyle(OctoTheme.secondaryText)
-      }
+      connectedAccountsCard
 
       ForEach(orderedAccounts) { account in
         SettingsCard(
@@ -126,6 +90,46 @@ public struct SecurityTokenSettingsTab: View {
         bundle: .module)
     }
     .onDisappear { disconnectTask?.cancel() }
+  }
+
+  private var connectedAccountsCard: some View {
+    SettingsCard(
+      "Connected GitHub accounts", symbol: "person.crop.circle",
+      subtitle: "Connect an identity and choose which account OctoRunner uses."
+    ) {
+      Button {
+        showingAuthentication = true
+      } label: {
+        Label {
+          Text("Connect GitHub account…", bundle: .module)
+        } icon: {
+          Image(systemName: "person.badge.plus")
+        }
+      }
+      .disabled(accountSession.isBusy)
+      .accessibilityLabel(Text("Connect GitHub account…", bundle: .module))
+      .accessibilityHint(
+        Text("Opens GitHub device login or personal access token validation.", bundle: .module))
+      if accounts.isEmpty {
+        Text(
+          "No GitHub accounts connected. Connect an account to manage runners and load workflow history.",
+          bundle: .module
+        )
+        .foregroundStyle(OctoTheme.secondaryText).fixedSize(horizontal: false, vertical: true)
+      }
+      if accountSession.isBusy {
+        ProgressView { Text("Removing local credentials…", bundle: .module) }
+          .accessibilityLabel(Text("Removing local credentials…", bundle: .module))
+      }
+      if let error = actionError ?? accountSession.error?.localizedMessage(locale: locale) {
+        Label(error, systemImage: "exclamationmark.triangle")
+          .foregroundStyle(OctoTheme.errorRed).fixedSize(horizontal: false, vertical: true)
+      }
+      Text(
+        "The selected account is used for GitHub requests. Its token is checked when used; selection alone does not confirm current permissions.",
+        bundle: .module)
+      .font(.callout).foregroundStyle(OctoTheme.secondaryText)
+    }
   }
 
   private var orderedAccounts: [GitHubAccountEntity] {
