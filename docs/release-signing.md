@@ -36,6 +36,38 @@ script deletes its temporary keychain and decoded notarization key on exit.
 GitHub release signing uses `scripts/sign-and-notarize.sh`. The older local
 Fastlane lane remains available for development and ad hoc builds.
 
+## Sign the background helper and app
+
+For v0.8 and later, the release build embeds the executable at
+`OctoRunner.app/Contents/MacOS/OctoRunnerBackgroundMonitor`. The release script
+requires it to be present and executable. It signs the helper first, then the app
+bundle, with the same existing Developer ID Application identity. Both signatures
+use the hardened runtime and a secure timestamp. Only the outer app receives
+`App/OctoRunner.entitlements`. The helper uses no Apple account capabilities or
+provisioning profile. The release runner then submits the signed app for
+notarization, staples the ticket, and checks Gatekeeper before creating the ZIP.
+
+To reproduce the signing steps locally, build the Release configuration and work
+on a copy of the app bundle. Set `SIGNING_IDENTITY` to the local Developer ID
+Application identity and `APP_PATH` to the copy's path. Run these commands from
+the repository root with the identity available in your local Keychain search list.
+
+```bash
+HELPER_PATH="$APP_PATH/Contents/MacOS/OctoRunnerBackgroundMonitor"
+codesign --force --sign "$SIGNING_IDENTITY" --options runtime --timestamp "$HELPER_PATH"
+codesign --force --sign "$SIGNING_IDENTITY" --options runtime --timestamp \
+  --entitlements App/OctoRunner.entitlements "$APP_PATH"
+codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+codesign --display --verbose=2 "$HELPER_PATH"
+```
+
+The helper's signature shows the `runtime` flag and a `Timestamp`. Signature
+inspection can reveal the identity's account name and team ID. Share redacted
+output only. For notarization, stapling, and public distribution, use the release
+workflow with its configured GitHub secrets.
+
+## Publish a verified release
+
 After configuring secrets, publish a new patch version from verified `main`.
 Do not replace an already published archive: Homebrew caches archives and checks
 their SHA-256 digests.

@@ -10,11 +10,15 @@ SCRIPT = Path(__file__).resolve().parents[1] / "sign-and-notarize.sh"
 
 
 class NotarizedReleaseTests(unittest.TestCase):
-    def run_release(self, status="Accepted", reject_gatekeeper=False, missing_secret=False):
+    def run_release(self, status="Accepted", reject_gatekeeper=False, missing_secret=False, missing_helper=False):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             app = root / "OctoRunner.app"
             app.mkdir()
+            if not missing_helper:
+                helper = app / "Contents" / "MacOS" / "OctoRunnerBackgroundMonitor"
+                helper.parent.mkdir(parents=True)
+                helper.touch(mode=0o755)
             log = root / "commands.jsonl"
             stub = root / "stub"
             stub.write_text('''#!/usr/bin/env python3
@@ -85,6 +89,32 @@ if command == "ditto":
         result, _, packaged = self.run_release(reject_gatekeeper=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(packaged)
+
+    def test_missing_background_helper_prevents_notarization(self):
+        result, commands, packaged = self.run_release(missing_helper=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("OctoRunnerBackgroundMonitor", result.stderr)
+        self.assertFalse(any(command[:3] == ["xcrun", "notarytool", "submit"] for command in commands))
+        self.assertFalse(packaged)
+
+    def test_background_helper_is_signed_before_the_app_without_app_entitlements(self):
+        result, commands, _ = self.run_release()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        signatures = [command for command in commands if command[0] == "codesign" and "--sign" in command]
+        self.assertEqual([Path(command[-1]).name for command in signatures], ["OctoRunnerBackgroundMonitor", "OctoRunner.app"])
+        worker, app = signatures
+        self.assertEqual(worker[worker.index("--sign") + 1], app[app.index("--sign") + 1])
+        self.assertIn("runtime", worker)
+        self.assertIn("--timestamp", worker)
+        self.assertNotIn("--entitlements", worker)
+        self.assertIn("--entitlements", app)
+
+    def test_signing_does_not_print_the_local_identity(self):
+        result, _, _ = self.run_release()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        output = result.stdout + result.stderr
+        self.assertNotIn("TEAM123", output)
+        self.assertNotIn("ABCDEF01", output)
 
     def test_signing_keychain_is_in_search_list_before_codesign_and_restored_afterwards(self):
         result, commands, _ = self.run_release()
