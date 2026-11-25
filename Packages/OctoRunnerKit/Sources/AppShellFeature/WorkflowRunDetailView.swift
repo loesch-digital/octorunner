@@ -2,21 +2,28 @@ import CoreModels
 import DesignSystem
 import GitHubAPI
 import SwiftUI
+import SyncKit
 
 struct WorkflowRunDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
+    @Environment(RunnerRemoteSyncMonitor.self) private var remoteSync: RunnerRemoteSyncMonitor?
     let entry: WorkflowHistoryEntry
     let selection: WorkflowRunDetailSelection
     @State private var model: WorkflowRunDetailModel
     @State private var refreshTicket = UUID()
     @State private var selectedLog: WorkflowJobLogSelection?
     private let rateBudget: WorkflowHistoryRateBudget
+    private let runnerAccount: RunnerSyncAccount?
+    private let runnerConfigurations: [UUID: LocalDotRunnerConfig]
 
     init(entry: WorkflowHistoryEntry, selection: WorkflowRunDetailSelection,
-         rateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(), model: WorkflowRunDetailModel? = nil) {
+         rateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(), model: WorkflowRunDetailModel? = nil,
+         runnerAccount: RunnerSyncAccount? = nil, runnerConfigurations: [UUID: LocalDotRunnerConfig] = [:]) {
         self.entry = entry; self.selection = selection
         self.rateBudget = rateBudget
+        self.runnerAccount = runnerAccount
+        self.runnerConfigurations = runnerConfigurations
         _model = State(initialValue: model ?? WorkflowRunDetailModel(rateBudget: rateBudget))
     }
 
@@ -74,10 +81,15 @@ struct WorkflowRunDetailView: View {
                         Text("No job details loaded", bundle: .module).foregroundStyle(OctoTheme.secondaryText)
                     }
                     TimelineView(.periodic(from: .now, by: model.shouldRefresh ? 1 : 15)) { timeline in
-                        let now = model.observedAt
-                            .map { (-5...90).contains(timeline.date.timeIntervalSince($0)) } == true ? timeline.date : nil
+                        let now = WorkflowJobQueueDiagnosis.isFresh(model.observedAt, at: timeline.date) ? timeline.date : nil
+                        let account = runnerAccount?.selectionRevision == GitHubAccountStore.selectionRevision ? runnerAccount : nil
+                        let snapshot = remoteSync?.snapshot
                         ForEach(model.jobs) { job in
-                            WorkflowJobDetailCard(job: job, selection: selection, now: now) {
+                            let queueDiagnosis = WorkflowJobQueueDiagnosis(
+                                job: job, repository: selection.source.repository, jobObservedAt: model.observedAt,
+                                account: account, configurations: runnerConfigurations, snapshot: snapshot, now: timeline.date
+                            )
+                            WorkflowJobDetailCard(job: job, selection: selection, now: now, queueDiagnosis: queueDiagnosis) {
                                 selectedLog = .init(detail: selection, jobID: job.id, jobName: job.name)
                             }
                         }

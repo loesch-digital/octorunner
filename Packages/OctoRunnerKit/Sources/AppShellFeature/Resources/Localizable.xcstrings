@@ -1,6 +1,154 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Job created %@ ago": {
+      "comment": "Age of the queued job since GitHub created it. %@ is a localized duration.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job vor %@ erstellt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job created %@ ago"
+          }
+        }
+      }
+    },
+    "The last job observation is out of date. Refresh to check whether it is still queued.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der letzte gemeldete Job-Status ist veraltet. Aktualisiere die Ansicht, um zu prüfen, ob der Job noch wartet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The last job observation is out of date. Refresh to check whether it is still queued."
+          }
+        }
+      }
+    },
+    "Current status for matching repository runners is unavailable.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der aktuelle Status passender Repository-Runner ist nicht verfügbar."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current status for matching repository runners is unavailable."
+          }
+        }
+      }
+    },
+    "None of the observed repository runners match all the requested labels.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keiner der beobachteten Repository-Runner trägt alle angeforderten Labels."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None of the observed repository runners match all the requested labels."
+          }
+        }
+      }
+    },
+    "An observed runner with matching labels is idle. The reason for the wait is unknown.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein beobachteter Runner mit passenden Labels ist bereit. Der Grund für die Wartezeit ist unbekannt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An observed runner with matching labels is idle. The reason for the wait is unknown."
+          }
+        }
+      }
+    },
+    "The observed matches below are busy or offline.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die unten aufgeführten passenden Runner sind beschäftigt oder offline."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The observed matches below are busy or offline."
+          }
+        }
+      }
+    },
+    "Queue runner idle": {
+      "comment": "Status of a runner that GitHub reports as online and idle.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idle"
+          }
+        }
+      }
+    },
+    "Queue runner busy": {
+      "comment": "Status of a runner that GitHub reports as online and busy.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschäftigt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busy"
+          }
+        }
+      }
+    },
+    "Queue runner offline": {
+      "comment": "Status of a runner that GitHub reports as offline.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline"
+          }
+        }
+      }
+    },
     "Local background monitoring": {
       "localizations": {
         "de": {
