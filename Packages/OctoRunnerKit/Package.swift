@@ -62,6 +62,7 @@ let package = Package(
         .target(
             name: "AppShellFeature",
             dependencies: [
+                "BackgroundMonitoringKit",
                 "CoreModels",
                 "DesignSystem",
                 "SecurityKit",

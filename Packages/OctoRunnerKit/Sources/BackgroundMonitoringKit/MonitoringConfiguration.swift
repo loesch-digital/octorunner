@@ -5,11 +5,11 @@ public struct MonitoringConfiguration: Codable, Equatable, Sendable {
 
     let version: Int
     public let revision: UUID
-    public let runnerIDs: [UUID]
+    public let runners: [MonitoringRunnerDescriptor]
 
-    public init(runnerIDs: [UUID]) {
+    public init(runners: [MonitoringRunnerDescriptor]) {
         version = Self.currentVersion
         revision = UUID()
-        self.runnerIDs = runnerIDs
+        self.runners = runners
     }
 }

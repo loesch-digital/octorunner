@@ -7,8 +7,8 @@ struct BackgroundMonitoringRuntimeTests {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = MonitoringSnapshotStore(directory: directory)
-        let original = MonitoringConfiguration(runnerIDs: [UUID()])
-        let updated = MonitoringConfiguration(runnerIDs: [])
+        let original = MonitoringConfiguration(runners: [.init(id: UUID(), name: "Runner", processRootPath: nil)])
+        let updated = MonitoringConfiguration(runners: [])
         #expect(try store.readConfiguration() == nil)
         try store.writeConfiguration(original)
         #expect(try store.readConfiguration() == original)
@@ -59,7 +59,7 @@ struct BackgroundMonitoringRuntimeTests {
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = MonitoringSnapshotStore(directory: directory)
         let runnerID = UUID()
-        let configuration = MonitoringConfiguration(runnerIDs: [runnerID])
+        let configuration = MonitoringConfiguration(runners: [.init(id: runnerID, name: "Runner", processRootPath: nil)])
         let now = Date(timeIntervalSince1970: 1_000)
         let observation = MonitoringObservation(
             configurationRevision: configuration.revision,
@@ -72,7 +72,7 @@ struct BackgroundMonitoringRuntimeTests {
         #expect(try store.readObservation(for: configuration, at: now) == observation)
         #expect(try store.readObservation(for: configuration, at: now.addingTimeInterval(61)) == nil)
         #expect(try store.readObservation(for: configuration, at: now.addingTimeInterval(-6)) == nil)
-        let changed = MonitoringConfiguration(runnerIDs: [runnerID])
+        let changed = MonitoringConfiguration(runners: [.init(id: runnerID, name: "Runner", processRootPath: nil)])
         #expect(try store.readObservation(for: changed, at: now) == nil)
     }
 

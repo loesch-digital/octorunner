@@ -37,7 +37,7 @@ public struct MonitoringSnapshotStore: Sendable {
     ) throws -> MonitoringObservation? {
         guard let observation: MonitoringObservation = try read("observation.json", version: MonitoringObservation.currentVersion),
               observation.configurationRevision == configuration.revision,
-              Set(observation.statuses.keys).isSubset(of: configuration.runnerIDs),
+              Set(observation.statuses.keys).isSubset(of: configuration.runners.map(\.id)),
               (-5...60).contains(now.timeIntervalSince(observation.observedAt))
         else { return nil }
         return observation
