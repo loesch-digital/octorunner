@@ -19,6 +19,36 @@ def release_metadata(tag):
             'prerelease': str(preview).lower(), 'update_homebrew': str(not preview).lower()}
 
 
+def render_cask(values, sha256):
+    if values['update_homebrew'] != 'true':
+        raise ValueError('Only stable releases are distributed through Homebrew')
+    if re.fullmatch(r'[0-9a-f]{64}', sha256) is None:
+        raise ValueError('Expected a lowercase SHA-256 checksum')
+    return f'''cask "octorunner" do
+  version "{values['version']}"
+  sha256 "{sha256}"
+
+  url "https://github.com/loesch-digital/octorunner/releases/download/v#{{version}}/OctoRunner-#{{version}}-arm64.zip"
+  name "OctoRunner"
+  desc "Native macOS manager for self-hosted GitHub Actions runners"
+  homepage "https://github.com/loesch-digital/octorunner"
+
+  depends_on macos: :sequoia
+  depends_on arch: :arm64
+
+  app "OctoRunner.app"
+
+  uninstall quit: "io.octorunner.macos"
+
+  zap trash: [
+    "~/Library/Application Support/io.octorunner.macos",
+    "~/Library/Caches/io.octorunner.macos",
+    "~/Library/Preferences/io.octorunner.macos.plist",
+  ]
+end
+'''
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
@@ -31,6 +61,9 @@ def main():
     publish.add_argument('tag')
     publish.add_argument('archive', type=Path)
     publish.add_argument('--notes-file', type=Path)
+    cask = commands.add_parser('cask')
+    cask.add_argument('tag')
+    cask.add_argument('sha256')
     args = parser.parse_args()
     try:
         values = release_metadata(args.tag)
@@ -42,6 +75,8 @@ def main():
                     stream.write(content)
             else:
                 print(content, end='')
+        elif args.command == 'cask':
+            print(render_cask(values, args.sha256), end='')
         elif args.command == 'stamp':
             info = args.app / 'Contents' / 'Info.plist'
             with info.open('rb') as stream:

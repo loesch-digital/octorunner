@@ -42,6 +42,24 @@ class ReleaseChannelTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0)
                     self.assertEqual(output.read_text(), 'existing=value\n')
 
+    def test_stable_cask_uses_the_current_bundle_and_data_paths(self):
+        checksum = 'a' * 64
+        result = self.run_tool('cask', 'v0.7.1', checksum)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('version "0.7.1"', result.stdout)
+        self.assertIn(f'sha256 "{checksum}"', result.stdout)
+        self.assertIn('releases/download/v#{version}/OctoRunner-#{version}-arm64.zip', result.stdout)
+        self.assertIn('uninstall quit: "io.octorunner.macos"', result.stdout)
+        self.assertIn('"~/Library/Application Support/io.octorunner.macos"', result.stdout)
+
+    def test_cask_rejects_prerelease_tags_and_malformed_checksums(self):
+        for tag, checksum in [('v0.7.1-rc.1', 'a' * 64), ('v0.7.1', 'a' * 63), ('v0.7.1', 'g' * 64)]:
+            with self.subTest(tag=tag, checksum=checksum):
+                result = self.run_tool('cask', tag, checksum)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(result.stdout, '')
+                self.assertIn('Release preparation failed:', result.stderr)
+
     def test_publish_policy_uses_verified_tag_and_never_clobbers_archives(self):
         with tempfile.TemporaryDirectory(prefix='release fixtures ') as directory:
             root = Path(directory)
