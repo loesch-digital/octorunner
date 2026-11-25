@@ -1,6 +1,118 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "100% means one fully used logical CPU core.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100 % entsprechen einem voll ausgelasteten logischen CPU-Kern."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100% means one fully used logical CPU core."
+          }
+        }
+      }
+    },
+    "Resident memory of detected runner processes.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belegter Arbeitsspeicher der erkannten Runner-Prozesse."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resident memory of detected runner processes."
+          }
+        }
+      }
+    },
+    "Measure Work Folder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordnergröße ermitteln"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measure Work Folder"
+          }
+        }
+      }
+    },
+    "Measure Work Folder for %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordnergröße für %@ ermitteln"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measure Work Folder for %@"
+          }
+        }
+      }
+    },
+    "Measuring Work Folder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordnergröße wird ermittelt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measuring Work Folder"
+          }
+        }
+      }
+    },
+    "Could not measure the work folder.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Ordnergröße konnte nicht ermittelt werden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not measure the work folder."
+          }
+        }
+      }
+    },
+    "Reads the size of files in this runner’s work folder.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ermittelt die Größe der Dateien im Arbeitsordner dieses Runners."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads the size of files in this runner’s work folder."
+          }
+        }
+      }
+    },
     "Job created %@ ago": {
       "comment": "Age of the queued job since GitHub created it. %@ is a localized duration.",
       "localizations": {

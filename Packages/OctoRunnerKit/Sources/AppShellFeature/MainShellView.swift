@@ -282,7 +282,7 @@ public struct MainShellView: View {
         HostTelemetryDisplay(snapshot: hostSnapshot, locale: locale)
     }
 
-    private func runnerRow(_ runner: RunnerEntity) -> some View {
+    private func runnerRow(_ runner: RunnerEntity, usage: RunnerResourceUsage?) -> some View {
         let observation = remoteSync?.snapshot.flatMap { snapshot in
             accounts.first(where: { $0.isActive }).flatMap {
                 RunnerSyncObservation(runner: runner, account: $0, snapshot: snapshot)
@@ -303,6 +303,7 @@ public struct MainShellView: View {
                 let isDirect = runner.executionMode == .direct
                 Task { await deleteRunner(id: id, isDirect: isDirect) }
             })
+        row.resourceUsage = usage
         row.currentJobControl = DashboardRunnerJobControl(results: jobResults, runnerID: runner.id, isRunning: runner.status == .busy,
             observationMaxAge: historyObservationMaxAge) { job in
             guard runner.status == .busy else { return }

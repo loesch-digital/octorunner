@@ -1,9 +1,14 @@
 import CoreModels
 import DesignSystem
 import SwiftUI
+import TelemetryKit
 
 struct DashboardRunnerPool<Row: View>: View {
     @Environment(\.locale) private var locale
+
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.usesDashboardSampleData) private var usesDashboardSampleData
+    @State private var resourceUsage: [UUID: RunnerResourceUsage] = [:]
 
     let runners: [RunnerEntity]
     let registeredCount: Int
@@ -13,9 +18,10 @@ struct DashboardRunnerPool<Row: View>: View {
     let isSyncingRunners: Bool
     let syncRunners: () -> Void
     let importRunner: () -> Void
-    @ViewBuilder let runnerRow: (RunnerEntity) -> Row
+    @ViewBuilder let runnerRow: (RunnerEntity, RunnerResourceUsage?) -> Row
 
     var body: some View {
+        let targets = processTargets
         VStack(alignment: .leading, spacing: 12) {
             if !jobResults.unreviewedFailures.isEmpty { JobFailureNotice(results: jobResults) }
             HStack {
@@ -31,7 +37,7 @@ struct DashboardRunnerPool<Row: View>: View {
                 emptyContent
             } else {
                 ForEach(runners) { runner in
-                    runnerRow(runner)
+                    runnerRow(runner, resourceUsage[runner.id])
                 }
             }
         }
@@ -40,6 +46,28 @@ struct DashboardRunnerPool<Row: View>: View {
         .overlay {
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(OctoTheme.outlineVariant.opacity(0.45), lineWidth: 1)
+        }
+        .task(id: targets) { await sampleResources(for: targets) }
+    }
+
+    private var processTargets: [RunnerProcessTarget] {
+        guard scenePhase == .active, !usesDashboardSampleData else { return [] }
+        return runners.compactMap { runner in
+            guard let root = runner.rootDirectoryPath, !root.isEmpty else { return nil }
+            return RunnerProcessTarget(id: runner.id, name: runner.name, rootPath: root)
+        }
+    }
+
+    private func sampleResources(for targets: [RunnerProcessTarget]) async {
+        guard !Task.isCancelled else { return }
+        resourceUsage = [:]
+        guard !targets.isEmpty else { return }
+        let monitor = RunnerProcessMonitor()
+        while !Task.isCancelled {
+            let processes = try? await monitor.snapshot(targets: targets)
+            guard !Task.isCancelled else { return }
+            resourceUsage = RunnerResourceUsage.byRunner(processes ?? [])
+            do { try await Task.sleep(for: .seconds(5)) } catch { return }
         }
     }
 

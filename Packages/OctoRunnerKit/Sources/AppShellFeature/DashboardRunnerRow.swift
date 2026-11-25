@@ -1,11 +1,13 @@
 import CoreModels
 import DesignSystem
 import SwiftUI
+import TelemetryKit
 
 public struct DashboardRunnerRow: View {
     @Environment(\.locale) private var locale
     let runner: RunnerEntity
     let lastJob: WorkflowHistoryEntry?
+    var resourceUsage: RunnerResourceUsage? = nil
     var currentJobControl: DashboardRunnerJobControl? = nil
     let syncObservation: RunnerSyncObservation?
     let openLog: () -> Void
@@ -73,18 +75,10 @@ public struct DashboardRunnerRow: View {
                 .accessibilityHint(Text("Shows settings, migration and removal actions", bundle: .module))
             }
 
-            HStack(spacing: 8) {
-                RunnerStatusBadge(status: runner.status)
-                    .fixedSize()
-                Text(Self.ownershipLabel(imported: runner.isImportedLocal, locale: locale))
-                    .lineLimit(1)
-                if let version = runner.runnerVersion {
-                    Text("v\(version)").lineLimit(1).truncationMode(.middle)
-                }
-                if let pid = runner.pid { Text("PID \(String(pid))").lineLimit(1) }
+            DashboardRunnerResourceLine(runnerName: runner.name, usage: resourceUsage,
+                                        workFolderPath: runner.workDirectoryPath) {
+                statusContent
             }
-            .font(.caption.monospaced())
-            .foregroundStyle(.secondary)
 
             if let currentJobControl {
                 currentJobControl
@@ -113,6 +107,19 @@ public struct DashboardRunnerRow: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Runner \(runner.name)")
     }
+    private var statusContent: some View {
+        HStack(spacing: 8) {
+            RunnerStatusBadge(status: runner.status)
+                .fixedSize()
+            Text(Self.ownershipLabel(imported: runner.isImportedLocal, locale: locale))
+                .lineLimit(1)
+            if let version = runner.runnerVersion {
+                Text("v\(version)").lineLimit(1).truncationMode(.middle)
+            }
+            if let pid = runner.pid { Text("PID \(String(pid))").lineLimit(1) }
+        }
+    }
+
     static func ownershipLabel(imported: Bool, locale: Locale) -> String {
         AppLocalization.string(imported ? "Imported" : "Managed", locale: locale)
     }
