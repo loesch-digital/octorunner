@@ -63,6 +63,8 @@ public enum AppUpdateHandoff {
     private static var candidateLease: AppUpdateStoreLease?
     private static let noticeFile = AppUpdateJournal.directory.appending(path: "result.json")
 
+    public static var isUpdatePending: Bool { pending != nil }
+
     public static func schedule(_ update: StagedAppUpdate) throws {
         guard pending == nil else {
             throw AppUpdateError.couldNotReplace

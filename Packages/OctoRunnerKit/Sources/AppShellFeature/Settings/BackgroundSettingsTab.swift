@@ -28,6 +28,7 @@ public struct BackgroundSettingsTab: View {
           "The app login item is independent of installed runner LaunchAgents.", bundle: .module)
         .font(.callout).foregroundStyle(OctoTheme.secondaryText)
       }
+      BackgroundMonitoringSettingsCard()
       SettingsCard(
         "Runner capacity", symbol: "gauge.with.dots.needle.50percent",
         subtitle: "Limit how many directly managed runners can run at once."

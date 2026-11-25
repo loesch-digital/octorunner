@@ -39,10 +39,16 @@ Open **OctoRunner → Settings** or press **⌘,**. Use Settings search to find 
 | Page | What you can configure |
 | --- | --- |
 | **General** | Interface language, menu bar and Dock visibility, and app update checks. The interface supports English and German, plus the macOS Light and Dark appearances. |
-| **Autostart & Background** | Launch at macOS login, runner shell and PATH, LaunchAgent inspection, and the capacity limit for directly managed runners. |
+| **Autostart & Background** | Launch at macOS login, local background monitoring, runner shell and PATH, LaunchAgent inspection, and the capacity limit for directly managed runners. |
 | **Failover** | Local restart policy, delay, quarantine threshold, and Low Power Mode behavior. |
 | **Cache & Storage** | Workspace age, log retention, automatic cleanup, and a review of managed storage before pruning. |
 | **Auth & Tokens** | Connect, switch, reauthenticate, or disconnect GitHub accounts and inspect reported permissions. OctoRunner stores tokens in the macOS Keychain. |
 | **Notifications** | Opt in to macOS notifications for runner availability or errors, local job failures, and low disk space. macOS controls delivery and presentation. |
+
+### Local background monitoring
+
+In **Autostart & Background**, enable **Monitor local runners after quitting**. If macOS requests approval, allow OctoRunner under **System Settings → General → Login Items & Extensions**. Quit OctoRunner with **⌘Q** to hand local process monitoring to the background service. Opening OctoRunner brings monitoring back into the app.
+
+The service observes registered runner processes on your Mac. GitHub refreshes and OctoRunner notifications run while the app is open. Runner LaunchAgents continue according to their own configuration. To stop background monitoring, turn it off in OctoRunner or disable its background item in macOS. Before an in-app update, OctoRunner unregisters the service so the app can safely replace its bundle. Turn the setting back on afterward if you want it to continue.
 
 If GitHub lists workflow write access under **Existing access** for OctoRunner, that permission is part of a prior OAuth grant. Revoke OctoRunner under **GitHub Settings → Applications → Authorized OAuth Apps** before reconnecting if you want to replace the prior grant. For monitoring a selected private repository, use a fine-grained token with **Actions: Read** and add **Pull requests: Read** if you want PR lookup. [Manage authorized OAuth apps](https://docs.github.com/en/apps/oauth-apps/using-oauth-apps/reviewing-your-authorized-oauth-apps)

@@ -27,6 +27,18 @@ public struct MonitoringSnapshotStore: Sendable {
         try read("configuration.json", version: MonitoringConfiguration.currentVersion)
     }
 
+    public func removeConfiguration() throws {
+        do {
+            try validateDirectory()
+            let file = directory.appending(path: "configuration.json")
+            guard unlink(file.path) == 0 else {
+                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+            }
+        } catch let error as POSIXError where error.code == .ENOENT {
+            return
+        }
+    }
+
     public func writeObservation(_ observation: MonitoringObservation) throws {
         try write(observation, to: "observation.json")
     }

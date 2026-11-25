@@ -7,14 +7,16 @@ struct BackgroundMonitorAgent {
     private static let logger = Logger(subsystem: "io.octorunner.macos", category: "BackgroundMonitor")
 
     static func main() async throws {
-        guard CommandLine.arguments.count == 2,
-              let path = CommandLine.arguments.last,
-              path.hasPrefix("/")
-        else {
-            logger.error("Missing monitoring configuration directory")
+        let directory: URL
+        switch CommandLine.arguments.dropFirst().first {
+        case nil:
+            directory = MonitoringStorage.directory
+        case let path? where path.hasPrefix("/") && CommandLine.arguments.count == 2:
+            directory = URL(filePath: path, directoryHint: .isDirectory)
+        default:
+            logger.error("Invalid monitoring configuration directory")
             return
         }
-        let directory = URL(filePath: path, directoryHint: .isDirectory)
         let store = MonitoringSnapshotStore(directory: directory)
         let monitor = LocalBackgroundMonitor(store: store)
         let lease = MonitoringLease(lockFile: directory.appending(path: "monitoring.lock"))

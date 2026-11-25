@@ -10,6 +10,7 @@ import SyncKit
 public final class AppServices {
     public let preferences: AppPreferencesStore
     public let integration: AppIntegrationController
+    public let backgroundMonitoring = BackgroundMonitoringController()
     public let notifications: AppNotificationsController
     public let historyRateBudget = WorkflowHistoryRateBudget()
     public let accounts = AccountSessionController()
