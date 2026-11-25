@@ -83,6 +83,7 @@ Your GitHub account needs the corresponding access. Organization policies and ru
 - **Operate runners.** Start, stop, or restart managed runners and follow local log output. Directly managed runners support restart policies, backoff, quarantine, and a local concurrency limit.
 - **Keep runners running after you quit.** Installed user LaunchAgents run independently through `launchd`. Directly managed runners depend on the app. Imported external runners stay with their existing process manager until you migrate them.
 - **Monitor from the menu bar.** See fleet health while the main window is closed. Enable native macOS notifications for runner availability, local job failures, and low disk space in Settings.
+- **Diagnose queued jobs.** See which observed repository runners match a queued job’s labels and whether GitHub reports them idle, busy, or offline. OctoRunner indicates when it lacks enough data to explain the wait.
 - **Investigate workflow failures.** See job results separately from runner health. Review workflow details and logs from GitHub, inspect local runner diagnostics, or search and export the audit log.
 - **Inspect your Mac.** Open **Host Telemetry** for CPU, memory, disk and I/O measurements, runner process details, and the last observed GitHub API rate limit. Review available cleanup actions before applying them to managed runner storage.
 

@@ -24,6 +24,8 @@ Open **Jobs & Workflow Runs** in the sidebar to see stored observations and refr
 
 Open a workflow run to see its GitHub link and associated pull request when GitHub provides the data. Expand jobs to see their steps and status. **Load job log** fetches the available log from GitHub on demand. Use the runner console for live output from a local runner.
 
+When a job requests the `self-hosted` label and is queued without an assigned runner, expand it in the workflow details to see its queue hint. OctoRunner compares the requested labels with current GitHub observations of registered runners scoped to that repository. It shows the job’s age when GitHub supplies its creation time. GitHub assigns the job, and other runners and scheduling constraints may be outside OctoRunner’s view.
+
 ## Host Telemetry
 
 Open **Host Telemetry** in the sidebar for CPU, memory, storage, and I/O measurements, plus the last observed GitHub API rate limit. Choose a sampling interval or refresh manually. When a runner process is available, inspect its resource usage and uptime. The process inspector asks for confirmation before terminating an identified process.

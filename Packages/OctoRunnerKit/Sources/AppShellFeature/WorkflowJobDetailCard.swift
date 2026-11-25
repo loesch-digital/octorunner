@@ -9,12 +9,17 @@ struct WorkflowJobDetailCard: View {
     let job: GitHubWorkflowJobDTO
     let selection: WorkflowRunDetailSelection
     var now: Date? = nil
+    var queueDiagnosis: WorkflowJobQueueDiagnosis? = nil
     var openLog: (() -> Void)? = nil
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(job.runnerName ?? "—").font(.caption).textSelection(.enabled)
+                if let queueDiagnosis {
+                    WorkflowJobQueueHint(diagnosis: queueDiagnosis)
+                } else {
+                    Text(job.runnerName ?? "—").font(.caption).textSelection(.enabled)
+                }
                 if let openLog {
                     Button(action: openLog) { Text("Load job log", bundle: .module) }
                         .accessibilityLabel(Text("Load job log", bundle: .module))

@@ -2,6 +2,7 @@ import CoreModels
 import DesignSystem
 import SwiftData
 import SwiftUI
+import SyncKit
 
 public struct WorkflowJobHistoryView: View {
     @Environment(\.modelContext) private var modelContext
@@ -74,20 +75,34 @@ public struct WorkflowJobHistoryView: View {
             sourceControls(account: accountSelection)
         }
         .sheet(item: $selectedRun) { run in
-            if let account = accountSelection,
-               let selection = WorkflowRunDetailSelection(entry: run, source: .init(accountID: account.accountID,
+            if let account = activeAccount,
+               let selection = WorkflowRunDetailSelection(entry: run, source: .init(accountID: account.githubUserId,
                 keychainAccountKey: account.keychainAccountKey, repository: run.repository)) {
-                WorkflowRunDetailView(entry: run, selection: selection, rateBudget: rateBudget)
+                WorkflowRunDetailView(entry: run, selection: selection, rateBudget: rateBudget,
+                    runnerAccount: RunnerSyncAccount(account), runnerConfigurations: runnerConfigurations)
             }
         }
         .task(id: request) { await observe(request) }
         .onDisappear { model.invalidate() }
     }
 
-    private var accountSelection: WorkflowHistorySelection? {
+    private var activeAccount: GitHubAccountEntity? {
         let active = accounts.filter(\.isActive)
-        guard active.count == 1, let account = active.first else { return nil }
-        return WorkflowHistorySelection(accountID: account.githubUserId, keychainAccountKey: account.keychainAccountKey, repository: "")
+        return active.count == 1 ? active.first : nil
+    }
+
+    private var accountSelection: WorkflowHistorySelection? {
+        activeAccount.map {
+            WorkflowHistorySelection(accountID: $0.githubUserId, keychainAccountKey: $0.keychainAccountKey, repository: "")
+        }
+    }
+
+    private var runnerConfigurations: [UUID: LocalDotRunnerConfig] {
+        var configurations: [UUID: LocalDotRunnerConfig] = [:]
+        for runner in runners {
+            configurations[runner.id] = LocalDotRunnerConfig(runner)
+        }
+        return configurations
     }
 
     private var managedRepositories: [String] {
