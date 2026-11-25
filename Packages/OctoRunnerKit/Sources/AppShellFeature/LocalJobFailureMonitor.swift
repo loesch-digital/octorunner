@@ -78,12 +78,7 @@ public final class LocalJobFailureMonitor {
             let cutoff = max(armedAt, now.addingTimeInterval(-86_400))
             delivered = delivered.filter { $0.value >= cutoff }
             let entries = model.entries.filter { $0.accountID == first.accountID }
-            var latestAttempts: [String: Int] = [:]
-            for entry in entries {
-                if let attempt = entry.attempt {
-                    latestAttempts[entry.repository + "|\(entry.githubRunID)"] = max(latestAttempts[entry.repository + "|\(entry.githubRunID)"] ?? 0, attempt)
-                }
-            }
+            let latestAttempts = WorkflowHistoryFilter.latestAttempts(in: entries)
             let repositories = Set(sources.map(\.repository))
             let ordered = entries.sorted { ($0.completedAt ?? .distantPast) < ($1.completedAt ?? .distantPast) }
             for entry in ordered {
@@ -91,7 +86,7 @@ public final class LocalJobFailureMonitor {
                 guard entry.recordKind == "job", entry.status == "completed",
                       entry.conclusion == "failure" || entry.conclusion == "timed_out",
                       let jobID = entry.githubJobID, jobID > 0, let attempt = entry.attempt,
-                      latestAttempts[entry.repository + "|\(entry.githubRunID)"] == attempt,
+                      latestAttempts[entry.runKey] == attempt,
                       repositories.contains(entry.repository), let completed = entry.completedAt,
                       let observed = entry.observedAt, observed <= now.addingTimeInterval(5),
                       completed >= cutoff, completed <= now, completed <= observed.addingTimeInterval(5) else { continue }
@@ -99,7 +94,7 @@ public final class LocalJobFailureMonitor {
                 guard delivered[eventID] == nil else { continue }
                 // Refetch local identities after suspension and before each alert.
                 // Remote names and free-form workflow output never prove locality.
-                let locals = try context.fetch(FetchDescriptor<RunnerEntity>()).filter { matches($0, entry: entry) }
+                let locals = try context.fetch(FetchDescriptor<RunnerEntity>()).filter { entry.matchesRunner($0) }
                 guard locals.count == 1, let name = locals.first?.name else { continue }
                 let locale = preferences.language.locale
                 let event = AppNotificationEvent(id: eventID, kind: .jobFailure,
@@ -143,21 +138,5 @@ public final class LocalJobFailureMonitor {
             WorkflowHistorySelection(accountID: account.githubUserId, keychainAccountKey: account.keychainAccountKey, repository: $0)
         }
         return sources.isEmpty ? nil : sources
-    }
-
-    private func matches(_ runner: RunnerEntity, entry: WorkflowHistoryEntry) -> Bool {
-        guard let id = runner.githubRunnerId, id > 0, entry.runnerID == id else { return false }
-        switch runner.scopeType {
-        case .repository, .personalMultiRepo:
-            return GitHubRepositorySlug(input: runner.scopeUrlString)?.rawValue == entry.repository
-        case .organization:
-            guard let url = URLComponents(string: runner.scopeUrlString), url.scheme == "https", url.host?.lowercased() == "github.com",
-                  url.port == nil || url.port == 443, url.user == nil, url.password == nil, url.query == nil, url.fragment == nil,
-                  !url.percentEncodedPath.contains("%") else { return false }
-            let parts = url.path.split(separator: "/")
-            guard parts.count == 1, let owner = parts.first,
-                  url.percentEncodedPath == "/\(owner)" || url.percentEncodedPath == "/\(owner)/" else { return false }
-            return owner.lowercased() == entry.repository.split(separator: "/").first?.lowercased()
-        }
     }
 }

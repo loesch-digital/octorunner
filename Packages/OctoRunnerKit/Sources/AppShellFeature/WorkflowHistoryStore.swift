@@ -11,7 +11,8 @@ public enum WorkflowHistoryStore {
         repository: String, accountID: Int64, jobsComplete: Bool = false, observedAt: Date = .now,
         in context: ModelContext) throws -> JobRunEntity {
         try Task.checkCancellation()
-        let repository = try canonicalRepository(repository)
+        guard let slug = GitHubRepositorySlug(slug: repository) else { throw WorkflowHistoryError.invalidRepository }
+        let repository = slug.rawValue
         guard accountID > 0, run.id > 0, run.runAttempt.map({ $0 > 0 }) ?? true,
               jobs.allSatisfy({ $0.runID == run.id && ($0.runAttempt == nil || $0.runAttempt == run.runAttempt) && $0.id > 0 && $0.hasValidStepIdentities }),
               Set(jobs.map(\.id)).count == jobs.count,
@@ -98,14 +99,5 @@ public enum WorkflowHistoryStore {
                 entity.pullRequestReferencesData = try? JSONEncoder().encode(references.filter { seen.insert($0.id).inserted })
             }
         }
-    }
-
-    private static func canonicalRepository(_ value: String) throws -> String {
-        let components = value.split(separator: "/", omittingEmptySubsequences: false)
-        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.")
-        guard components.count == 2, components.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." && $0.unicodeScalars.allSatisfy(allowed.contains) }) else {
-            throw WorkflowHistoryError.invalidRepository
-        }
-        return value.lowercased()
     }
 }

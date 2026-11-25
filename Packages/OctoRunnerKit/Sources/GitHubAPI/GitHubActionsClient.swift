@@ -1,3 +1,4 @@
+import CoreModels
 import Foundation
 
 /// Read-only Actions REST API. Credentials never appear in URLs, errors or storage.
@@ -71,11 +72,7 @@ public actor GitHubActionsClient {
     }
 
     private func repositoryPath(_ repository: String) throws -> String {
-        let parts = repository.split(separator: "/", omittingEmptySubsequences: false)
-        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.")
-        guard parts.count == 2, parts.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." && $0.unicodeScalars.allSatisfy(allowed.contains) }) else {
-            throw GitHubActionsError.invalidRepository
-        }
+        guard GitHubRepositorySlug(slug: repository) != nil else { throw GitHubActionsError.invalidRepository }
         return "/repos/\(repository)"
     }
 

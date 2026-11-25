@@ -1,4 +1,4 @@
-import AppShellFeature
+@testable import AppShellFeature
 import CoreModels
 import Foundation
 import SwiftData
@@ -25,7 +25,7 @@ struct FilesystemModelPathTests {
             workDirectory: secondRoot.appending(path: "_work"), runnerVersion: nil, listenerPID: nil,
             isWorkerActive: false)
 
-        MainShellView.upsertDiscoveredRunners([other], into: context)
+        LocalRunnerImportStore.upsert([other], into: context)
 
         #expect(try context.fetchCount(FetchDescriptor<RunnerEntity>()) == 2)
         #expect(first.scopeUrlString == firstScope.absoluteString)
@@ -50,7 +50,7 @@ struct FilesystemModelPathTests {
             config: .init(agentId: 42, agentName: runner.name, gitHubUrl: scope),
             workDirectory: otherRoot.appending(path: "_work"), runnerVersion: nil, listenerPID: 123, isWorkerActive: false)
 
-        MainShellView.upsertDiscoveredRunners([discovered], into: context)
+        LocalRunnerImportStore.upsert([discovered], into: context)
         let rows = try context.fetch(FetchDescriptor<RunnerEntity>())
         #expect(runner.executionMode == mode)
         #expect(runner.rootDirectoryPath == expectedRoot.path)
@@ -75,15 +75,58 @@ struct FilesystemModelPathTests {
         let discovered = DiscoveredLocalRunner(rootDirectory: URL(fileURLWithPath: root),
             config: LocalDotRunnerConfig(agentId: 42, agentName: "Runner", gitHubUrl: try #require(URL(string: "https://github.com/example/repo")), workFolder: "_work"),
             workDirectory: URL(fileURLWithPath: root + "/_work"), runnerVersion: nil, listenerPID: nil, isWorkerActive: false)
-        MainShellView.upsertDiscoveredRunners([discovered], into: container.mainContext)
+        LocalRunnerImportStore.upsert([discovered], into: container.mainContext)
         let runner = try #require(container.mainContext.fetch(FetchDescriptor<RunnerEntity>()).first)
         #expect(runner.rootDirectoryPath == root)
         #expect(runner.workDirectoryPath == root + "/_work")
         runner.rootDirectoryPath = "/tmp/100%2520literal/Runner%20Fleet"
         runner.workDirectoryPath = "/tmp/100%2520literal/Runner%20Fleet/_work"
-        MainShellView.upsertDiscoveredRunners([discovered], into: container.mainContext)
+        LocalRunnerImportStore.upsert([discovered], into: container.mainContext)
         #expect(runner.rootDirectoryPath == root)
         #expect(runner.workDirectoryPath == root + "/_work")
         #expect(try container.mainContext.fetchCount(FetchDescriptor<RunnerEntity>()) == 1)
+    }
+
+    @Test("Repeated discovery updates the same runner and preserves its identity")
+    func upsertDiscoveredRunnersIdempotency() throws {
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        Self.retainedContainers.append(container)
+        let context = container.mainContext
+
+        let discovered = DiscoveredLocalRunner(
+            rootDirectory: URL(fileURLWithPath: "/tmp/example-actions-runner"),
+            config: LocalDotRunnerConfig(
+                agentId: 21,
+                agentName: "example-local-runner",
+                gitHubUrl: try #require(URL(string: "https://github.com/example/project")),
+                workFolder: "_work"
+            ),
+            workDirectory: URL(fileURLWithPath: "/tmp/example-actions-runner/_work"),
+            runnerVersion: "2.338.2",
+            listenerPID: 87558,
+            isWorkerActive: false,
+            labels: ["self-hosted", "macOS", "ARM64"]
+        )
+
+        // First sync imports the runner
+        let importedCount = LocalRunnerImportStore.upsert([discovered], into: context)
+        #expect(importedCount == 1)
+
+        var allRunners = try context.fetch(FetchDescriptor<RunnerEntity>())
+        #expect(allRunners.count == 1)
+        #expect(allRunners.first?.name == "example-local-runner")
+        #expect(allRunners.first?.githubRunnerId == 21)
+        #expect(allRunners.first?.pid == 87558)
+        #expect(allRunners.first?.status == .idle)
+
+        // Second sync updates in-place (no duplicate created)
+        var busyDiscovered = discovered
+        busyDiscovered.localStatus = .busy
+        let secondCount = LocalRunnerImportStore.upsert([busyDiscovered], into: context)
+        #expect(secondCount == 1)
+
+        allRunners = try context.fetch(FetchDescriptor<RunnerEntity>())
+        #expect(allRunners.count == 1)
+        #expect(allRunners.first?.status == .busy)
     }
 }

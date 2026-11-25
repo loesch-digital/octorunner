@@ -1,4 +1,3 @@
-import CoreModels
 import Foundation
 
 public struct GitHubRunnerDownloadDTO: Codable, Sendable, Equatable {
@@ -28,23 +27,5 @@ public struct GitHubRunnerDownloadDTO: Codable, Sendable, Equatable {
         self.downloadUrl = downloadUrl
         self.filename = filename
         self.sha256Checksum = sha256Checksum
-    }
-}
-
-public actor GitHubAPIClientActor {
-    private let session: URLSession
-
-    public init(session: URLSession = .shared) {
-        self.session = session
-    }
-
-    public func pingGitHubAPI() async -> Bool {
-        guard let url = URL(string: "https://api.github.com/zen") else { return false }
-        do {
-            let (_, response) = try await session.data(from: url)
-            return (response as? HTTPURLResponse)?.statusCode == 200
-        } catch {
-            return false
-        }
     }
 }
