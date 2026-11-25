@@ -1,3 +1,4 @@
+import AppKit
 import CoreModels
 import Observation
 import RunnerEngine
@@ -68,6 +69,20 @@ public final class AppIntegrationController {
             hideDockWhenClosed: preferences.hideDockIconWhenClosed
         )
         return show ? .regular : .accessory
+    }
+
+    public func backgroundDockMenu(hasVisibleWindow: Bool, locale: Locale) -> NSMenu? {
+        let dockPolicy = desiredDockPolicy(hasVisibleDashboard: hasVisibleWindow)
+        guard hasPresentedWindow, !hasVisibleWindow, dockPolicy == .regular else { return nil }
+
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        let status = NSMenuItem(
+            title: AppLocalization.string("Monitoring is running in the background", locale: locale),
+            action: nil, keyEquivalent: "")
+        status.isEnabled = false
+        menu.addItem(status)
+        return menu
     }
 
     public func applyDockVisibility(hasVisibleDashboard: Bool) {

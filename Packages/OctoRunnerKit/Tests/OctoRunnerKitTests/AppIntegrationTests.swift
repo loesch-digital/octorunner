@@ -80,6 +80,33 @@ struct AppIntegrationTests {
         #expect(controller.desiredDockPolicy(hasVisibleDashboard: false) == .regular)
     }
 
+    @Test("The Dock menu reports background monitoring only after the window closes")
+    func dockBackgroundStatus() throws {
+        let name = "octorunner-dock-status-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let preferences = AppPreferencesStore(defaults: defaults)
+        preferences.showInMenuBar = true
+        preferences.hideDockIconWhenClosed = false
+        let controller = AppIntegrationController(preferences: preferences)
+
+        #expect(controller.backgroundDockMenu(hasVisibleWindow: false, locale: Locale(identifier: "de")) == nil)
+        #expect(controller.backgroundDockMenu(hasVisibleWindow: true, locale: Locale(identifier: "de")) == nil)
+
+        let menu = try #require(controller.backgroundDockMenu(hasVisibleWindow: false, locale: Locale(identifier: "de")))
+        let status = try #require(menu.items.first)
+        #expect(status.title == "Überwachung läuft im Hintergrund")
+        #expect(!status.isEnabled)
+        #expect(status.action == nil)
+        #expect(controller.backgroundDockMenu(hasVisibleWindow: true, locale: Locale(identifier: "de")) == nil)
+
+        preferences.hideDockIconWhenClosed = true
+        #expect(controller.backgroundDockMenu(hasVisibleWindow: false, locale: Locale(identifier: "de")) == nil)
+        preferences.showInMenuBar = false
+        #expect(controller.backgroundDockMenu(hasVisibleWindow: false, locale: Locale(identifier: "en"))?.items.first?.title
+            == "Monitoring is running in the background")
+    }
+
     @Test("An older status refresh cannot overwrite a completed login change")
     func staleRefresh() async throws {
         let name = "octorunner-integration-test-\(UUID().uuidString)"

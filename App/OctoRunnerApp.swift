@@ -118,8 +118,17 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate, Obser
         guard !isPreview else { return }
         // Re-evaluate after AppKit processes window and preference changes, including
         // when the dashboard is closed. A visible Settings window also keeps its Dock icon.
-        let hasVisibleWindow = NSApplication.shared.windows.contains { $0.canBecomeMain && $0.isVisible }
-        services.integration.applyDockVisibility(hasVisibleDashboard: hasVisibleWindow)
+        services.integration.applyDockVisibility(hasVisibleDashboard: hasVisibleWindow(in: .shared))
+    }
+
+    public func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        guard !isPreview, isReadyForActions else { return nil }
+        return services.integration.backgroundDockMenu(
+            hasVisibleWindow: hasVisibleWindow(in: sender), locale: services.preferences.language.locale)
+    }
+
+    private func hasVisibleWindow(in application: NSApplication) -> Bool {
+        application.windows.contains { $0.canBecomeMain && $0.isVisible }
     }
 }
 

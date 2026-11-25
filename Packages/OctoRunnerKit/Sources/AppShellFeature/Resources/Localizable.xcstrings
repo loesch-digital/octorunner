@@ -2568,6 +2568,23 @@
         }
       }
     },
+    "Monitoring is running in the background": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überwachung läuft im Hintergrund"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitoring is running in the background"
+          }
+        }
+      }
+    },
     "Closing a window keeps OctoRunner running. Quitting removes its menu bar icon; installed runner LaunchAgents continue running.": {
       "extractionState": "manual",
       "localizations": {
