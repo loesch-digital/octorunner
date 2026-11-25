@@ -16,8 +16,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  scope:
+    name: Detect app changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      website_only: ${{ steps.scope.outputs.website_only }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Detect website-only changes
+        id: scope
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # Pull requests check out GitHub's merge commit, so compare its
+          # changes against the base. Pushes compare the full pushed range.
+          if ! git cat-file -e "${BASE_SHA}^{commit}"; then
+            echo "website_only=false" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet --no-renames "$BASE_SHA" "$GITHUB_SHA" -- . \
+            ':(exclude)website/**' ':(exclude)docs/DESIGN.md' \
+            ':(exclude).github/workflows/website.yml' ':(exclude)scripts/tests/test_website.py'; then
+            echo "website_only=true" >> "$GITHUB_OUTPUT"
+          else
+            result=$?
+            if [[ "$result" != 1 ]]; then exit "$result"; fi
+            echo "website_only=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate website-only changes for the required check
+        if: steps.scope.outputs.website_only == 'true'
+        run: python3 -m unittest discover -s scripts/tests -p test_website.py
+
   build-and-test:
-    name: Swift 6 Strict Concurrency & macOS App Build
+    name: Build and test the macOS app
+    needs: scope
+    if: needs.scope.outputs.website_only == 'false'
     runs-on: xcode-27
     timeout-minutes: 20
     env:
@@ -92,3 +131,24 @@ jobs:
           name: settings-ui-tests-xcode-27
           path: DerivedData/SettingsUITests.xcresult
           retention-days: 7
+
+  required-check:
+    name: Swift 6 Strict Concurrency & macOS App Build
+    needs: [scope, build-and-test]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify the required app checks
+        shell: bash
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          WEBSITE_ONLY: ${{ needs.scope.outputs.website_only }}
+          APP_RESULT: ${{ needs.build-and-test.result }}
+        run: |
+          [[ "$SCOPE_RESULT" == success ]] || exit 1
+          if [[ "$WEBSITE_ONLY" == true && "$APP_RESULT" == skipped ]]; then
+            echo "Website-only changes. The macOS build was skipped."
+          else
+            [[ "$APP_RESULT" == success ]]
+          fi

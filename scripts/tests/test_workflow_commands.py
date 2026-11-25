@@ -38,9 +38,44 @@ class WorkflowCommandTests(unittest.TestCase):
         for workflow in ("ci.yml", "release.yml"):
             with self.subTest(workflow=workflow):
                 source = (ROOT / ".github/workflows" / workflow).read_text()
-                self.assertEqual(re.findall(r"^    runs-on: (.+)$", source, re.MULTILINE), ["xcode-27"])
+                self.assertEqual(re.findall(r"^    runs-on: (xcode-.+)$", source, re.MULTILINE), ["xcode-27"])
                 self.assertIn("DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer", source)
                 self.assertNotIn("matrix.", source)
+
+    def test_ci_skips_the_mac_build_only_for_website_changes(self):
+        source = (ROOT / ".github/workflows/ci.yml").read_text()
+        self.assertIn("- name: Detect website-only changes\n", source)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+
+            def git(*arguments):
+                return subprocess.check_output(["git", *arguments], cwd=root, text=True).strip()
+
+            git("init", "--quiet")
+            git("config", "user.name", "Workflow Test")
+            git("config", "user.email", "workflow@example.test")
+            git("commit", "--quiet", "--allow-empty", "-m", "Base")
+            base = git("rev-parse", "HEAD")
+            output = root / "outputs"
+            for paths, expected in [
+                (["website/index.html", ".github/workflows/website.yml"], "true"),
+                (["website/style.css", "App/OctoRunnerApp.swift"], "false"),
+            ]:
+                with self.subTest(paths=paths):
+                    for name in paths:
+                        path = root / name
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_text("change")
+                        git("add", name)
+                    git("commit", "--quiet", "-m", "Update files")
+                    output.write_text("")
+                    result = subprocess.run(
+                        ["bash", "-euo", "pipefail", "-c", workflow_run("ci.yml", "Detect website-only changes")],
+                        cwd=root, env={**os.environ, "BASE_SHA": base, "GITHUB_SHA": git("rev-parse", "HEAD"),
+                                       "GITHUB_OUTPUT": str(output)}, capture_output=True, text=True,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(output.read_text(), f"website_only={expected}\n")
 
     def run_step(self, workflow, step, command, stub, extra_env=None):
         with tempfile.TemporaryDirectory() as directory:
