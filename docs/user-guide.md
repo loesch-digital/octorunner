@@ -14,6 +14,12 @@ Open **Runners** in the main window. Each runner shows its current availability 
 
 Use `GITHUB_WORKSPACE` in a workflow to get the checkout directory. On GitHub's self-hosted runner, `RUNNER_WORKSPACE` points to the per-repository parent directory under the runner's work folder. Use an explicit cache or build directory there when a job needs files outside the checkout. With several runners, `RUNNER_NAME` identifies the assigned runner. Use unique paths or locking for any files deliberately shared between concurrent jobs.
 
+### Runner resources
+
+In **Runners**, CPU and RAM update every five seconds while the dashboard is active. CPU can exceed 100% because 100% represents one fully used logical core. RAM totals the resident memory reported for detected runner processes. Shared memory can be counted by more than one process. CPU appears once a second sample is available.
+
+Select **Measure Work Folder** to add up the logical sizes of regular files in that runner’s configured work folder. The scan skips symbolic links and runs only when requested. macOS may ask for access if the folder is protected. Select the refresh button next to the result to measure it again.
+
 ## Menu bar
 
 The menu bar icon summarizes runner availability while OctoRunner is open. Select it to see runner states or return to the dashboard. Closing the dashboard leaves the menu bar available. Quitting OctoRunner stops its monitoring and directly managed processes. Installed user LaunchAgents can continue through `launchd`.

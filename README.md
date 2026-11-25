@@ -85,6 +85,7 @@ Your GitHub account needs the corresponding access. Organization policies and ru
 - **Monitor from the menu bar.** See fleet health while the main window is closed. Enable native macOS notifications for runner availability, local job failures, and low disk space in Settings.
 - **Diagnose queued jobs.** See which observed repository runners match a queued job’s labels and whether GitHub reports them idle, busy, or offline. OctoRunner indicates when it lacks enough data to explain the wait.
 - **Investigate workflow failures.** See job results separately from runner health. Review workflow details and logs from GitHub, inspect local runner diagnostics, or search and export the audit log.
+- **See resources per runner.** Check current CPU and RAM from the dashboard and measure the configured work folder on demand.
 - **Inspect your Mac.** Open **Host Telemetry** for CPU, memory, disk and I/O measurements, runner process details, and the last observed GitHub API rate limit. Review available cleanup actions before applying them to managed runner storage.
 
 ## Screenshots
