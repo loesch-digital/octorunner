@@ -6,6 +6,7 @@ public struct DashboardRunnerRow: View {
     @Environment(\.locale) private var locale
     let runner: RunnerEntity
     let lastJob: WorkflowHistoryEntry?
+    var currentJobControl: DashboardRunnerJobControl? = nil
     let syncObservation: RunnerSyncObservation?
     let openLog: () -> Void
     let openSettings: () -> Void
@@ -84,6 +85,10 @@ public struct DashboardRunnerRow: View {
             }
             .font(.caption.monospaced())
             .foregroundStyle(.secondary)
+
+            if let currentJobControl {
+                currentJobControl
+            }
 
             if let syncObservation {
                 RunnerSyncStatusView(observation: syncObservation)

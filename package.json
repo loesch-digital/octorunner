@@ -1,6 +1,6 @@
 {
   "name": "octorunner",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "license": "Apache-2.0",
   "description": "Native macOS desktop manager for self-hosted GitHub Actions runners",
@@ -14,6 +14,6 @@
     "release": "release-it"
   },
   "devDependencies": {
-    "release-it": "^21.1.2"
+    "release-it": "^21.1.3"
   }
 }

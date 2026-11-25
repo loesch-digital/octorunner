@@ -20,7 +20,7 @@ The menu bar icon summarizes runner availability while OctoRunner is open. Selec
 
 ## Jobs & Workflow Runs
 
-Open **Jobs & Workflow Runs** in the sidebar to see stored observations and refresh history from GitHub. For an organization runner, use **History sources** to select the repositories you want to follow. Use the filters to focus on relevant repositories or outcomes. The displayed metrics describe the loaded history.
+Open **Jobs & Workflow Runs** in the sidebar to see stored observations and refresh history from GitHub. For an organization runner, use **History sources** to select the repositories you want to follow. Use the filters to focus on relevant repositories or outcomes. The displayed metrics describe the loaded history. The sidebar counts running workflows across the configured repositories. When a running job can be matched to a local runner, the dashboard links to its workflow details. Elapsed time updates while a workflow, job, or step is running and GitHub provides a start time.
 
 Open a workflow run to see its GitHub link and associated pull request when GitHub provides the data. Expand jobs to see their steps and status. **Load job log** fetches the available log from GitHub on demand. Use the runner console for live output from a local runner.
 
@@ -44,3 +44,5 @@ Open **OctoRunner → Settings** or press **⌘,**. Use Settings search to find 
 | **Cache & Storage** | Workspace age, log retention, automatic cleanup, and a review of managed storage before pruning. |
 | **Auth & Tokens** | Connect, switch, reauthenticate, or disconnect GitHub accounts and inspect reported permissions. OctoRunner stores tokens in the macOS Keychain. |
 | **Notifications** | Opt in to macOS notifications for runner availability or errors, local job failures, and low disk space. macOS controls delivery and presentation. |
+
+If GitHub lists workflow write access under **Existing access** for OctoRunner, that permission is part of a prior OAuth grant. Revoke OctoRunner under **GitHub Settings → Applications → Authorized OAuth Apps** before reconnecting if you want to replace the prior grant. For monitoring a selected private repository, use a fine-grained token with **Actions: Read** and add **Pull requests: Read** if you want PR lookup. [Manage authorized OAuth apps](https://docs.github.com/en/apps/oauth-apps/using-oauth-apps/reviewing-your-authorized-oauth-apps)

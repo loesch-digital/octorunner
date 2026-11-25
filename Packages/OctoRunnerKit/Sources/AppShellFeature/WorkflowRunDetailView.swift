@@ -31,7 +31,7 @@ struct WorkflowRunDetailView: View {
                         Text(entry.branch).lineLimit(1).truncationMode(.middle).help(entry.branch)
                         Text(String(entry.commitSHA.prefix(7))).help(entry.commitSHA)
                     }.font(.caption.monospaced()).foregroundStyle(OctoTheme.secondaryText)
-                    Text("Run #\(selection.runID) · Attempt \(selection.attempt)", bundle: .module).font(.caption)
+                    Text("Run #\(String(selection.runID)) · Attempt \(selection.attempt)", bundle: .module).font(.caption)
                 }
                 Spacer(minLength: 8)
                 Button { dismiss() } label: { Text("Close", bundle: .module) }
@@ -47,7 +47,15 @@ struct WorkflowRunDetailView: View {
             if let workflow = model.workflow {
                 let status = WorkflowStepPresentation(step: .init(number: 0, name: workflow.name ?? "",
                     status: workflow.status ?? "unknown", conclusion: workflow.conclusion, startedAt: nil, completedAt: nil), locale: locale)
-                Label(status.title, systemImage: status.symbol).foregroundStyle(status.color).font(.subheadline)
+                HStack(spacing: 12) {
+                    Label(status.title, systemImage: status.symbol).foregroundStyle(status.color)
+                    Text("Duration", bundle: .module)
+                    TimelineView(.periodic(from: .now, by: model.shouldRefresh ? 1 : 15)) { timeline in
+                        Text(WorkflowHistoryPresentation.duration(workflowDuration(workflow, at: timeline.date)))
+                            .monospacedDigit()
+                    }
+                }
+                .font(.subheadline)
             }
             if let observed = model.observedAt {
                 HStack {
@@ -65,9 +73,13 @@ struct WorkflowRunDetailView: View {
                     if model.jobs.isEmpty && !model.isLoading && model.error == nil {
                         Text("No job details loaded", bundle: .module).foregroundStyle(OctoTheme.secondaryText)
                     }
-                    ForEach(model.jobs) { job in
-                        WorkflowJobDetailCard(job: job, selection: selection) {
-                            selectedLog = .init(detail: selection, jobID: job.id, jobName: job.name)
+                    TimelineView(.periodic(from: .now, by: model.shouldRefresh ? 1 : 15)) { timeline in
+                        let now = model.observedAt
+                            .map { (-5...90).contains(timeline.date.timeIntervalSince($0)) } == true ? timeline.date : nil
+                        ForEach(model.jobs) { job in
+                            WorkflowJobDetailCard(job: job, selection: selection, now: now) {
+                                selectedLog = .init(detail: selection, jobID: job.id, jobName: job.name)
+                            }
                         }
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
@@ -88,6 +100,19 @@ struct WorkflowRunDetailView: View {
         .sheet(item: $selectedLog) { log in
             WorkflowJobLogView(selection: log, rateBudget: rateBudget)
         }
+    }
+
+    private func workflowDuration(_ workflow: GitHubWorkflowRunDTO, at now: Date) -> Double? {
+        if workflow.status == "in_progress",
+           let observed = model.observedAt, (-5...90).contains(now.timeIntervalSince(observed)) {
+            return WorkflowExecutionDuration.elapsedSeconds(since: workflow.startedAt, at: now)
+        }
+        if workflow.status == "completed", !model.jobs.isEmpty,
+           model.jobs.allSatisfy({ $0.status == "completed" && $0.completedAt != nil }),
+           let end = model.jobs.compactMap(\.completedAt).max() {
+            return WorkflowExecutionDuration.elapsedSeconds(since: workflow.startedAt, at: end)
+        }
+        return entry.durationSeconds
     }
 
     @ViewBuilder private var actions: some View {

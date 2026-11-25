@@ -39,7 +39,7 @@ struct RunnerProcessInspectorView: View {
                 .accessibilityLabel(Text("Cancel", bundle: .module))
                 .accessibilityHint(Text("Keep the process running.", bundle: .module))
         } message: { process in
-            Text("Terminate \(process.name) (PID \(process.id.pid)) for \(process.runner.name)? Active jobs may fail. The service may restart this process. This does not stop the entire runner process tree.", bundle: .module)
+            Text("Terminate \(process.name) (PID \(String(process.id.pid))) for \(process.runner.name)? Active jobs may fail. The service may restart this process. This does not stop the entire runner process tree.", bundle: .module)
         }
         .task(id: terminationRequest?.id) {
             guard !Task.isCancelled, let request = terminationRequest else { return }

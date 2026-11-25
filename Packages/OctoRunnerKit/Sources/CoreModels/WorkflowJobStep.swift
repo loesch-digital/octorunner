@@ -14,6 +14,12 @@ public struct WorkflowJobStep: Codable, Sendable, Equatable, Identifiable {
         return seconds.isFinite && seconds >= 0 ? seconds : nil
     }
 
+    public func elapsedDuration(at now: Date?) -> Double? {
+        if let durationSeconds { return durationSeconds }
+        guard status == "in_progress", let now else { return nil }
+        return WorkflowExecutionDuration.elapsedSeconds(since: startedAt, at: now)
+    }
+
     public init(number: Int, name: String, status: String, conclusion: String?, startedAt: Date?, completedAt: Date?) {
         self.number = number; self.name = name; self.status = status
         self.conclusion = conclusion; self.startedAt = startedAt; self.completedAt = completedAt

@@ -8,6 +8,7 @@ struct WorkflowJobDetailCard: View {
     @State private var isExpanded = true
     let job: GitHubWorkflowJobDTO
     let selection: WorkflowRunDetailSelection
+    var now: Date? = nil
     var openLog: (() -> Void)? = nil
 
     var body: some View {
@@ -27,18 +28,24 @@ struct WorkflowJobDetailCard: View {
                 if let steps = job.steps {
                     if steps.isEmpty { Text("No steps reported", bundle: .module).foregroundStyle(OctoTheme.secondaryText) }
                     ForEach(steps.sorted { $0.number < $1.number }, id: \.number) { step in
-                        WorkflowJobStepView(step: step.snapshot)
+                        WorkflowJobStepView(step: step.snapshot, now: now)
                     }
                 } else {
                     Text("Step details unavailable", bundle: .module).foregroundStyle(OctoTheme.secondaryText)
                 }
             }.padding(.top, 8)
         } label: {
-            let display = WorkflowStepPresentation(step: .init(number: 0, name: job.name, status: job.status,
-                conclusion: job.conclusion, startedAt: job.startedAt, completedAt: job.completedAt), locale: locale)
+            let timing = WorkflowJobStep(number: 0, name: job.name, status: job.status,
+                conclusion: job.conclusion, startedAt: job.startedAt, completedAt: job.completedAt)
+            let display = WorkflowStepPresentation(step: timing, locale: locale)
             VStack(alignment: .leading, spacing: 4) {
                 Text(job.name).font(.headline).fixedSize(horizontal: false, vertical: true)
-                Label(display.title, systemImage: display.symbol).font(.caption).foregroundStyle(display.color)
+                HStack {
+                    Label(display.title, systemImage: display.symbol).foregroundStyle(display.color)
+                    if let seconds = timing.elapsedDuration(at: now) {
+                        Text(WorkflowHistoryPresentation.duration(seconds)).monospacedDigit()
+                    }
+                }.font(.caption)
             }
         }
         .accessibilityLabel(Text(job.name))

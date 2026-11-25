@@ -7,6 +7,10 @@ public struct WorkflowHistoryPreferences: Codable, Equatable, Sendable {
 
     public init() {}
 
+    public var observationMaxAge: TimeInterval { TimeInterval(validatedRefreshInterval + 30) }
+
+    private var validatedRefreshInterval: Int { min(max(refreshIntervalSeconds, 60), 900) }
+
     public func validated() -> Self {
         var result = self
         result.additionalRepositoriesByAccount = additionalRepositoriesByAccount.reduce(into: [:]) { accounts, item in
@@ -20,7 +24,7 @@ public struct WorkflowHistoryPreferences: Codable, Equatable, Sendable {
         if let target = durationSLATargetSeconds, !(1...86_400).contains(target) {
             result.durationSLATargetSeconds = nil
         }
-        result.refreshIntervalSeconds = min(max(refreshIntervalSeconds, 60), 900)
+        result.refreshIntervalSeconds = validatedRefreshInterval
         return result
     }
 }
