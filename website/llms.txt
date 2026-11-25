@@ -1,0 +1,15 @@
+# OctoRunner
+
+> OctoRunner is an open-source macOS app for setting up and monitoring self-hosted GitHub Actions runners on an Apple Silicon Mac.
+
+OctoRunner requires macOS 15 or later. It can register new runners, import existing installations, inspect local runner logs and resource usage, and show GitHub Actions workflow history. It is licensed under Apache 2.0.
+
+Install with Homebrew using `brew install --cask loesch-digital/tap/octorunner`, or download the latest signed release from GitHub.
+
+## Documentation and downloads
+
+- [OctoRunner website](https://loesch-digital.github.io/octorunner/)
+- [README and installation](https://raw.githubusercontent.com/loesch-digital/octorunner/main/README.md)
+- [User guide](https://raw.githubusercontent.com/loesch-digital/octorunner/main/docs/user-guide.md)
+- [Latest release](https://github.com/loesch-digital/octorunner/releases/latest)
+- [Source code and issue tracker](https://github.com/loesch-digital/octorunner)
