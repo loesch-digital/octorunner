@@ -11,7 +11,7 @@
 | **UI framework** | SwiftUI 6 (`@Observable`, `NavigationSplitView`, `MenuBarExtra`, `Settings` scene) |
 | **Persistence** | SwiftData (`@Model`, `@Relationship(deleteRule: .cascade)`, `#Index`, `#Predicate`) |
 | **Security and tokens** | Data Protection Keychain (`SecItem`, `kSecClassGenericPassword`, `SecAccessControl`) following `swift-security-expert` |
-| **Process management** | See ADR-01. `SMAppService.mainApp` starts the app at login. Direct supervision uses a dedicated process group created by `posix_spawn`. Standalone user LaunchAgents in `~/Library/LaunchAgents` can run after the app quits. Pipe streaming is planned separately. |
+| **Process management** | See ADR-01. `SMAppService.mainApp` starts the app at login. Direct supervision uses a dedicated process group created by `posix_spawn`. Standalone runner LaunchAgents in `~/Library/LaunchAgents` can run after the app quits. An opt-in bundled LaunchAgent can observe registered local processes after the GUI quits. Pipe streaming is planned separately. |
 | **Sandbox and runtime** | Hardened Runtime is enabled (`ENABLE_HARDENED_RUNTIME = YES`). App Sandbox is disabled (`com.apple.security.app-sandbox = false`) so `xcodebuild`, `fastlane`, `git`, Homebrew, and subprocesses can run without sandbox restrictions. |
 | **Localization** | String catalog (`Localizable.xcstrings`) for German (`de`) and English (`en`) |
 

@@ -3,7 +3,7 @@ import RunnerEngine
 
 @MainActor
 public enum AppQuitConfirmation {
-    public static func makeAlert(locale: Locale = .current) -> NSAlert {
+    public static func makeAlert(locale: Locale = .current, keepsMonitoring: Bool = false) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = AppLocalization.string("Confirm quitting OctoRunner", locale: locale)
         alert.informativeText = AppLocalization.string("""
@@ -11,8 +11,24 @@ public enum AppQuitConfirmation {
 
         Imported runners stay under their existing process manager.
         """, locale: locale)
+        if keepsMonitoring {
+            alert.informativeText += "\n\n" + AppLocalization.string(
+                "Local runner monitoring will continue in the background.", locale: locale)
+        }
         alert.addButton(withTitle: AppLocalization.string("Quit OctoRunner", locale: locale))
         alert.addButton(withTitle: AppLocalization.string("Cancel", locale: locale)).keyEquivalent = "\u{1b}"
+        return alert
+    }
+
+    public static func makeBackgroundHandoffError(locale: Locale) -> NSAlert {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = AppLocalization.string("OctoRunner is still open", locale: locale)
+        alert.informativeText = AppLocalization.string(
+            "The app could not prepare the background service or update. Check the background monitoring setting and try again.",
+            locale: locale
+        )
+        alert.addButton(withTitle: "OK")
         return alert
     }
 

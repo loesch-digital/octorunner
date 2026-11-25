@@ -26,6 +26,9 @@ final class SettingsNavigationUITests: XCTestCase {
             app.buttons[category].firstMatch.click()
             XCTAssertTrue(app.descendants(matching: .any)[control].firstMatch.waitForExistence(timeout: 5), "Missing content for \(category)")
         }
+        app.buttons["Autostart & Background"].firstMatch.click()
+        XCTAssertTrue(app.descendants(matching: .any)["local-background-monitoring"].firstMatch.waitForExistence(timeout: 5),
+                      "Background settings must expose the local monitoring switch")
         let search = app.searchFields.firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 5), "Settings search is missing from the toolbar")
         search.click()

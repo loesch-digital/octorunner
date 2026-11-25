@@ -16,11 +16,16 @@ targets:
       - path: App
       - path: LICENSE
         buildPhase: resources
+      - path: BackgroundAgent/io.octorunner.macos.background.plist
+        buildPhase:
+          copyFiles:
+            destination: wrapper
+            subpath: Contents/Library/LaunchAgents
     settings:
       base:
         PRODUCT_NAME: OctoRunner
         PRODUCT_BUNDLE_IDENTIFIER: io.octorunner.macos
-        MARKETING_VERSION: 0.7.2
+        MARKETING_VERSION: 0.8.0
         CURRENT_PROJECT_VERSION: 1
         SWIFT_VERSION: "6.0"
         SWIFT_STRICT_CONCURRENCY: complete
@@ -31,6 +36,11 @@ targets:
         INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.developer-tools"
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 loesch-digital. Licensed under the Apache License, Version 2.0."
     dependencies:
+      - target: OctoRunnerBackgroundMonitor
+        embed: true
+        link: false
+        copy:
+          destination: executables
       - package: OctoRunnerKit
         product: CoreModels
       - package: OctoRunnerKit
@@ -47,6 +57,22 @@ targets:
         product: TelemetryKit
       - package: OctoRunnerKit
         product: AppShellFeature
+  OctoRunnerBackgroundMonitor:
+    type: tool
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Packages/OctoRunnerKit/Sources/BackgroundMonitorAgent
+    dependencies:
+      - package: OctoRunnerKit
+        product: BackgroundMonitoringKit
+    settings:
+      base:
+        PRODUCT_NAME: OctoRunnerBackgroundMonitor
+        PRODUCT_BUNDLE_IDENTIFIER: io.octorunner.macos.background
+        ENABLE_HARDENED_RUNTIME: YES
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
   OctoRunnerUITests:
     type: bundle.ui-testing
     platform: macOS

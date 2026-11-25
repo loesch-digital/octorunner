@@ -1,6 +1,166 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Local background monitoring": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Hintergrundüberwachung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local background monitoring"
+          }
+        }
+      }
+    },
+    "Keep checking local runner processes after you quit OctoRunner.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überwacht lokale Runner-Prozesse weiter, nachdem du OctoRunner beendet hast."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep checking local runner processes after you quit OctoRunner."
+          }
+        }
+      }
+    },
+    "Monitor local runners after quitting": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Runner nach dem Beenden überwachen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitor local runners after quitting"
+          }
+        }
+      }
+    },
+    "Registers a macOS background item for your account.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registriert ein macOS-Hintergrundobjekt für deinen Benutzeraccount."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registers a macOS background item for your account."
+          }
+        }
+      }
+    },
+    "The background service could not be configured.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Hintergrunddienst konnte nicht eingerichtet werden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The background service could not be configured."
+          }
+        }
+      }
+    },
+    "Background monitoring is off.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Hintergrundüberwachung ist ausgeschaltet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background monitoring is off."
+          }
+        }
+      }
+    },
+    "Ready to monitor locally after quitting. GitHub updates resume when you reopen OctoRunner.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Überwachung nach dem Beenden ist bereit. GitHub-Daten werden beim erneuten Öffnen von OctoRunner wieder aktualisiert."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to monitor locally after quitting. GitHub updates resume when you reopen OctoRunner."
+          }
+        }
+      }
+    },
+    "Background monitoring is unavailable for this app installation.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für diese App-Installation ist die Hintergrundüberwachung nicht verfügbar."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background monitoring is unavailable for this app installation."
+          }
+        }
+      }
+    },
+    "Local runner monitoring will continue in the background.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Überwachung lokaler Runner läuft im Hintergrund weiter."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local runner monitoring will continue in the background."
+          }
+        }
+      }
+    },
+    "The app could not prepare the background service or update. Check the background monitoring setting and try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OctoRunner konnte den Hintergrunddienst oder das Update nicht vorbereiten. Prüfe die Hintergrundüberwachung in den Einstellungen und versuche es erneut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app could not prepare the background service or update. Check the background monitoring setting and try again."
+          }
+        }
+      }
+    },
     "Local runner group: %@": {
       "extractionState": "manual",
       "localizations": {

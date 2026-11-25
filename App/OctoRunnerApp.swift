@@ -58,7 +58,10 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate, Obser
         try? AppAuditEvent.started.record(in: modelContainer.mainContext)
         UNUserNotificationCenter.current().delegate = notificationPresenter
         services.startRecoveryMonitoring(container: modelContainer)
-        services.healthMonitor.start(container: modelContainer)
+        Task {
+            await services.backgroundMonitoring.resumeForeground()
+            services.healthMonitor.start(container: modelContainer)
+        }
         services.remoteSyncMonitor.start(container: modelContainer)
         services.diskMonitor.start()
         services.storageMaintenance.start(container: modelContainer)
@@ -80,7 +83,10 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate, Obser
         guard !isPreview, isReadyForActions else { return .terminateNow }
         guard !isQuitRequestPending else { return .terminateLater }
         let locale = services.preferences.language.locale
-        let confirmation = AppQuitConfirmation.makeAlert(locale: locale)
+        let confirmation = AppQuitConfirmation.makeAlert(
+            locale: locale,
+            keepsMonitoring: services.backgroundMonitoring.state == .enabled && !AppUpdateHandoff.isUpdatePending
+        )
         guard AppQuitConfirmation.shouldTerminate(after: confirmation.runModal()) else {
             AppUpdateHandoff.cancelPending()
             return .terminateCancel
@@ -90,13 +96,22 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate, Obser
             do {
                 try await services.supervisor.shutdownForQuit()
                 do {
+                    if #available(macOS 27.0, *), services.backgroundMonitoring.state == .enabled,
+                       !AppUpdateHandoff.isUpdatePending {
+                        sender.setActivationPolicy(.regular)
+                    }
+                    try await services.backgroundMonitoring.prepareToQuit(
+                        in: modelContainer.mainContext,
+                        updating: AppUpdateHandoff.isUpdatePending
+                    )
                     try AppUpdateHandoff.approvePending()
                 } catch {
+                    await services.backgroundMonitoring.resumeForeground()
                     await services.supervisor.resumeAfterAbortedQuit()
                     isQuitRequestPending = false
                     AppUpdateHandoff.cancelPending()
                     sender.reply(toApplicationShouldTerminate: false)
-                    AppUpdatePresentation.makeAlert(.installationFailed, locale: locale).runModal()
+                    AppQuitConfirmation.makeBackgroundHandoffError(locale: locale).runModal()
                     return
                 }
                 sender.reply(toApplicationShouldTerminate: true)
@@ -115,7 +130,7 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate, Obser
     }
 
     public func applicationDidUpdate(_ notification: Notification) {
-        guard !isPreview else { return }
+        guard !isPreview, !isQuitRequestPending else { return }
         // Re-evaluate after AppKit processes window and preference changes, including
         // when the dashboard is closed. A visible Settings window also keeps its Dock icon.
         services.integration.applyDockVisibility(hasVisibleDashboard: hasVisibleWindow(in: .shared))
@@ -184,6 +199,7 @@ struct OctoRunnerApp: App {
                 .environment(services.preferences)
                 .environment(services.remoteSyncMonitor)
                 .environment(services.integration)
+                .environment(services.backgroundMonitoring)
                 .environment(services.notifications)
                 .environment(services.storageMaintenance)
                 .environment(\.locale, preferences.language.locale)
@@ -200,6 +216,7 @@ struct OctoRunnerApp: App {
                 SettingsWindowView(accountSession: services.accounts, launchAgents: services.launchAgents)
                     .environment(services.preferences)
                     .environment(services.integration)
+                    .environment(services.backgroundMonitoring)
                     .environment(services.notifications)
                     .environment(services.storageMaintenance)
                     .environment(\.locale, preferences.language.locale)

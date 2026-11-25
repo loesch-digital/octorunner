@@ -20,6 +20,8 @@ unset MATCH_GIT_TOKEN
 [[ -d "$APP_PATH" ]] || { echo "App not found: $APP_PATH" >&2; exit 1; }
 # Prevent a stale archive from being mistaken for a successfully notarized release.
 rm -f "$ZIP_PATH"
+HELPER_PATH="$APP_PATH/Contents/MacOS/OctoRunnerBackgroundMonitor"
+[[ -f "$HELPER_PATH" && -x "$HELPER_PATH" ]] || { echo "Background helper missing or not executable: $HELPER_PATH" >&2; exit 1; }
 umask 077
 SIGNING_DIR=$(mktemp -d)
 KEYCHAIN_PATH="$SIGNING_DIR/release.keychain-db"
@@ -51,9 +53,10 @@ security list-keychains -d user -s "$KEYCHAIN_PATH" ${ORIGINAL_KEYCHAINS[@]+"${O
 IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
   | sed -nE '/"Developer ID Application:/s/.*\) ([A-Fa-f0-9]{40}) .*/\1/p' | head -1)
 [[ -n "$IDENTITY" ]] || { echo "No valid Developer ID Application identity in certificate." >&2; exit 1; }
-echo "Signing with Developer ID identity ${IDENTITY:0:8}… from temporary keychain."
-security find-identity -v -p codesigning "$KEYCHAIN_PATH" | sed -E 's/[A-Fa-f0-9]{40}/<sha1>/'
+echo "Signing with the Developer ID identity from the temporary keychain."
 
+codesign --force --sign "$IDENTITY" --keychain "$KEYCHAIN_PATH" \
+  --options runtime --timestamp "$HELPER_PATH"
 codesign --force --sign "$IDENTITY" --keychain "$KEYCHAIN_PATH" \
   --options runtime --timestamp --entitlements App/OctoRunner.entitlements "$APP_PATH"
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
