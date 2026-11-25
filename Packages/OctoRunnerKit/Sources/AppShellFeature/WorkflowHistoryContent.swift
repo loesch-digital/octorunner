@@ -82,6 +82,7 @@ public struct WorkflowHistoryContent: View {
                     ContentUnavailableView {
                         Label { Text("No matching workflow runs", bundle: .module) } icon: { Image(systemName: "list.bullet.rectangle") }
                     } description: { Text("Add a repository, refresh or adjust the filters", bundle: .module) }
+                    .frame(maxWidth: .infinity)
                 } else {
                     LazyVStack(spacing: 12) {
                         ForEach(rows) { entry in
