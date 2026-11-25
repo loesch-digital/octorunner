@@ -22,6 +22,12 @@
 - The native Dock subtitle and stop action remain unverified. The UI automation connection timed out while attaching to the probe.
 - The current Fastlane release skips profile provisioning, and neither the installed app nor the local cache has an OctoRunner macOS profile. Apple requires the `keychain-access-groups` entitlement to be authorized by a profile. A standalone helper executable cannot embed a restricted-entitlement profile. The distribution test therefore needs a provisioned helper bundle and matching app and helper profiles before validating access with disposable credentials. See [Apple TN3125](https://developer.apple.com/documentation/technotes/tn3125-inside-code-signing-provisioning-profiles).
 
+### Local monitoring checkpoint
+
+- The local monitor and standalone agent use the existing process sampler and only publish observations for registered roots. Missing or failed process samples produce unknown status.
+- A separate Developer ID–signed probe packaged the standalone agent under its LaunchAgent. After the registration process exited, the agent observed a synthetic runner as ready and then offline after its listener exited. Unregistration removed the test service.
+- The local checkpoint uses the existing signing certificate with no Keychain Sharing entitlement. App packaging, opt-in, the native Dock UI, and signed GitHub access are subsequent checkpoints.
+
 ## 2. Share monitoring inputs and coordinate ownership
 
 Files: `Packages/OctoRunnerKit/Package.swift`, a new `BackgroundMonitoringKit` target, and new `BackgroundMonitoringRuntimeTests.swift` in `OctoRunnerKitTests`. Reuse existing process samplers, GitHub clients, state transition policies, and job result matching.

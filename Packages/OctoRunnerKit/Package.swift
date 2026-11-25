@@ -8,6 +8,7 @@ let package = Package(
         .macOS(.v15)
     ],
     products: [
+        .executable(name: "octorunner-background-monitor", targets: ["BackgroundMonitorAgent"]),
         .library(name: "BackgroundMonitoringKit", targets: ["BackgroundMonitoringKit"]),
         .library(name: "CoreModels", targets: ["CoreModels"]),
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
@@ -19,9 +20,14 @@ let package = Package(
         .library(name: "AppShellFeature", targets: ["AppShellFeature"])
     ],
     targets: [
+        .executableTarget(
+            name: "BackgroundMonitorAgent",
+            dependencies: ["BackgroundMonitoringKit"],
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        ),
         .target(
             name: "BackgroundMonitoringKit",
-            dependencies: ["CoreModels"],
+            dependencies: ["CoreModels", "SyncKit"],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .target(
