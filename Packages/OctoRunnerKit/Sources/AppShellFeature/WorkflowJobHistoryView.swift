@@ -22,26 +22,45 @@ public struct WorkflowJobHistoryView: View {
     @State private var operationID: UUID?
     @State private var isRefreshing = false
     @State private var selectedRun: WorkflowHistoryEntry?
+    @State private var isShowingSources = false
+    private let observedRepositoryChanged: (String) -> Void
     private let rateBudget: WorkflowHistoryRateBudget
 
     public init(rateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget()) {
+        self.init(rateBudget: rateBudget, initialRun: nil, showsRunning: false)
+    }
+
+    init(rateBudget: WorkflowHistoryRateBudget, initialRun: WorkflowHistoryEntry?, showsRunning: Bool, observedRepositoryChanged: @escaping (String) -> Void = { _ in }) {
+        self.observedRepositoryChanged = observedRepositoryChanged
         self.rateBudget = rateBudget
         _model = State(initialValue: WorkflowHistoryViewModel(rateBudget: rateBudget))
+        _selectedRun = State(initialValue: initialRun)
+        _filter = State(initialValue: WorkflowHistoryFilter(status: showsRunning ? .running : .all))
     }
 
     public var body: some View {
         @Bindable var preferences = preferences
         let request = request
         VStack(spacing: 0) {
-            sourceControls(account: request.account)
+            HStack {
+                Button { isShowingSources = true } label: {
+                    Label { Text("History sources", bundle: .module) } icon: { Image(systemName: "folder") }
+                }
+                .accessibilityHint(Text("Manage additional repository sources for the active account", bundle: .module))
+                Spacer(minLength: 0)
+            }
+            .padding(16)
+            .background(OctoTheme.surface)
             WorkflowHistoryContent(entries: model.entries.filter { $0.accountID == request.account?.accountID }, repositories: repositoryChoices, repository: $selectedRepository,
                 filter: $filter, durationTarget: $preferences.historyPreferences.durationSLATargetSeconds,
                 isLoading: isRefreshing, errorMessage: errorMessage(account: request.account), lastRefresh: model.lastRefresh,
                 rateLimitRemaining: model.rateLimit?.remaining, canLoadOlder: request.sources.count == 1 && !selectedRepository.isEmpty && model.nextPage != nil,
                 refresh: { loadOlderSource = nil; refreshTicket = UUID() },
                 loadOlder: { loadOlderSource = request.sources.first; refreshTicket = UUID() },
+                observationMaxAge: preferences.historyPreferences.observationMaxAge,
                 openDetails: { selectedRun = $0 })
         }
+        .onChange(of: request.selectedRepository, initial: true) { observedRepositoryChanged(request.selectedRepository) }
         .onChange(of: selectedRepository) { repositoryAccountID = accountSelection?.accountID }
         .onChange(of: accountSelection?.accountID) {
             selectedRun = nil
@@ -50,6 +69,9 @@ public struct WorkflowJobHistoryView: View {
             filter = WorkflowHistoryFilter()
             repositoryInput = ""
             sourceInputError = false
+        }
+        .sheet(isPresented: $isShowingSources) {
+            sourceControls(account: accountSelection)
         }
         .sheet(item: $selectedRun) { run in
             if let account = accountSelection,
@@ -63,18 +85,19 @@ public struct WorkflowJobHistoryView: View {
     }
 
     private var accountSelection: WorkflowHistorySelection? {
-        guard let account = accounts.first(where: \.isActive) else { return nil }
+        let active = accounts.filter(\.isActive)
+        guard active.count == 1, let account = active.first else { return nil }
         return WorkflowHistorySelection(accountID: account.githubUserId, keychainAccountKey: account.keychainAccountKey, repository: "")
     }
 
     private var managedRepositories: [String] {
-        Array(Set(runners.compactMap { GitHubRepositorySlug(input: $0.scopeUrlString)?.rawValue })).sorted()
+        WorkflowHistorySelection.managedRepositories(for: runners)
     }
 
     private var configuredRepositories: [String] {
         guard let account = accountSelection else { return [] }
-        let added = preferences.historyPreferences.additionalRepositoriesByAccount[String(account.accountID)] ?? []
-        return Array(Set(managedRepositories + added)).sorted()
+        return WorkflowHistorySelection.configuredRepositories(for: runners, accountID: account.accountID,
+            preferences: preferences.historyPreferences).sorted()
     }
 
     private var repositoryChoices: [String] {
@@ -92,9 +115,15 @@ public struct WorkflowJobHistoryView: View {
     }
 
     private func sourceControls(account: WorkflowHistorySelection?) -> some View {
-        DisclosureGroup {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Recent runs refresh while this view is active. Add repositories for organization runners explicitly.", bundle: .module)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("History sources", bundle: .module).font(.headline)
+                    Spacer(minLength: 8)
+                    Button { isShowingSources = false } label: { Text("Close", bundle: .module) }
+                        .keyboardShortcut(.cancelAction)
+                }
+                Text("Recent runs refresh while OctoRunner is active. Add the repositories you want to follow for organization runners.", bundle: .module)
                     .font(.caption).foregroundStyle(.secondary)
                 HStack {
                     TextField(text: $repositoryInput) { Text("owner/repository or GitHub URL", bundle: .module) }
@@ -120,11 +149,10 @@ public struct WorkflowJobHistoryView: View {
                         .accessibilityHint(Text("Stops including this source in automatic refresh; saved history remains", bundle: .module))
                     }
                 }
-            }.padding(.top, 8)
-        } label: { Text("History sources", bundle: .module) }
-        .accessibilityLabel(Text("History sources", bundle: .module))
-        .accessibilityHint(Text("Manage additional repository sources for the active account", bundle: .module))
-        .padding(16).background(OctoTheme.surface)
+            }.padding(20)
+        }
+        .frame(minWidth: 360, idealWidth: 480, minHeight: 180, idealHeight: 240)
+        .background(OctoTheme.surface)
     }
 
     private func addRepository(account: WorkflowHistorySelection?) {
@@ -180,8 +208,9 @@ public struct WorkflowJobHistoryView: View {
         else { await model.refreshRepositories(request.sources, in: modelContext) }
         guard !Task.isCancelled else { return }
         isRefreshing = false
-        while model.error == nil, model.repositoryFailures.isEmpty, (model.retryNotBefore ?? .distantPast) <= .now {
-            do { try await Task.sleep(for: .seconds(request.refreshInterval)) } catch { return }
+        while model.error != .authenticationRequired {
+            let delay = max(Double(request.refreshInterval), model.retryNotBefore?.timeIntervalSinceNow ?? 0)
+            do { try await Task.sleep(for: .seconds(delay)) } catch { return }
             guard !Task.isCancelled else { return }
             isRefreshing = true
             await model.refreshRepositories(request.sources, in: modelContext)

@@ -7,15 +7,45 @@ public struct LocalJobResults: Sendable {
     public let latestByRunner: [UUID: WorkflowHistoryEntry]
     public let unreviewedFailures: [WorkflowHistoryEntry]
 
-    public init() { latestByRunner = [:]; unreviewedFailures = [] }
+    private let runningJobs: [UUID: [WorkflowHistoryEntry]]
+    private let runningWorkflowByAttempt: [String: WorkflowHistoryEntry]
+
+    public init() {
+        self.init(latestByRunner: [:], unreviewedFailures: [], runningJobs: [:], runningWorkflowByAttempt: [:])
+    }
+
+    func runningWorkflowCount(at now: Date, maxAge: TimeInterval = 90, repositories: Set<String>? = nil) -> Int {
+        runningWorkflowByAttempt.values.count { entry in
+            entry.isFresh(at: now, maxAge: maxAge) && (repositories?.contains(entry.repository) ?? true)
+        }
+    }
+
+    func runningJob(for runnerID: UUID, at now: Date, maxAge: TimeInterval = 90) -> WorkflowHistoryEntry? {
+        let jobs = (runningJobs[runnerID] ?? []).filter { job in
+            job.isFresh(at: now, maxAge: maxAge) && runningWorkflowByAttempt[Self.attemptKey(job)]?.isFresh(at: now, maxAge: maxAge) == true
+        }
+        return jobs.count == 1 ? jobs.first : nil
+    }
+
+    func workflow(for job: WorkflowHistoryEntry) -> WorkflowHistoryEntry? {
+        runningWorkflowByAttempt[Self.attemptKey(job)]
+    }
+
+    private static func attemptKey(_ entry: WorkflowHistoryEntry) -> String {
+        "\(entry.repository.lowercased())|\(entry.githubRunID)|\(entry.attempt ?? 0)"
+    }
 
     @MainActor
     public init(entries: [WorkflowHistoryEntry], runners: [RunnerEntity], accountID: Int64?,
                 reviewed: Set<String>, now: Date = .now) {
         guard let accountID, accountID > 0 else {
-            latestByRunner = [:]; unreviewedFailures = []; return
+            self.init()
+            return
         }
         let entries = entries.filter { $0.accountID == accountID }
+        let running = WorkflowHistoryFilter(status: .running).apply(to: entries)
+        let workflowsByAttempt = Dictionary(uniqueKeysWithValues: running.map { (Self.attemptKey($0), $0) })
+        var assignedJobs: [UUID: [WorkflowHistoryEntry]] = [:]
         var attempts: [String: Int] = [:]
         for entry in entries {
             if let attempt = entry.attempt {
@@ -23,10 +53,35 @@ public struct LocalJobResults: Sendable {
                 attempts[key] = max(attempts[key] ?? 0, attempt)
             }
         }
+        let runnersByID = Dictionary(grouping: runners.filter { ($0.githubRunnerId ?? 0) > 0 }, by: { $0.githubRunnerId! })
+        for entry in entries where entry.recordKind == "job" && entry.status == "in_progress" {
+            guard (entry.githubJobID ?? 0) > 0, entry.githubRunID > 0, (entry.attempt ?? 0) > 0,
+                  workflowsByAttempt[Self.attemptKey(entry)] != nil else { continue }
+            let assigned = (runnersByID[entry.runnerID ?? 0] ?? []).filter { Self.matches($0, entry: entry) }
+            guard assigned.count == 1, let runner = assigned.first else { continue }
+            assignedJobs[runner.id, default: []].append(entry)
+        }
+        let completed = Self.completedResults(entries: entries, runnersByID: runnersByID, attempts: attempts,
+            reviewed: reviewed, now: now)
+        self.init(latestByRunner: completed.latest, unreviewedFailures: completed.failures,
+            runningJobs: assignedJobs, runningWorkflowByAttempt: workflowsByAttempt)
+    }
+
+    private init(latestByRunner: [UUID: WorkflowHistoryEntry], unreviewedFailures: [WorkflowHistoryEntry],
+                 runningJobs: [UUID: [WorkflowHistoryEntry]], runningWorkflowByAttempt: [String: WorkflowHistoryEntry]) {
+        self.latestByRunner = latestByRunner
+        self.unreviewedFailures = unreviewedFailures
+        self.runningJobs = runningJobs
+        self.runningWorkflowByAttempt = runningWorkflowByAttempt
+    }
+
+    @MainActor
+    private static func completedResults(entries: [WorkflowHistoryEntry], runnersByID: [Int64: [RunnerEntity]],
+                                         attempts: [String: Int], reviewed: Set<String>, now: Date)
+        -> (latest: [UUID: WorkflowHistoryEntry], failures: [WorkflowHistoryEntry]) {
         var latest: [UUID: WorkflowHistoryEntry] = [:]
         var failures: [WorkflowHistoryEntry] = []
         var included: Set<String> = []
-        let runnersByID = Dictionary(grouping: runners.filter { ($0.githubRunnerId ?? 0) > 0 }, by: { $0.githubRunnerId! })
         for entry in entries.sorted(by: Self.newerFirst) {
             guard entry.recordKind == "job", entry.status == "completed",
                   (entry.githubJobID ?? 0) > 0, entry.githubRunID > 0,
@@ -42,8 +97,7 @@ public struct LocalJobResults: Sendable {
             if Self.isFailure(entry), !reviewed.contains(key),
                attempts["\(entry.repository.lowercased())|\(entry.githubRunID)"] == attempt { failures.append(entry) }
         }
-        latestByRunner = latest
-        unreviewedFailures = failures
+        return (latest, failures)
     }
 
     public static func reviewKey(_ entry: WorkflowHistoryEntry) -> String {

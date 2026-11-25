@@ -11,9 +11,9 @@ public actor GitHubActionsClient {
         self.transport = transport
     }
 
-    public func workflowRuns(repository: String, token: String, page: URL? = nil) async throws -> GitHubActionsPage<GitHubWorkflowRunDTO> {
+    public func workflowRuns(repository: String, token: String, page: URL? = nil, runningOnly: Bool = false) async throws -> GitHubActionsPage<GitHubWorkflowRunDTO> {
         let path = try repositoryPath(repository) + "/actions/runs"
-        let (data, next, rate) = try await load(path: path, page: page, token: token)
+        let (data, next, rate) = try await load(path: path, page: page, token: token, runningOnly: runningOnly)
         let result = try Self.decoder().decode(GitHubWorkflowRunsResponse.self, from: data)
         return GitHubActionsPage(items: result.workflowRuns, nextPage: next, totalCount: result.totalCount, rateLimit: rate)
     }
@@ -47,12 +47,13 @@ public actor GitHubActionsClient {
         return GitHubActionsPage(items: items, nextPage: next, totalCount: items.count, rateLimit: rate)
     }
 
-    private func load(path: String, page: URL?, token: String) async throws -> (Data, URL?, GitHubRateLimitSnapshot?) {
+    private func load(path: String, page: URL?, token: String, runningOnly: Bool = false) async throws -> (Data, URL?, GitHubRateLimitSnapshot?) {
         try Task.checkCancellation()
         guard !token.isEmpty, token.utf8.allSatisfy({ (33...126).contains($0) }) else { throw GitHubActionsError.invalidToken }
-        guard let initial = URL(string: "https://api.github.com\(path)?per_page=100&page=1") else { throw GitHubActionsError.invalidRepository }
+        let status = runningOnly ? "&status=in_progress" : ""
+        guard let initial = URL(string: "https://api.github.com\(path)?per_page=100&page=1\(status)") else { throw GitHubActionsError.invalidRepository }
         let url = page ?? initial
-        try validate(url, path: path)
+        try validate(url, path: path, runningOnly: runningOnly)
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
         request.httpMethod = "GET"
         request.httpShouldHandleCookies = false
@@ -65,7 +66,7 @@ public actor GitHubActionsClient {
         let responseRate = hasRateHeaders ? GitHubRateLimitSnapshot(headers: response.headers) : nil
         if let responseRate { rateLimit = responseRate }
         guard response.statusCode == 200 else { throw GitHubActionsError.httpStatus(response.statusCode, rateLimit: responseRate) }
-        let next = try nextPage(from: response.headers["link"], path: path)
+        let next = try nextPage(from: response.headers["link"], path: path, runningOnly: runningOnly)
         return (response.data, next, responseRate)
     }
 
@@ -78,15 +79,17 @@ public actor GitHubActionsClient {
         return "/repos/\(repository)"
     }
 
-    private func validate(_ url: URL, path: String) throws {
+    private func validate(_ url: URL, path: String, runningOnly: Bool) throws {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               components.scheme == "https", components.host == "api.github.com",
               components.port == nil || components.port == 443,
               components.user == nil, components.password == nil, components.fragment == nil,
               components.percentEncodedPath == path else { throw GitHubActionsError.invalidPagination }
         let items = components.queryItems ?? []
-        guard !items.isEmpty, Set(items.map(\.name)).count == items.count,
+        guard !items.isEmpty, items.contains(where: { $0.name == "status" }) == runningOnly,
+              Set(items.map(\.name)).count == items.count,
               items.allSatisfy({ item in
+                  if item.name == "status" { return item.value == "in_progress" }
                   guard let value = item.value, let number = Int(value) else { return false }
                   switch item.name {
                   case "page": return (1...100_000).contains(number)
@@ -96,7 +99,7 @@ public actor GitHubActionsClient {
               }) else { throw GitHubActionsError.invalidPagination }
     }
 
-    private func nextPage(from link: String?, path: String) throws -> URL? {
+    private func nextPage(from link: String?, path: String, runningOnly: Bool) throws -> URL? {
         guard let link else { return nil }
         for part in link.split(separator: ",") {
             let components = part.split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) }
@@ -120,7 +123,7 @@ public actor GitHubActionsClient {
                 linked.percentEncodedPath = path
             }
             guard let url = linked.url else { throw GitHubActionsError.invalidPagination }
-            try validate(url, path: path)
+            try validate(url, path: path, runningOnly: runningOnly)
             return url
         }
         return nil

@@ -9,6 +9,13 @@ import Testing
 
 @MainActor
 struct RunnerProcessInspectorUITests {
+    @Test("PID identifiers remain ungrouped in German and English")
+    func ungroupedPID() {
+        for language in ["de", "en"] {
+            #expect(RunnerProcessRow.pidLabel(53_194, locale: Locale(identifier: language)) == "PID 53194")
+        }
+    }
+
     private func fixture() -> (RunnerProcessTarget, RunnerProcessMetadata) {
         let target = RunnerProcessTarget(id: UUID(), name: "Build Mac", rootPath: "/managed/mac")
         let metadata = RunnerProcessMetadata(identity: ProcessIdentity(pid: 42, startSeconds: 100, startMicroseconds: 0), parentPID: 1,

@@ -11,6 +11,7 @@ import TelemetryKit
 public struct MainShellView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.locale) private var locale
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(RunnerRemoteSyncMonitor.self) private var remoteSync: RunnerRemoteSyncMonitor?
     @Environment(AppPreferencesStore.self) private var preferences: AppPreferencesStore?
     @Environment(\.usesDashboardSampleData) private var usesDashboardSampleData
@@ -21,6 +22,9 @@ public struct MainShellView: View {
     @State private var accountSession: AccountSessionController
     @State private var accountTask: Task<Void, Never>?
     @State private var selectedSection: SidebarSection?
+    @State private var observedHistoryRepository = ""
+    @State private var workflowJump: WorkflowHistoryEntry?
+    @State private var showsRunningWorkflows = false
     @State private var searchText: String = ""
     @State private var hostSnapshot: HostTelemetrySnapshot?
     @State private var isShowingAuditLog = false
@@ -70,6 +74,14 @@ public struct MainShellView: View {
             detailContent
         }
         .navigationTitle("OctoRunner")
+        .onChange(of: selectedSection) {
+            if selectedSection != .queueWorkpools {
+                observedHistoryRepository = ""
+                workflowJump = nil
+                showsRunningWorkflows = false
+            }
+        }
+        .task(id: sidebarHistoryRequest) { await refreshSidebarHistory(sidebarHistoryRequest) }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button { isShowingAuditLog = true } label: {
@@ -169,7 +181,19 @@ public struct MainShellView: View {
                                 Label(AppLocalization.string(String.LocalizationValue(stringLiteral: section == .allRunners ? "All runners" : section.title), locale: locale), systemImage: section.systemImage)
                             }
                             Spacer()
-                            if section != .queueWorkpools && section != .launchdSettings && section != .hostTelemetry {
+                            if section == .queueWorkpools {
+                                TimelineView(.periodic(from: .now, by: 15)) { timeline in
+                                    let active = jobResults.runningWorkflowCount(at: timeline.date, maxAge: historyObservationMaxAge,
+                                        repositories: historyRepositories)
+                                    if active > 0 {
+                                        Text(active, format: .number)
+                                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                            .foregroundStyle(.secondary)
+                                            .accessibilityLabel(Text("Running workflows: \(active)", bundle: .module))
+                                    }
+                                }
+                                .fixedSize()
+                            } else if section != .launchdSettings && section != .hostTelemetry {
                               Text("\(count(for: section))")
                                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
                                 .foregroundStyle(.secondary)
@@ -267,11 +291,57 @@ public struct MainShellView: View {
         .background(OctoTheme.surfaceLow)
     }
 
+    private var historyAccount: GitHubAccountEntity? {
+        let active = accounts.filter(\.isActive)
+        guard active.count == 1, let account = active.first, account.githubUserId > 0,
+              !account.keychainAccountKey.isEmpty else { return nil }
+        return account
+    }
+
+    private var historyRepositories: Set<String> {
+        guard let account = historyAccount, let preferences else { return [] }
+        return WorkflowHistorySelection.configuredRepositories(for: runners, accountID: account.githubUserId,
+            preferences: preferences.historyPreferences)
+    }
+
+    private var historyObservationMaxAge: TimeInterval {
+        (preferences?.historyPreferences ?? WorkflowHistoryPreferences()).observationMaxAge
+    }
+
+    private var sidebarHistoryRequest: WorkflowHistoryRequest? {
+        guard !usesDashboardSampleData, scenePhase == .active, let preferences, let account = historyAccount else { return nil }
+        if selectedSection == .queueWorkpools && observedHistoryRepository.isEmpty { return nil }
+        // With job alerts enabled, the existing app-lifetime monitor refreshes these sources.
+        if preferences.notificationPolicy.enabled && preferences.notificationPolicy.jobFailure,
+           runners.contains(where: { ($0.githubRunnerId ?? 0) > 0 }) { return nil }
+
+        let history = preferences.historyPreferences.validated()
+        let sources = historyRepositories.sorted().filter { $0 != observedHistoryRepository }.map {
+            WorkflowHistorySelection(accountID: account.githubUserId, keychainAccountKey: account.keychainAccountKey, repository: $0)
+        }
+        guard !sources.isEmpty else { return nil }
+        return WorkflowHistoryRequest(account: sources.first, sources: sources, selectedRepository: "",
+            isActive: true, refreshInterval: history.refreshIntervalSeconds, ticket: account.id)
+    }
+
+    private func refreshSidebarHistory(_ request: WorkflowHistoryRequest?) async {
+        guard !Task.isCancelled, let request else { return }
+        let model = WorkflowHistoryViewModel(rateBudget: historyRateBudget, acceptResponse: { sidebarHistoryRequest == request })
+        while !Task.isCancelled, sidebarHistoryRequest == request {
+            await model.refreshRepositories(request.sources, in: modelContext)
+            guard !Task.isCancelled, model.error != .authenticationRequired else { return }
+            let delay = max(Double(request.refreshInterval), model.retryNotBefore?.timeIntervalSinceNow ?? 0)
+            do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+        }
+    }
+
     // MARK: - Dashboard and Status Footer
 
     @ViewBuilder private var detailContent: some View {
         if selectedSection == .queueWorkpools {
-            WorkflowJobHistoryView(rateBudget: historyRateBudget)
+            WorkflowJobHistoryView(rateBudget: historyRateBudget, initialRun: workflowJump, showsRunning: showsRunningWorkflows) {
+                observedHistoryRepository = $0
+            }
         } else if selectedSection == .launchdSettings {
             SettingsWindowView(accountSession: accountSession, launchAgents: launchAgents)
         } else if selectedSection == .hostTelemetry {
@@ -479,7 +549,7 @@ public struct MainShellView: View {
                 RunnerSyncObservation(runner: runner, account: $0, snapshot: snapshot)
             }
         }
-        return DashboardRunnerRow(runner: runner, lastJob: jobResults.latestByRunner[runner.id], syncObservation: observation,
+        var row = DashboardRunnerRow(runner: runner, lastJob: jobResults.latestByRunner[runner.id], syncObservation: observation,
             openLog: { activeConsoleRunner = runner },
             openSettings: {
                 showMigrationOnOpen = false
@@ -494,6 +564,14 @@ public struct MainShellView: View {
                 let isDirect = runner.executionMode == .direct
                 Task { await deleteRunner(id: id, isDirect: isDirect) }
             })
+        row.currentJobControl = DashboardRunnerJobControl(results: jobResults, runnerID: runner.id, isRunning: runner.status == .busy,
+            observationMaxAge: historyObservationMaxAge) { job in
+            guard runner.status == .busy else { return }
+            workflowJump = job
+            showsRunningWorkflows = true
+            selectedSection = .queueWorkpools
+        }
+        return row
     }
 
     // MARK: - Bottom Status Bar

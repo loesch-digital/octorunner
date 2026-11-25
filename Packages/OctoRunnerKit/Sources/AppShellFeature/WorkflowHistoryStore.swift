@@ -22,6 +22,7 @@ public enum WorkflowHistoryStore {
             $0.accountGitHubUserID == accountID && $0.repositoryFullName == repository && $0.githubRunId == runID
         }))
         let workflow = record(jobID: nil, attempt: run.runAttempt, from: records, in: context)
+        guard (workflow.observedAt ?? .distantPast) <= observedAt else { return workflow }
         update(workflow, run: run, repository: repository, accountID: accountID)
         workflow.observedAt = observedAt
         if run.status != "completed" { workflow.jobDetailsComplete = false }
@@ -34,6 +35,7 @@ public enum WorkflowHistoryStore {
         }
         for job in jobs {
             let entity = record(jobID: job.id, attempt: run.runAttempt, from: records, in: context)
+            guard (entity.observedAt ?? .distantPast) <= observedAt else { continue }
             update(entity, run: run, repository: repository, accountID: accountID)
             entity.observedAt = observedAt
             entity.recordKindRaw = "job"

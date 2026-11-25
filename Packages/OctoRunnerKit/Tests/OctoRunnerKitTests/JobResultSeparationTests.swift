@@ -133,6 +133,39 @@ struct JobResultSeparationTests {
         #expect(JobFailureNotice.title(1, locale: Locale(identifier: "de")) == "1 nicht quittierter Job-Fehler")
     }
 
+    @Test("The latest fresh running attempt contributes one workflow badge and an exact local runner job")
+    func currentWorkflowLink() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let runner = fixtureRunner()
+        runner.status = .busy
+        let workflow = fixtureJob(now: now)
+        workflow.recordKindRaw = "workflow"
+        workflow.githubJobId = nil
+        workflow.runAttempt = 2
+        workflow.statusRaw = "in_progress"
+        let previous = fixtureJob(now: now)
+        previous.statusRaw = "in_progress"
+        let current = fixtureJob(now: now)
+        current.githubJobId = 101
+        current.runAttempt = 2
+        current.statusRaw = "in_progress"
+        current.completedAt = nil
+        current.jobName = "Unit Tests"
+        let snapshots = [previous, current, workflow].map(WorkflowHistoryEntry.init)
+        let results = LocalJobResults(entries: snapshots, runners: [runner], accountID: 7, reviewed: [], now: now)
+        #expect(results.runningWorkflowCount(at: now) == 1)
+        #expect(results.runningJob(for: runner.id, at: now)?.githubJobID == 101)
+        #expect(results.runningWorkflowCount(at: now.addingTimeInterval(91)) == 0)
+        #expect(results.runningJob(for: runner.id, at: now.addingTimeInterval(91)) == nil)
+        #expect(LocalJobResults(entries: snapshots, runners: [runner], accountID: 8, reviewed: [], now: now)
+            .runningJob(for: runner.id, at: now) == nil)
+        #expect(LocalJobResults(entries: snapshots, runners: [runner, fixtureRunner()], accountID: 7, reviewed: [], now: now)
+            .runningJob(for: runner.id, at: now) == nil)
+        workflow.statusRaw = "completed"
+        #expect(LocalJobResults(entries: [current, workflow].map(WorkflowHistoryEntry.init), runners: [runner],
+            accountID: 7, reviewed: [], now: now).runningJob(for: runner.id, at: now) == nil)
+    }
+
     private func fixtureRunner() -> RunnerEntity {
         let runner = RunnerEntity(name: "local-mac", scopeUrl: URL(string: "https://github.com/example/repo")!, status: .idle, workDirectory: URL(fileURLWithPath: "/tmp/unused"))
         runner.githubRunnerId = 31

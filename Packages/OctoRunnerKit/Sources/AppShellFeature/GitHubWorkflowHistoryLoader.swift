@@ -6,9 +6,12 @@ import SecurityKit
 /// running and queued attempts are fetched again on the next explicit refresh.
 public actor GitHubWorkflowHistoryLoader: WorkflowHistoryLoading {
     private let client: GitHubActionsClient
+    private let includesActiveRuns: Bool
     private let secrets: any SecretReading
 
-    public init(client: GitHubActionsClient = GitHubActionsClient(), secrets: any SecretReading = KeychainVaultActor()) {
+    public init(client: GitHubActionsClient = GitHubActionsClient(), secrets: any SecretReading = KeychainVaultActor(),
+                includesActiveRuns: Bool = false) {
+        self.includesActiveRuns = includesActiveRuns
         self.client = client
         self.secrets = secrets
     }
@@ -25,8 +28,24 @@ public actor GitHubWorkflowHistoryLoader: WorkflowHistoryLoading {
             let page = try await client.workflowRuns(repository: selection.repository, token: token, page: nextPage ?? initial)
             let observedAt = Date.now
             var responseRate = page.rateLimit
+            var runs = page.items
+            if includesActiveRuns, nextPage == nil, page.nextPage != nil || page.totalCount > runs.count {
+                var seen = Set(runs.map(\.id))
+                var next: URL?
+                var visited: Set<URL> = []
+                repeat {
+                    guard responseRate?.remaining != 0 else { break }
+                    guard visited.count < 10 else { throw WorkflowHistoryLoadError.tooManyPages }
+                    let active = try await client.workflowRuns(repository: selection.repository, token: token, page: next, runningOnly: true)
+                    try Task.checkCancellation()
+                    if let rate = active.rateLimit { responseRate = rate }
+                    runs.append(contentsOf: active.items.filter { $0.status == "in_progress" && seen.insert($0.id).inserted })
+                    next = active.nextPage
+                    if let next, !visited.insert(next).inserted { throw WorkflowHistoryLoadError.tooManyPages }
+                } while next != nil
+            }
             var results: [WorkflowRunDetails] = []
-            for var run in page.items {
+            for var run in runs {
                 if run.event?.hasPrefix("pull_request") == true, run.pullRequests?.isEmpty != false,
                    let sha = run.headSHA, responseRate?.remaining != 0 {
                     do {

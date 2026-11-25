@@ -28,6 +28,23 @@ struct WorkflowHistoryLoadingTests {
         #expect(requests[1].url?.path.contains("/attempts/2/jobs") == true)
     }
 
+    @Test("Live runs outside the recent history window are paged and included once")
+    func liveRunsOutsideRecentHistory() async throws {
+        let next = #"<https://api.github.com/repositories/123/actions/runs?status=in_progress&per_page=100&page=2>; rel="next""#
+        let transport = HistoryHTTPFixture(responses: [
+            .init(statusCode: 200, headers: [:], data: Data(#"{"total_count":20,"workflow_runs":[{"id":42,"status":"in_progress"}]}"#.utf8)),
+            .init(statusCode: 200, headers: ["Link": next], data: Data(#"{"total_count":3,"workflow_runs":[{"id":42,"status":"in_progress"},{"id":17,"status":"in_progress"}]}"#.utf8)),
+            .init(statusCode: 200, headers: [:], data: Data(#"{"total_count":3,"workflow_runs":[{"id":9,"status":"in_progress"}]}"#.utf8))
+        ])
+        let loader = GitHubWorkflowHistoryLoader(client: GitHubActionsClient(transport: transport), secrets: HistorySecrets(), includesActiveRuns: true)
+        let page = try await loader.page(selection: selection, nextPage: nil, completedAttempts: [])
+        #expect(page.runs.map(\.run.id) == [42, 17, 9])
+        let requests = await transport.requests
+        #expect(requests.count == 3)
+        #expect(requests.dropFirst().allSatisfy { $0.url?.query?.contains("status=in_progress") == true })
+        #expect(page.nextPage == nil)
+    }
+
     @Test("GitHub repository-ID pagination loads both history pages within the selected repository")
     func repositoryIDPagination() async throws {
         let nextLink = "<https://api.github.com/repositories/123456/actions/runs?per_page=10&page=2>; rel=\"next\", <https://api.github.com/repositories/123456/actions/runs?per_page=10&page=8>; rel=\"last\""

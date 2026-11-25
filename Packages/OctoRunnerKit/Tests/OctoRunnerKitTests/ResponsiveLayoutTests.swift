@@ -58,6 +58,33 @@ struct ResponsiveLayoutTests {
         }
     }
 
+    @Test("The empty workflow history appears in the horizontal center of the detail pane")
+    func emptyWorkflowHistoryIsCentered() throws {
+        let size = CGSize(width: 900, height: 640)
+        let host = NSHostingView(rootView: WorkflowHistoryContent(
+            entries: [], repositories: [], repository: .constant(""), filter: .constant(WorkflowHistoryFilter()),
+            durationTarget: .constant(nil), isLoading: false, errorMessage: nil, lastRefresh: nil,
+            rateLimitRemaining: nil, canLoadOlder: false, refresh: {}, loadOlder: {}
+        ).environment(\.locale, Locale(identifier: "en")).preferredColorScheme(.dark))
+        host.appearance = NSAppearance(named: .darkAqua)
+        host.frame = CGRect(origin: .zero, size: size)
+        host.layoutSubtreeIfNeeded()
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        let scale = Double(bitmap.pixelsHigh) / size.height
+        // With this viewport, the title and description occupy the band below the filters.
+        let textBand = Int(390 * scale)..<Int(450 * scale)
+        let emptyStatePixels = (0..<bitmap.pixelsWide).filter { x in
+            textBand.contains { y in
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { return false }
+                return color.redComponent > 0.5 && color.greenComponent > 0.5 && color.blueComponent > 0.5
+            }
+        }
+        let left = try #require(emptyStatePixels.first)
+        let right = try #require(emptyStatePixels.last)
+        #expect(abs(Double(left + right) / 2 - Double(bitmap.pixelsWide) / 2) < 8 * scale)
+    }
+
     @Test("Copying a workflow warning preserves the complete multiline message")
     func copyWorkflowWarning() {
         let message = "Einige Repositories konnten nicht aktualisiert werden:\nexample/repo: Historie konnte nicht geladen werden."

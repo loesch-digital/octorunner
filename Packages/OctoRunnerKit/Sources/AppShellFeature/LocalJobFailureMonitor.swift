@@ -20,7 +20,7 @@ public final class LocalJobFailureMonitor {
 
     public init(preferences: AppPreferencesStore, notifications: AppNotificationsController,
                 rateBudget: WorkflowHistoryRateBudget,
-                loader: any WorkflowHistoryLoading = GitHubWorkflowHistoryLoader()) {
+                loader: any WorkflowHistoryLoading = GitHubWorkflowHistoryLoader(includesActiveRuns: true)) {
         self.preferences = preferences
         self.notifications = notifications
         self.rateBudget = rateBudget
@@ -138,12 +138,8 @@ public final class LocalJobFailureMonitor {
               account.githubUserId > 0, !account.keychainAccountKey.isEmpty else { return nil }
         let runners = try context.fetch(FetchDescriptor<RunnerEntity>())
         guard runners.contains(where: { ($0.githubRunnerId ?? 0) > 0 }) else { return nil }
-        let managed = runners.compactMap { runner -> String? in
-            guard runner.scopeType != .organization else { return nil }
-            return GitHubRepositorySlug(input: runner.scopeUrlString)?.rawValue
-        }
-        let added = preferences.historyPreferences.validated().additionalRepositoriesByAccount[String(account.githubUserId)] ?? []
-        let sources = Array(Set(managed + added)).sorted().map {
+        let sources = WorkflowHistorySelection.configuredRepositories(for: runners, accountID: account.githubUserId,
+            preferences: preferences.historyPreferences).sorted().map {
             WorkflowHistorySelection(accountID: account.githubUserId, keychainAccountKey: account.keychainAccountKey, repository: $0)
         }
         return sources.isEmpty ? nil : sources

@@ -57,6 +57,12 @@ public struct WorkflowHistoryEntry: Sendable, Identifiable {
             .map { references in references.compactMap { $0.validated(repository: entity.repositoryFullName) } }
     }
 
+    public func elapsedDuration(at now: Date, maxAge: TimeInterval = 90) -> Double? {
+        if let durationSeconds { return durationSeconds }
+        guard status == "in_progress", isFresh(at: now, maxAge: maxAge) else { return nil }
+        return WorkflowExecutionDuration.elapsedSeconds(since: startedAt, at: now)
+    }
+
     public func isFresh(at now: Date, maxAge: TimeInterval = 90) -> Bool {
         guard let observedAt else { return false }
         let age = now.timeIntervalSince(observedAt)
