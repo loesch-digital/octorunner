@@ -15,11 +15,11 @@ public struct WorkflowHistoryMetrics: Sendable {
 
     static let failureConclusions: Set<String> = ["failure", "timed_out", "startup_failure", "action_required", "stale"]
 
-    public init(entries: [WorkflowHistoryEntry], now: Date = .now, calendar: Calendar = .current, durationSLASeconds: Double? = nil) {
+    public init(entries: [WorkflowHistoryEntry], now: Date = .now, calendar: Calendar = .current, durationSLASeconds: Double? = nil, observationMaxAge: TimeInterval = 90) {
         let runs = WorkflowHistoryFilter.latestWorkflows(in: entries)
-        runningCount = runs.count { $0.status == "in_progress" && $0.isFresh(at: now) }
-        queuedCount = runs.count { WorkflowHistoryStatusFilter.queued.matches($0) && $0.isFresh(at: now) }
-        stalePendingCount = runs.count { ($0.status == "in_progress" || WorkflowHistoryStatusFilter.queued.matches($0)) && !$0.isFresh(at: now) }
+        runningCount = runs.count { $0.status == "in_progress" && $0.isFresh(at: now, maxAge: observationMaxAge) }
+        queuedCount = runs.count { WorkflowHistoryStatusFilter.queued.matches($0) && $0.isFresh(at: now, maxAge: observationMaxAge) }
+        stalePendingCount = runs.count { ($0.status == "in_progress" || WorkflowHistoryStatusFilter.queued.matches($0)) && !$0.isFresh(at: now, maxAge: observationMaxAge) }
         completedToday = runs.count {
             $0.status == "completed" && $0.completedAt.map { $0 <= now && calendar.isDate($0, inSameDayAs: now) } == true
         }

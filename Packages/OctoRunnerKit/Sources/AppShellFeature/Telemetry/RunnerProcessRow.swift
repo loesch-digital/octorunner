@@ -3,6 +3,7 @@ import SwiftUI
 import TelemetryKit
 
 struct RunnerProcessRow: View {
+    @Environment(\.locale) private var locale
     let process: InspectedRunnerProcess
     let isTerminating: Bool
     let inspect: (InspectedRunnerProcess) -> Void
@@ -29,8 +30,12 @@ struct RunnerProcessRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(verbatim: process.name).font(.headline).lineLimit(2)
             Text(verbatim: process.runner.name).font(.callout).foregroundStyle(OctoTheme.secondaryText).lineLimit(2)
-            Text("PID \(process.id.pid)").font(.callout.monospaced())
+            Text(Self.pidLabel(process.id.pid, locale: locale)).font(.callout.monospaced())
         }
+    }
+
+    static func pidLabel(_ pid: Int32, locale: Locale) -> String {
+        AppLocalization.string("PID \(String(pid))", locale: locale)
     }
 
     private var metrics: some View {

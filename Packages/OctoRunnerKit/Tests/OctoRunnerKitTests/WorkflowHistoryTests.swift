@@ -102,6 +102,22 @@ struct WorkflowHistoryTests {
         #expect(entity.completedAt == nil && entity.measuredDurationSeconds == nil)
     }
 
+    @Test("A late observation cannot reopen a completed workflow or its job")
+    func rejectsOlderObservation() throws {
+        let context = try makeContext()
+        let decoder = JSONDecoder()
+        let completed = try decoder.decode(GitHubWorkflowRunDTO.self, from: Data(#"{"id":42,"status":"completed","conclusion":"success","run_attempt":1}"#.utf8))
+        let completedJob = try decoder.decode(GitHubWorkflowJobDTO.self, from: Data(#"{"id":100,"run_id":42,"name":"Build","status":"completed","conclusion":"success"}"#.utf8))
+        let newer = Date(timeIntervalSince1970: 2_000)
+        let record = try WorkflowHistoryStore.upsert(run: completed, jobs: [completedJob], repository: "example/repo",
+            accountID: 7, jobsComplete: true, observedAt: newer, in: context)
+        _ = try WorkflowHistoryStore.upsert(run: workflow(attempt: 1), jobs: [job(id: 100)], repository: "example/repo",
+            accountID: 7, observedAt: newer.addingTimeInterval(-5), in: context)
+        let savedJob = try #require(context.fetch(FetchDescriptor<JobRunEntity>()).first { $0.githubJobId == 100 })
+        #expect(record.statusRaw == "completed" && record.jobDetailsComplete && record.observedAt == newer)
+        #expect(savedJob.statusRaw == "completed" && savedJob.conclusion == "success" && savedJob.observedAt == newer)
+    }
+
     @Test("Unsafe repository identifiers never create history", arguments: ["../repo", "example/repo/extra", "example/repo?token=value"])
     func unsafeRepository(_ repository: String) throws {
         let context = try makeContext()

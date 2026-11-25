@@ -26,7 +26,7 @@ public final class WorkflowHistoryViewModel {
         selection.flatMap { rateBudget.deadline(for: $0.accountID) }
     }
 
-    public init(loader: any WorkflowHistoryLoading = GitHubWorkflowHistoryLoader(), rateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(),
+    public init(loader: any WorkflowHistoryLoading = GitHubWorkflowHistoryLoader(includesActiveRuns: true), rateBudget: WorkflowHistoryRateBudget = WorkflowHistoryRateBudget(),
                 acceptResponse: @escaping @MainActor () -> Bool = { true }) {
         self.loader = loader
         self.rateBudget = rateBudget

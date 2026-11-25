@@ -4,6 +4,16 @@ import Testing
 
 @MainActor
 struct WorkflowHistoryPreferencesTests {
+    @Test("The live observation window follows the validated polling interval")
+    func liveObservationWindow() {
+        var preferences = WorkflowHistoryPreferences()
+        #expect(preferences.observationMaxAge == 90)
+        preferences.refreshIntervalSeconds = 300
+        #expect(preferences.observationMaxAge == 330)
+        preferences.refreshIntervalSeconds = 2_000
+        #expect(preferences.observationMaxAge == 930)
+    }
+
     @Test("History repository choices and explicit duration targets persist without crossing accounts")
     func persistence() throws {
         let suite = "octorunner-history-preferences-\(UUID())"

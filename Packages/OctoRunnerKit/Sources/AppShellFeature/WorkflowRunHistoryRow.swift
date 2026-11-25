@@ -7,10 +7,11 @@ struct WorkflowRunHistoryRow: View {
     let entry: WorkflowHistoryEntry
     let jobs: [WorkflowHistoryEntry]
     let now: Date
+    let observationMaxAge: TimeInterval
     var openDetails: (() -> Void)? = nil
 
     var body: some View {
-        let presentation = WorkflowHistoryPresentation(entry: entry, now: now, locale: locale)
+        let presentation = WorkflowHistoryPresentation(entry: entry, now: now, locale: locale, observationMaxAge: observationMaxAge)
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -34,11 +35,11 @@ struct WorkflowRunHistoryRow: View {
                 Text(entry.branch).lineLimit(1).truncationMode(.middle).help(entry.branch)
                 Spacer(minLength: 8)
                 Text(String(entry.commitSHA.prefix(7))).help(entry.commitSHA)
-                Text("#\(entry.githubRunID)")
+                Text("#\(String(entry.githubRunID))")
             }.font(.caption.monospaced()).foregroundStyle(.secondary)
             HStack {
                 Text("Duration", bundle: .module)
-                Text(duration(entry.durationSeconds))
+                elapsedDuration(entry)
                 Spacer()
                 if let event = entry.event { Text(event).lineLimit(1).help(event) }
             }.font(.caption)
@@ -61,7 +62,7 @@ struct WorkflowRunHistoryRow: View {
                 } else {
                     LazyVStack(alignment: .leading, spacing: 10) {
                         ForEach(jobs) { job in
-                            let display = WorkflowHistoryPresentation(entry: job, now: now, locale: locale)
+                            let display = WorkflowHistoryPresentation(entry: job, now: now, locale: locale, observationMaxAge: observationMaxAge)
                             VStack(alignment: .leading, spacing: 3) {
                                 Label(job.jobName ?? "—", systemImage: display.symbol)
                                     .lineLimit(1).truncationMode(.middle).help(job.jobName ?? "—")
@@ -69,7 +70,7 @@ struct WorkflowRunHistoryRow: View {
                                     Text(display.status)
                                     Text(job.runnerName ?? "—").lineLimit(1).truncationMode(.middle).help(job.runnerName ?? "—")
                                     Spacer()
-                                    Text(duration(job.durationSeconds))
+                                    elapsedDuration(job)
                                 }.font(.caption).foregroundStyle(.secondary)
                             }
                         }
@@ -83,9 +84,14 @@ struct WorkflowRunHistoryRow: View {
         .background(OctoTheme.surface, in: .rect(cornerRadius: 10))
     }
 
-    private func duration(_ seconds: Double?) -> String {
-        guard let seconds else { return "—" }
-        return Duration.seconds(seconds).formatted(.time(pattern: .minuteSecond))
+    @ViewBuilder private func elapsedDuration(_ entry: WorkflowHistoryEntry) -> some View {
+        if entry.status == "in_progress" && entry.isFresh(at: now, maxAge: observationMaxAge) {
+            TimelineView(.periodic(from: .now, by: 1)) { timeline in
+                Text(WorkflowHistoryPresentation.duration(entry.elapsedDuration(at: timeline.date, maxAge: observationMaxAge)))
+            }
+        } else {
+            Text(WorkflowHistoryPresentation.duration(entry.elapsedDuration(at: now, maxAge: observationMaxAge)))
+        }
     }
 
     private func statusColor(_ symbol: String) -> Color {

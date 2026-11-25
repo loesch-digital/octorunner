@@ -4676,19 +4676,19 @@
         }
       }
     },
-    "Recent runs refresh while this view is active. Add repositories for organization runners explicitly.": {
+    "Recent runs refresh while OctoRunner is active. Add the repositories you want to follow for organization runners.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aktuelle Läufe werden bei geöffneter Ansicht aktualisiert. Repositories für Organisations-Runner ausdrücklich hinzufügen."
+            "value": "Aktuelle Läufe werden aktualisiert, solange OctoRunner aktiv ist. Füge bei Organisations-Runnern die Repositories hinzu, die du verfolgen möchtest."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recent runs refresh while this view is active. Add repositories for organization runners explicitly."
+            "value": "Recent runs refresh while OctoRunner is active. Add the repositories you want to follow for organization runners."
           }
         }
       }
@@ -8667,19 +8667,19 @@
         }
       }
     },
-    "Terminate %@ (PID %d) for %@? Active jobs may fail. The service may restart this process. This does not stop the entire runner process tree.": {
+    "Terminate %@ (PID %@) for %@? Active jobs may fail. The service may restart this process. This does not stop the entire runner process tree.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ (PID %d) für %@ beenden? Aktive Jobs können fehlschlagen. Der Dienst kann diesen Prozess neu starten. Der gesamte Runner-Prozessbaum wird dadurch nicht gestoppt."
+            "value": "%@ (PID %@) für %@ beenden? Aktive Jobs können fehlschlagen. Der Dienst kann diesen Prozess neu starten. Der gesamte Runner-Prozessbaum wird dadurch nicht gestoppt."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Terminate %@ (PID %d) for %@? Active jobs may fail. The service may restart this process. This does not stop the entire runner process tree."
+            "value": "Terminate %@ (PID %@) for %@? Active jobs may fail. The service may restart this process. This does not stop the entire runner process tree."
           }
         }
       }
@@ -9247,19 +9247,19 @@
         }
       }
     },
-    "Run #%lld · Attempt %lld": {
+    "Run #%@ · Attempt %lld": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Run #%lld · Attempt %lld"
+            "value": "Run #%@ · Attempt %lld"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lauf #%lld · Versuch %lld"
+            "value": "Lauf #%@ · Versuch %lld"
           }
         }
       },
@@ -9778,6 +9778,24 @@
             "value": "Installieren & neu starten"
           }
         }
+      }
+    },
+    "Running workflows: %lld": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Laufende Workflows: %lld" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Running workflows: %lld" } }
+      }
+    },
+    "Show running workflows": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Laufende Workflows anzeigen" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Show running workflows" } }
+      }
+    },
+    "Opens Jobs & Workflow Runs and shows the current run when available.": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Öffnet Jobs & Workflow-Läufe und zeigt den aktuellen Lauf an, sofern verfügbar." } },
+        "en": { "stringUnit": { "state": "translated", "value": "Opens Jobs & Workflow Runs and shows the current run when available." } }
       }
     },
     "Running Instances": {

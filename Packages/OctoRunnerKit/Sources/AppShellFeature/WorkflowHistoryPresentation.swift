@@ -6,9 +6,9 @@ struct WorkflowHistoryPresentation {
     let symbol: String
     let githubURL: URL?
 
-    init(entry: WorkflowHistoryEntry, now: Date = .now, locale: Locale = .current) {
+    init(entry: WorkflowHistoryEntry, now: Date = .now, locale: Locale = .current, observationMaxAge: TimeInterval = 90) {
         let key: String.LocalizationValue
-        if entry.status != "completed", !entry.isFresh(at: now) {
+        if entry.status != "completed", !entry.isFresh(at: now, maxAge: observationMaxAge) {
             key = "Stale"; symbol = "clock.badge.questionmark"
         } else {
             switch (entry.status, entry.conclusion) {
@@ -24,6 +24,11 @@ struct WorkflowHistoryPresentation {
         }
         status = AppLocalization.string(key, locale: locale)
         githubURL = Self.validatedURL(entry)
+    }
+
+    static func duration(_ seconds: Double?) -> String {
+        guard let seconds else { return "—" }
+        return Duration.seconds(seconds).formatted(.time(pattern: .minuteSecond))
     }
 
     private static func validatedURL(_ entry: WorkflowHistoryEntry) -> URL? {

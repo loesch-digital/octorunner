@@ -5,6 +5,7 @@ import SwiftUI
 struct WorkflowJobStepView: View {
     @Environment(\.locale) private var locale
     let step: WorkflowJobStep
+    var now: Date? = nil
 
     var body: some View {
         let display = WorkflowStepPresentation(step: step, locale: locale)
@@ -15,7 +16,7 @@ struct WorkflowJobStepView: View {
                 Label(display.title, systemImage: display.symbol).font(.caption).foregroundStyle(display.color)
             }
             Spacer(minLength: 8)
-            Text(step.durationSeconds.map { Duration.seconds($0).formatted(.time(pattern: .minuteSecond)) } ?? "—")
+            Text(WorkflowHistoryPresentation.duration(step.elapsedDuration(at: now)))
                 .font(.caption.monospacedDigit())
         }.padding(.vertical, 5)
     }
