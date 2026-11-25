@@ -16,6 +16,12 @@
 - [ ] On macOS 15 and 27, verify background notification authorization and delivery under the intended application identity. Verify the intended shared Keychain entitlement in the notarized Developer ID distribution setup. Use disposable credentials, fail closed on unsigned or mismatched peers, and unregister the disposable helper.
 - [ ] Record the results and final helper packaging decision. If the native Dock status or authenticated background access cannot be reproduced, bring the result back for review before changing production behavior.
 
+### Signed probe results
+
+- On macOS 27.2, a separate Developer ID–signed app with a bundled LaunchAgent registered successfully with `SMAppService`. The helper kept writing its one-second heartbeat after the test application process exited. Unregistration removed the launchd service. The probe used synthetic data and a separate bundle identifier.
+- The native Dock subtitle and stop action remain unverified. The UI automation connection timed out while attaching to the probe.
+- The current Fastlane release skips profile provisioning, and neither the installed app nor the local cache has an OctoRunner macOS profile. Apple requires the `keychain-access-groups` entitlement to be authorized by a profile. A standalone helper executable cannot embed a restricted-entitlement profile. The distribution test therefore needs a provisioned helper bundle and matching app and helper profiles before validating access with disposable credentials. See [Apple TN3125](https://developer.apple.com/documentation/technotes/tn3125-inside-code-signing-provisioning-profiles).
+
 ## 2. Share monitoring inputs and coordinate ownership
 
 Files: `Packages/OctoRunnerKit/Package.swift`, a new `BackgroundMonitoringKit` target, and new `BackgroundMonitoringRuntimeTests.swift` in `OctoRunnerKitTests`. Reuse existing process samplers, GitHub clients, state transition policies, and job result matching.

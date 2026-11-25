@@ -8,6 +8,7 @@ let package = Package(
         .macOS(.v15)
     ],
     products: [
+        .library(name: "BackgroundMonitoringKit", targets: ["BackgroundMonitoringKit"]),
         .library(name: "CoreModels", targets: ["CoreModels"]),
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
         .library(name: "SecurityKit", targets: ["SecurityKit"]),
@@ -18,6 +19,11 @@ let package = Package(
         .library(name: "AppShellFeature", targets: ["AppShellFeature"])
     ],
     targets: [
+        .target(
+            name: "BackgroundMonitoringKit",
+            dependencies: ["CoreModels"],
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        ),
         .target(
             name: "CoreModels",
             swiftSettings: [.swiftLanguageMode(.v6)]
@@ -70,6 +76,7 @@ let package = Package(
         .testTarget(
             name: "OctoRunnerKitTests",
             dependencies: [
+                "BackgroundMonitoringKit",
                 "CoreModels",
                 "DesignSystem",
                 "SecurityKit",
