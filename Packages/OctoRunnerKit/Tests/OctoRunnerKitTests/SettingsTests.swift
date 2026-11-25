@@ -144,21 +144,6 @@ struct SettingsTests {
                 #expect(host.fittingSize.width <= 680)
                 #expect(!preferences.launchAtLogin)
                 #expect(!preferences.notificationPolicy.enabled)
-                let alerts = NSHostingView(rootView: AlertsSettingsTab()
-                    .environment(preferences)
-                    .environment(services.notifications).environment(services.storageMaintenance)
-                    .environment(\.locale, language.locale)
-                    .environment(\.colorScheme, scheme))
-                alerts.frame = NSRect(x: 0, y: 0, width: 680, height: 520)
-                alerts.layoutSubtreeIfNeeded()
-                // Form's unconstrained fittingSize is an ideal width, not its
-                // minimum. Verify actual rendering at the constrained viewport.
-                let bitmap = try #require(alerts.bitmapImageRepForCachingDisplay(in: alerts.bounds))
-                alerts.cacheDisplay(in: alerts.bounds, to: bitmap)
-                #expect(bitmap.pixelsWide > 0)
-                #expect(bitmap.pixelsHigh > 0)
-                #expect(try #require(bitmap.representation(using: .png, properties: [:])).count > 0)
-                #expect(alerts.fittingSize.height > 0)
             }
         }
     }

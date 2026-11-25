@@ -30,49 +30,13 @@ public actor GitHubWorkflowHistoryLoader: WorkflowHistoryLoading {
             var responseRate = page.rateLimit
             var runs = page.items
             if includesActiveRuns, nextPage == nil, page.nextPage != nil || page.totalCount > runs.count {
-                var seen = Set(runs.map(\.id))
-                var next: URL?
-                var visited: Set<URL> = []
-                repeat {
-                    guard responseRate?.remaining != 0 else { break }
-                    guard visited.count < 10 else { throw WorkflowHistoryLoadError.tooManyPages }
-                    let active = try await client.workflowRuns(repository: selection.repository, token: token, page: next, runningOnly: true)
-                    try Task.checkCancellation()
-                    if let rate = active.rateLimit { responseRate = rate }
-                    runs.append(contentsOf: active.items.filter { $0.status == "in_progress" && seen.insert($0.id).inserted })
-                    next = active.nextPage
-                    if let next, !visited.insert(next).inserted { throw WorkflowHistoryLoadError.tooManyPages }
-                } while next != nil
+                runs = try await addingActiveRuns(to: runs, repository: selection.repository, token: token, rate: &responseRate)
             }
             var results: [WorkflowRunDetails] = []
             for var run in runs {
                 if run.event?.hasPrefix("pull_request") == true, run.pullRequests?.isEmpty != false,
                    let sha = run.headSHA, responseRate?.remaining != 0 {
-                    do {
-                        var requests: [GitHubWorkflowPullRequestDTO] = []
-                        var next: URL?
-                        var visited = Set<URL>()
-                        repeat {
-                            guard visited.count < 20 else { throw WorkflowHistoryLoadError.tooManyPages }
-                            let associations = try await client.pullRequests(repository: selection.repository, commitSHA: sha, token: token, page: next)
-                            try Task.checkCancellation()
-                            if let rate = associations.rateLimit { responseRate = rate }
-                            requests.append(contentsOf: associations.items)
-                            next = associations.nextPage
-                            if let next {
-                                guard responseRate?.remaining != 0 else {
-                                    throw GitHubActionsError.httpStatus(429, rateLimit: responseRate)
-                                }
-                                guard visited.insert(next).inserted else { throw WorkflowHistoryLoadError.tooManyPages }
-                            }
-                        } while next != nil
-                        run.pullRequests = requests
-                    } catch let GitHubActionsError.httpStatus(status, rate) where
-                        (status == 403 && rate?.remaining != 0 && rate?.retryAfterSeconds == nil) || status == 404 {
-                        // Fine-grained Actions read does not imply Pull requests
-                        // read. Keep the history useful, without inventing a PR.
-                        run.pullRequests = nil
-                    }
+                    run.pullRequests = try await pullRequests(for: sha, repository: selection.repository, token: token, rate: &responseRate)
                 }
                 try Task.checkCancellation()
                 if let attempt = run.runAttempt,
@@ -121,6 +85,56 @@ public actor GitHubWorkflowHistoryLoader: WorkflowHistoryLoading {
                 throw WorkflowHistoryLoadError.permissionDenied
             default: throw WorkflowHistoryLoadError.unavailable
             }
+        }
+    }
+
+    private func addingActiveRuns(to pageRuns: [GitHubWorkflowRunDTO], repository: String, token: String,
+        rate: inout GitHubRateLimitSnapshot?
+    ) async throws -> [GitHubWorkflowRunDTO] {
+        var runs = pageRuns
+        var seen = Set(runs.map(\.id))
+        var next: URL?
+        var visited: Set<URL> = []
+        repeat {
+            guard rate?.remaining != 0 else { break }
+            guard visited.count < 10 else { throw WorkflowHistoryLoadError.tooManyPages }
+            let active = try await client.workflowRuns(repository: repository, token: token, page: next, runningOnly: true)
+            try Task.checkCancellation()
+            if let responseRate = active.rateLimit { rate = responseRate }
+            runs.append(contentsOf: active.items.filter { $0.status == "in_progress" && seen.insert($0.id).inserted })
+            next = active.nextPage
+            if let next, !visited.insert(next).inserted { throw WorkflowHistoryLoadError.tooManyPages }
+        } while next != nil
+        return runs
+    }
+
+    private func pullRequests(for sha: String, repository: String, token: String,
+        rate: inout GitHubRateLimitSnapshot?
+    ) async throws -> [GitHubWorkflowPullRequestDTO]? {
+        do {
+            var requests: [GitHubWorkflowPullRequestDTO] = []
+            var next: URL?
+            var visited = Set<URL>()
+            repeat {
+                guard visited.count < 20 else { throw WorkflowHistoryLoadError.tooManyPages }
+                let associations = try await client.pullRequests(repository: repository, commitSHA: sha, token: token, page: next)
+                try Task.checkCancellation()
+                if let responseRate = associations.rateLimit { rate = responseRate }
+                requests.append(contentsOf: associations.items)
+                next = associations.nextPage
+                if let next {
+                    guard rate?.remaining != 0 else {
+                        throw GitHubActionsError.httpStatus(429, rateLimit: rate)
+                    }
+                    guard visited.insert(next).inserted else { throw WorkflowHistoryLoadError.tooManyPages }
+                }
+            } while next != nil
+            return requests
+        } catch let GitHubActionsError.httpStatus(status, rate) where
+            (status == 403 && rate?.remaining != 0 && rate?.retryAfterSeconds == nil) || status == 404 {
+            // Fine-grained Actions read does not imply Pull requests
+            // read. Keep the history useful, without inventing a PR.
+            return nil
         }
     }
 }

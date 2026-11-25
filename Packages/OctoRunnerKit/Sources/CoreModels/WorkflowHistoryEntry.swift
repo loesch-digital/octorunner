@@ -69,5 +69,22 @@ public struct WorkflowHistoryEntry: Sendable, Identifiable {
         return age >= -5 && age <= maxAge
     }
 
-    var runKey: String { "\(accountID.map(String.init) ?? "legacy")|\(repository.lowercased())|\(githubRunID)" }
+    @MainActor
+    package func matchesRunner(_ runner: RunnerEntity) -> Bool {
+        guard let id = runner.githubRunnerId, id > 0, runnerID == id else { return false }
+        switch runner.scopeType {
+        case .repository, .personalMultiRepo:
+            return GitHubRepositorySlug(input: runner.scopeUrlString)?.rawValue == repository.lowercased()
+        case .organization:
+            guard let url = URLComponents(string: runner.scopeUrlString), url.scheme == "https", url.host?.lowercased() == "github.com",
+                  url.port == nil || url.port == 443, url.user == nil, url.password == nil, url.query == nil, url.fragment == nil,
+                  !url.percentEncodedPath.contains("%") else { return false }
+            let parts = url.path.split(separator: "/")
+            guard parts.count == 1, let owner = parts.first,
+                  url.percentEncodedPath == "/\(owner)" || url.percentEncodedPath == "/\(owner)/" else { return false }
+            return owner.lowercased() == repository.split(separator: "/").first?.lowercased()
+        }
+    }
+
+    package var runKey: String { "\(accountID.map(String.init) ?? "legacy")|\(repository.lowercased())|\(githubRunID)" }
 }

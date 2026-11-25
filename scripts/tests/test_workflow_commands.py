@@ -33,6 +33,8 @@ class WorkflowCommandTests(unittest.TestCase):
                 self.assertEqual(re.findall(r"^git add (.+)$", publisher, re.MULTILINE),
                                  ["Casks/octorunner.rb"])
                 self.assertNotIn("README.md", publisher)
+                self.assertIn('scripts/release_tools.py cask "v${VERSION}" "${SHA256}"', publisher)
+                self.assertNotIn('cask "octorunner" do', publisher)
 
     def test_build_workflows_use_the_same_current_toolchain(self):
         for workflow in ("ci.yml", "release.yml"):

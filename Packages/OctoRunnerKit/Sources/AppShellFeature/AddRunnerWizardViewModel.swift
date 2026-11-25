@@ -330,34 +330,10 @@ public final class AddRunnerWizardViewModel {
     ) async -> Bool {
         guard !isProvisioning, !provisioningCompleted, !Task.isCancelled else { return false }
         errorMessage = nil
-        guard let login = accountLogin, let key = keychainAccountKey, !key.isEmpty else {
-            errorMessage = .key("Please sign in with GitHub before provisioning a runner.")
+        guard let request = prepareProvisioning(accountLogin: accountLogin, keychainAccountKey: keychainAccountKey) else {
             return false
         }
-        if selectedScope == .personalMultiRepo,
-           let invalidTarget = manualRepositoryEntries.first(where: { Self.parseRepoTarget($0) == nil }) {
-            errorMessage = .key("Enter repositories as owner/repo. Invalid entry: \(invalidTarget).")
-            return false
-        }
-        let targets = resolvedTargetSummaries
-        guard !targets.isEmpty else {
-            errorMessage = .key("Please select at least one GitHub Repository or Organization.")
-            return false
-        }
-        // Freeze form input before credential loading suspends this actor.
-        let names = previewInstanceNames
-        let scope: RunnerScopeType = selectedScope == .organization ? .organization : .repository
-        let group: GitHubRunnerGroupDTO?
-        if scope == .organization, let selectedRunnerGroupID {
-            guard groupSelection == organizationSelection(forAccountKey: key),
-                  let matched = organizationGroups.first(where: { $0.id == selectedRunnerGroupID }) else {
-                errorMessage = .key("The GitHub runner group is no longer available. Check the organization and select a group again.")
-                return false
-            }
-            group = matched
-        } else {
-            group = nil
-        }
+        let (login, key, targets, names, scope, group) = request
         let accountRevision = GitHubAccountStore.selectionRevision
         let labels = selectedLabels
         let launchAgent = registerLaunchAgent
@@ -413,55 +389,11 @@ public final class AddRunnerWizardViewModel {
                 if provisionedList.count < namesForTarget.count {
                     failedTargets.append(target.scopeURL.path().trimmingCharacters(in: CharacterSet(charactersIn: "/")))
                 }
-                try modelContext.transaction {
-                    for summary in provisionedList {
-                        let id = UUID()
-                        let mode: RunnerExecutionMode = summary.launchdLabel == nil ? .direct : .launchAgent
-                        let entity = RunnerEntity(
-                            id: id,
-                            name: summary.name,
-                            scopeType: summary.scopeType,
-                            scopeUrl: summary.scopeURL,
-                            status: .offline,
-                            labels: summary.labels,
-                            workDirectory: summary.workDirectory,
-                            rootDirectoryPath: summary.rootDirectory.path(percentEncoded: false),
-                            runnerVersion: summary.runnerVersion,
-                            pid: summary.pid,
-                            executionMode: mode
-                        )
-                        entity.githubRunnerId = summary.remoteID
-                        entity.githubRunnerGroupID = summary.remoteGroupID
-                        entity.githubRunnerGroupName = summary.remoteGroupName
-                        if let label = summary.launchdLabel {
-                            entity.serviceLabel = label
-                        }
-                        modelContext.insert(entity)
-                        modelContext.insert(AuditLogEntity(
-                            category: .runnerLifecycle,
-                            title: "Runner Provisioned",
-                            summary: "Provisioned \(summary.name) (\(summary.scopeURL.absoluteString), v\(summary.runnerVersion))",
-                            actorAccountLogin: login,
-                            targetRunnerName: summary.name,
-                            newValue: summary.labels.joined(separator: ",")
-                        ))
-                        if launchAgent && (summary.launchAgentFailed || summary.launchdLabel == nil) {
-                            if mode == .direct {
-                                serviceInstallFailures.append(summary.name)
-                            } else {
-                                startFailures.append(summary.name)
-                            }
-                            modelContext.insert(AuditLogEntity(
-                                category: .runnerLifecycle, severity: .warning, title: "Runner Start Failed",
-                                summary: "Could not start \(summary.name) (\(id.uuidString)).",
-                                actorAccountLogin: login, targetRunnerName: summary.name
-                            ))
-                        } else if mode == .direct {
-                            directRunners.append(.init(runnerID: id, name: summary.name, rootDirectory: summary.rootDirectory,
-                                mode: .direct, launch: configuration))
-                        }
-                    }
-                }
+                let persisted = try RunnerWizardProvisioning.persistProvisionedRunners(provisionedList, in: modelContext, accountLogin: login,
+                    launchAgent: launchAgent, configuration: configuration)
+                directRunners.append(contentsOf: persisted.directRunners)
+                startFailures.append(contentsOf: persisted.startFailures)
+                serviceInstallFailures.append(contentsOf: persisted.serviceInstallFailures)
                 savedCount += provisionedList.count
             }
             provisioningCompleted = savedCount > 0
@@ -469,27 +401,8 @@ public final class AddRunnerWizardViewModel {
                 errorMessage = .key("GitHub account changed during setup. Saved registrations: \(savedCount).")
                 return provisioningCompleted
             }
-            for runner in directRunners {
-                try Task.checkCancellation()
-                do {
-                    try await supervisor.configure(runner)
-                    try await supervisor.start(runnerID: runner.runnerID)
-                } catch is CancellationError {
-                    return false
-                } catch {
-                    try Task.checkCancellation()
-                    startFailures.append(runner.name)
-                    AuditLogRecorder.record(
-                        in: modelContext,
-                        category: .runnerLifecycle,
-                        severity: .warning,
-                        title: "Runner Start Failed",
-                        summary: "Could not start \(runner.name) (\(runner.runnerID.uuidString)).",
-                        actorAccountLogin: login,
-                        targetRunnerName: runner.name
-                    )
-                }
-            }
+            startFailures += try await RunnerWizardProvisioning.startDirectRunners(directRunners, in: modelContext,
+                accountLogin: login, supervisor: supervisor)
             if !failedTargets.isEmpty {
                 errorMessage = .key("Runner setup incomplete for \(failedTargets.joined(separator: ", ")). Saved registrations: \(savedCount).")
             } else if !serviceInstallFailures.isEmpty {
@@ -505,5 +418,39 @@ public final class AddRunnerWizardViewModel {
             errorMessage = .failure(error)
             return false
         }
+    }
+
+    private func prepareProvisioning(accountLogin: String?, keychainAccountKey: String?)
+        -> (login: String, key: String, targets: [(owner: String, repo: String?, scopeURL: URL)],
+            names: [String], scope: RunnerScopeType, group: GitHubRunnerGroupDTO?)? {
+        guard let login = accountLogin, let key = keychainAccountKey, !key.isEmpty else {
+            errorMessage = .key("Please sign in with GitHub before provisioning a runner.")
+            return nil
+        }
+        if selectedScope == .personalMultiRepo,
+           let invalidTarget = manualRepositoryEntries.first(where: { Self.parseRepoTarget($0) == nil }) {
+            errorMessage = .key("Enter repositories as owner/repo. Invalid entry: \(invalidTarget).")
+            return nil
+        }
+        let targets = resolvedTargetSummaries
+        guard !targets.isEmpty else {
+            errorMessage = .key("Please select at least one GitHub Repository or Organization.")
+            return nil
+        }
+        // Freeze form input before credential loading suspends this actor.
+        let names = previewInstanceNames
+        let scope: RunnerScopeType = selectedScope == .organization ? .organization : .repository
+        let group: GitHubRunnerGroupDTO?
+        if scope == .organization, let selectedRunnerGroupID {
+            guard groupSelection == organizationSelection(forAccountKey: key),
+                  let matched = organizationGroups.first(where: { $0.id == selectedRunnerGroupID }) else {
+                errorMessage = .key("The GitHub runner group is no longer available. Check the organization and select a group again.")
+                return nil
+            }
+            group = matched
+        } else {
+            group = nil
+        }
+        return (login, key, targets, names, scope, group)
     }
 }

@@ -38,6 +38,16 @@ public struct WorkflowHistoryFilter: Sendable {
         }
     }
 
+    package static func latestAttempts(in entries: [WorkflowHistoryEntry]) -> [String: Int] {
+        var attempts: [String: Int] = [:]
+        for entry in entries {
+            guard let attempt = entry.attempt else { continue }
+            let key = entry.runKey
+            attempts[key] = max(attempts[key] ?? 0, attempt)
+        }
+        return attempts
+    }
+
     static func latestWorkflows(in entries: [WorkflowHistoryEntry]) -> [WorkflowHistoryEntry] {
         var latest: [String: WorkflowHistoryEntry] = [:]
         for entry in entries where entry.recordKind == "workflow" {

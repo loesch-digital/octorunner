@@ -2,6 +2,8 @@ import Foundation
 
 /// Validated GitHub repository identity, never a credential-bearing URL.
 public struct GitHubRepositorySlug: Hashable, Sendable {
+    private static let allowed = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.".utf8)
+
     public let rawValue: String
 
     public init?(input: String) {
@@ -17,10 +19,13 @@ public struct GitHubRepositorySlug: Hashable, Sendable {
         } else {
             slug = input
         }
+        self.init(slug: slug)
+    }
+
+    package init?(slug: String) {
         let parts = slug.split(separator: "/", omittingEmptySubsequences: false)
-        let allowed = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.".utf8)
         guard parts.count == 2, parts.allSatisfy({
-            !$0.isEmpty && $0 != "." && $0 != ".." && $0.utf8.allSatisfy(allowed.contains)
+            !$0.isEmpty && $0 != "." && $0 != ".." && $0.utf8.allSatisfy(Self.allowed.contains)
         }) else { return nil }
         rawValue = slug.lowercased()
     }

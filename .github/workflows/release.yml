@@ -124,30 +124,7 @@ jobs:
           export GIT_SSH_COMMAND="ssh -i ~/.ssh/homebrew_tap_key -o IdentitiesOnly=yes"
           git clone git@github.com:loesch-digital/homebrew-tap.git /tmp/homebrew-tap
 
-          cat > /tmp/homebrew-tap/Casks/octorunner.rb <<EOF
-          cask "octorunner" do
-            version "${VERSION}"
-            sha256 "${SHA256}"
-
-            url "https://github.com/loesch-digital/octorunner/releases/download/v#{version}/OctoRunner-#{version}-arm64.zip"
-            name "OctoRunner"
-            desc "Native macOS manager for self-hosted GitHub Actions runners"
-            homepage "https://github.com/loesch-digital/octorunner"
-
-            depends_on macos: :sequoia
-            depends_on arch: :arm64
-
-            app "OctoRunner.app"
-
-            uninstall quit: "io.octorunner.macos"
-
-            zap trash: [
-              "~/Library/Application Support/io.octorunner.macos",
-              "~/Library/Caches/io.octorunner.macos",
-              "~/Library/Preferences/io.octorunner.macos.plist",
-            ]
-          end
-          EOF
+          python3 scripts/release_tools.py cask "v${VERSION}" "${SHA256}" > /tmp/homebrew-tap/Casks/octorunner.rb
 
           cd /tmp/homebrew-tap
           git config user.name "github-actions[bot]"

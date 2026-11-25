@@ -10,6 +10,7 @@ if [[ ! -f "$ZIP_FILE" ]]; then
 fi
 
 SHA256=$(shasum -a 256 "$ZIP_FILE" | awk '{print $1}')
+CASK=$(python3 scripts/release_tools.py cask "v${VERSION}" "${SHA256}")
 echo "Computed SHA256 for v${VERSION}: ${SHA256}"
 
 TAP_DIR=$(mktemp -d)
@@ -18,31 +19,7 @@ trap 'rm -rf "$TAP_DIR"' EXIT
 gh repo clone loesch-digital/homebrew-tap "$TAP_DIR"
 mkdir -p "$TAP_DIR/Casks"
 
-cat > "$TAP_DIR/Casks/octorunner.rb" <<EOF
-cask "octorunner" do
-  version "${VERSION}"
-  sha256 "${SHA256}"
-
-  url "https://github.com/loesch-digital/octorunner/releases/download/v#{version}/OctoRunner-#{version}-arm64.zip"
-  name "OctoRunner"
-  desc "Native macOS desktop manager for self-hosted GitHub Actions runners"
-  homepage "https://github.com/loesch-digital/octorunner"
-
-  depends_on macos: :sequoia
-  depends_on arch: :arm64
-
-  app "OctoRunner.app"
-
-  uninstall quit: "io.octorunner.macos"
-
-  zap trash: [
-    "~/Library/Application Support/OctoRunner",
-    "~/Library/Caches/io.octorunner.macos",
-    "~/Library/Logs/OctoRunner",
-    "~/Library/Preferences/io.octorunner.macos.plist",
-  ]
-end
-EOF
+printf '%s\n' "$CASK" > "$TAP_DIR/Casks/octorunner.rb"
 
 cd "$TAP_DIR"
 git add Casks/octorunner.rb

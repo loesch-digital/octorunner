@@ -66,7 +66,7 @@ struct RunnerMigrationCompletionTests {
             config: .init(agentId: 21, agentName: runner.name, gitHubUrl: URL(string: runner.scopeUrlString)!),
             workDirectory: URL(filePath: source).appending(path: "_work"), runnerVersion: nil, listenerPID: nil,
             isWorkerActive: false)
-        #expect(MainShellView.upsertDiscoveredRunners([original], into: context) == 0)
+        #expect(LocalRunnerImportStore.upsert([original], into: context) == 0)
         #expect(try context.fetchCount(FetchDescriptor<RunnerEntity>()) == 1)
         let id = runner.id
         context.delete(runner)

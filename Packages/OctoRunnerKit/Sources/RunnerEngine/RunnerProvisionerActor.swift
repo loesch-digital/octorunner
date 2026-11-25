@@ -206,29 +206,9 @@ public actor RunnerProvisionerActor {
         verifyAccountSelection: @escaping @MainActor @Sendable () throws -> Void = { try Task.checkCancellation() },
         onStatusUpdate: @MainActor @Sendable (RunnerProvisioningProgress) -> Void
     ) async throws -> [ProvisionedRunnerSummary] {
-        for name in instanceNames {
-            try Self.validateRunnerName(name)
-        }
-        try await verifyAccountSelection()
-        if let runnerGroup {
-            guard scopeType == .organization,
-                  case .available(let groups, _, _) = try await runnerSync.groupInventory(
-                    for: scopeURL, token: accessToken, isCurrent: { (try? await verifyAccountSelection()) != nil }
-                  ),
-                  groups.contains(where: { $0.id == runnerGroup.id && $0.name == runnerGroup.name && !$0.inherited }) else {
-                throw RunnerMigrationError.groupChanged
-            }
-        }
-        await onStatusUpdate(.fetchingMetadata)
-        try await verifyAccountSelection()
-        let candidate = try await provisioningClient.fetchArm64RunnerDownload(
-            scopeURL: scopeURL,
-            token: accessToken
-        )
-
-        let version = Self.extractVersion(fromFilename: candidate.filename) ?? "latest"
-        await onStatusUpdate(.verifyingBinary(filename: candidate.filename))
-        let archiveURL = try await binaryCache.ensureBinaryDownloadedAndVerified(package: candidate)
+        let (archiveURL, version) = try await prepareRunnerArchive(instanceNames: instanceNames, scopeType: scopeType,
+            scopeURL: scopeURL, runnerGroup: runnerGroup, accessToken: accessToken,
+            verifyAccountSelection: verifyAccountSelection, onStatusUpdate: onStatusUpdate)
 
         let baseDir = self.baseRunnersDirectory
         try FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
@@ -273,31 +253,8 @@ public actor RunnerProvisionerActor {
                           runnerGroup.map({ Int64(registered.poolId ?? 0) == $0.id }) ?? true else {
                         throw RunnerMigrationError.runnerIdentityMismatch
                     }
-                    var launchdLabel: String?
-                    var launchedPID: Int32?
-                    var launchAgentFailed = false
-
-                    if registerLaunchAgent {
-                        let label = RunnerServiceLabel.forRunner(named: instanceName)
-                        let plistURL = LaunchAgentPlistGenerator.launchAgentPlistURL(for: label)
-                        do {
-                            try await verifyAccountSelection()
-                            guard try await LaunchAgentServiceStateReader().isUnloaded(label: label) else {
-                                throw RunnerMigrationError.conflictingService
-                            }
-                            try await verifyAccountSelection()
-                            try RunnerMigrationStartup.installDefinition(
-                                target: .init(name: instanceName, rootDirectory: instanceRoot, label: label),
-                                launch: configuration
-                            )
-                            launchdLabel = label
-                            launchedPID = try await Self.bootstrapLaunchAgent(plistURL: plistURL)
-                        } catch {
-                            // The registration has already completed. Keep its identity so
-                            // the user can retry startup without registering again.
-                            launchAgentFailed = true
-                        }
-                    }
+                    let service = await Self.registerBackgroundService(enabled: registerLaunchAgent, instanceName: instanceName,
+                        instanceRoot: instanceRoot, configuration: configuration, verifyAccountSelection: verifyAccountSelection)
 
                     return ProvisionedRunnerSummary(
                         name: instanceName,
@@ -307,12 +264,12 @@ public actor RunnerProvisionerActor {
                         workDirectory: workDir,
                         labels: labels,
                         runnerVersion: version,
-                        launchdLabel: launchdLabel,
-                        pid: launchedPID,
+                        launchdLabel: service.label,
+                        pid: service.pid,
                         remoteID: registered.agentId,
                         remoteGroupID: scopeType == .organization ? registered.poolId.map(Int64.init) : nil,
                         remoteGroupName: scopeType == .organization ? registered.poolName : nil,
-                        launchAgentFailed: launchAgentFailed
+                        launchAgentFailed: service.failed
                     )
                 }
             }
@@ -330,6 +287,68 @@ public actor RunnerProvisionerActor {
             if provisioned.isEmpty, let firstFailure { throw firstFailure }
             return provisioned.sorted { $0.name < $1.name }
         }
+    }
+
+    private func prepareRunnerArchive(instanceNames: [String], scopeType: RunnerScopeType, scopeURL: URL,
+        runnerGroup: GitHubRunnerGroupDTO?, accessToken: String,
+        verifyAccountSelection: @escaping @MainActor @Sendable () throws -> Void,
+        onStatusUpdate: @MainActor @Sendable (RunnerProvisioningProgress) -> Void
+    ) async throws -> (url: URL, version: String) {
+        for name in instanceNames {
+            try Self.validateRunnerName(name)
+        }
+        try await verifyAccountSelection()
+        if let runnerGroup {
+            guard scopeType == .organization,
+                  case .available(let groups, _, _) = try await runnerSync.groupInventory(
+                    for: scopeURL, token: accessToken, isCurrent: { (try? await verifyAccountSelection()) != nil }
+                  ),
+                  groups.contains(where: { $0.id == runnerGroup.id && $0.name == runnerGroup.name && !$0.inherited }) else {
+                throw RunnerMigrationError.groupChanged
+            }
+        }
+        await onStatusUpdate(.fetchingMetadata)
+        try await verifyAccountSelection()
+        let candidate = try await provisioningClient.fetchArm64RunnerDownload(
+            scopeURL: scopeURL,
+            token: accessToken
+        )
+
+        let version = Self.extractVersion(fromFilename: candidate.filename) ?? "latest"
+        await onStatusUpdate(.verifyingBinary(filename: candidate.filename))
+        let archiveURL = try await binaryCache.ensureBinaryDownloadedAndVerified(package: candidate)
+        return (archiveURL, version)
+    }
+
+    private static func registerBackgroundService(enabled: Bool, instanceName: String, instanceRoot: URL,
+        configuration: RunnerLaunchConfiguration, verifyAccountSelection: @MainActor @Sendable () throws -> Void
+    ) async -> (label: String?, pid: Int32?, failed: Bool) {
+        var launchdLabel: String?
+        var launchedPID: Int32?
+        var launchAgentFailed = false
+
+        if enabled {
+            let label = RunnerServiceLabel.forRunner(named: instanceName)
+            let plistURL = LaunchAgentPlistGenerator.launchAgentPlistURL(for: label)
+            do {
+                try await verifyAccountSelection()
+                guard try await LaunchAgentServiceStateReader().isUnloaded(label: label) else {
+                    throw RunnerMigrationError.conflictingService
+                }
+                try await verifyAccountSelection()
+                try RunnerMigrationStartup.installDefinition(
+                    target: .init(name: instanceName, rootDirectory: instanceRoot, label: label),
+                    launch: configuration
+                )
+                launchdLabel = label
+                launchedPID = try await Self.bootstrapLaunchAgent(plistURL: plistURL)
+            } catch {
+                // The registration has already completed. Keep its identity so
+                // the user can retry startup without registering again.
+                launchAgentFailed = true
+            }
+        }
+        return (launchdLabel, launchedPID, launchAgentFailed)
     }
 
     static func createInstanceDirectory(name: String, in base: URL) throws -> URL {
