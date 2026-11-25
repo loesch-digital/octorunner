@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Set up and monitor self-hosted GitHub Actions runners on your Apple Silicon Mac with OctoRunner.">
+  <meta name="theme-color" content="#080f23">
+  <title>OctoRunner – Run CI on your own Mac</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="copy.js"></script>
+</head>
+<body>
+  <header class="site-header wrap">
+    <a class="brand" href="./index.html">
+      <img src="assets/logo.webp" width="58" height="58" alt="">
+      OctoRunner
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="https://github.com/loesch-digital/octorunner/blob/main/docs/user-guide.md">Docs</a>
+      <a href="https://github.com/loesch-digital/octorunner">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section class="hero" aria-labelledby="hero-title">
+      <div>
+        <h1 id="hero-title">Run CI on your own Mac.</h1>
+        <p class="tagline">Set up GitHub Actions runners, see what’s running, and trace failed jobs to the log.</p>
+        <div class="actions">
+          <a class="button primary" href="https://github.com/loesch-digital/octorunner/releases/latest">Download for macOS</a>
+          <a class="button secondary" href="https://github.com/loesch-digital/octorunner">View on GitHub</a>
+        </div>
+        <div class="install">
+          <code id="brew-command">brew install --cask loesch-digital/tap/octorunner</code>
+          <button type="button" id="copy-command" aria-label="Copy Homebrew command" hidden>Copy</button>
+        </div>
+        <p class="copy-status" role="status"></p>
+        <ul class="requirements" aria-label="Requirements and license">
+          <li>macOS 15+</li>
+          <li>Apple Silicon</li>
+          <li><a href="https://github.com/loesch-digital/octorunner/blob/main/LICENSE">Apache 2.0</a></li>
+        </ul>
+      </div>
+      <div class="hero-visual">
+        <img class="screen" src="assets/dashboard.webp" width="2240" height="1544" alt="OctoRunner dashboard with three example runners. The list shows availability separately from the last job result.">
+      </div>
+    </section>
+
+    <section class="features" aria-label="What you can do with OctoRunner">
+      <article>
+        <h2>Manage runners</h2>
+        <p>Set up a fresh runner or import an existing one. See whether each runner is idle, running, or offline at a glance.</p>
+      </article>
+      <article>
+        <h2>Follow workflow runs</h2>
+        <p>Find the pull request for a run, drill into jobs and steps, and open available GitHub Actions logs.</p>
+      </article>
+      <article>
+        <h2>Inspect your Mac</h2>
+        <p>Check CPU, memory, disk activity, and GitHub API usage from the Host Telemetry view.</p>
+      </article>
+    </section>
+
+    <section class="screens" aria-label="Inside OctoRunner">
+      <figure>
+        <a href="assets/runner-setup.webp" aria-label="View full-size runner setup screenshot">
+          <img class="screen" src="assets/runner-setup.webp" width="1640" height="1440" loading="lazy" alt="New Runner assistant with fields for runner names, GitHub scope, and labels.">
+        </a>
+        <figcaption>Configure repository or organization runners in the New Runner assistant.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/telemetry.webp" aria-label="View full-size Host Telemetry screenshot">
+          <img class="screen" src="assets/telemetry.webp" width="2200" height="1280" loading="lazy" alt="Host Telemetry in Dark Mode with CPU, unified memory, and disk activity charts.">
+        </a>
+        <figcaption>Inspect host metrics in Dark Mode. OctoRunner follows your macOS appearance.</figcaption>
+      </figure>
+    </section>
+  </main>
+
+  <footer class="site-footer wrap">
+    <p>OctoRunner by loesch-digital</p>
+    <nav aria-label="Project links">
+      <a href="https://github.com/loesch-digital/octorunner/blob/main/docs/user-guide.md">User guide</a>
+      <a href="https://github.com/loesch-digital/octorunner/issues/new/choose">Report an issue</a>
+      <a href="https://github.com/loesch-digital/octorunner/blob/main/LICENSE">License</a>
+    </nav>
+  </footer>
+</body>
+</html>
