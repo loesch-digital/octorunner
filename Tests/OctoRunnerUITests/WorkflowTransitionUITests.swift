@@ -31,14 +31,14 @@ final class WorkflowTransitionUITests: XCTestCase {
             XCTAssertFalse(currentJob.exists)
             let lastJob = app.groups["RunnerLastCompletedJob"].firstMatch
             XCTAssertTrue(lastJob.staticTexts["Fixture Build"].exists)
-            XCTAssertTrue(lastJob.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Failed")).firstMatch.exists)
+            XCTAssertTrue(lastJob.staticTexts["Failed"].exists, lastJob.debugDescription)
 
             history.click()
             XCTAssertTrue(app.links["Open pull request #56"].waitForExistence(timeout: 10))
             try writeObservation(2, to: directory)
             XCTAssertTrue(app.staticTexts["0 / 0"].waitForExistence(timeout: 10))
             XCTAssertTrue(activeBadge.waitForNonExistence(timeout: 10))
-            XCTAssertTrue(app.staticTexts["2"].exists)
+            XCTAssertTrue(app.staticTexts["2"].firstMatch.exists, app.debugDescription)
         }
     }
 
@@ -85,9 +85,12 @@ final class WorkflowTransitionUITests: XCTestCase {
         XCTAssertTrue(disclosure.exists, sheet.debugDescription)
         XCTAssertTrue(disclosure.label.contains("Fixture Build"), disclosure.debugDescription)
         XCTAssertTrue(sheet.staticTexts["Fixture Checkout"].exists, sheet.debugDescription)
-        disclosure.click()
-        XCTAssertTrue(action.waitForNonExistence(timeout: 5))
-        disclosure.click()
+        // The disclosure's accessibility frame includes the job title and status.
+        let chevron = disclosure.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5))
+            .withOffset(CGVector(dx: 9, dy: 0))
+        chevron.click()
+        XCTAssertTrue(action.waitForNonExistence(timeout: 5), sheet.debugDescription)
+        chevron.click()
         XCTAssertTrue(action.waitForExistence(timeout: 5))
     }
 
