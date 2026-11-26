@@ -87,7 +87,7 @@ final class WorkflowTransitionUITests: XCTestCase {
         XCTAssertTrue(sheet.staticTexts["Fixture Checkout"].exists, sheet.debugDescription)
         // The disclosure's accessibility frame includes the job title and status.
         let chevron = disclosure.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5))
-            .withOffset(CGVector(dx: 9, dy: 0))
+            .withOffset(CGVector(dx: 25, dy: 0))
         chevron.click()
         XCTAssertTrue(action.waitForNonExistence(timeout: 5), sheet.debugDescription)
         chevron.click()
