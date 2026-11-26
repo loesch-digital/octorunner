@@ -26,14 +26,15 @@ final class WorkflowTransitionUITests: XCTestCase {
             try writeObservation(1, to: directory)
             XCTAssertTrue(app.staticTexts["1 / 0"].waitForExistence(timeout: 10))
             XCTAssertTrue(activeBadge.exists)
-            sidebar.staticTexts["All runners"].click()
+            sidebar.staticTexts["All Runners"].click()
             XCTAssertTrue(app.buttons["PR CI · Fixture PR Build"].waitForExistence(timeout: 10))
             XCTAssertFalse(currentJob.exists)
-            XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Failed")).firstMatch.exists)
-            XCTAssertTrue(sidebar.staticTexts["1"].exists)
-            XCTAssertTrue(sidebar.staticTexts["0"].exists)
+            let lastJob = app.descendants(matching: .any).matching(identifier: "RunnerLastCompletedJob").firstMatch
+            XCTAssertTrue(lastJob.staticTexts["Fixture Build"].exists)
+            XCTAssertTrue(lastJob.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Failed")).firstMatch.exists)
 
             history.click()
+            XCTAssertTrue(app.links["Open pull request #56"].waitForExistence(timeout: 10))
             try writeObservation(2, to: directory)
             XCTAssertTrue(app.staticTexts["0 / 0"].waitForExistence(timeout: 10))
             XCTAssertTrue(activeBadge.waitForNonExistence(timeout: 10))
@@ -99,8 +100,8 @@ final class WorkflowTransitionUITests: XCTestCase {
         try writeObservation(0, to: directory)
         let app = XCUIApplication()
         app.launchEnvironment["OCTORUNNER_WORKFLOW_UI_TEST_DIRECTORY"] = directory.path
-        app.launchEnvironment["OCTORUNNER_WORKFLOW_UI_TEST_LANGUAGE"] = language
-        app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", language == "de" ? "de_DE" : "en_US"]
+        app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", language == "de" ? "de_DE" : "en_US",
+                               "-preferences.language", language]
         app.launch()
         defer { app.terminate() }
         try test(app, directory)
@@ -111,6 +112,11 @@ final class WorkflowTransitionUITests: XCTestCase {
         func observation(_ runID: Int, workflow: String, job: String, status: String, conclusion: String?) -> [String: Any] {
             var run: [String: Any] = ["id": runID, "run_attempt": 1, "name": workflow, "status": status,
                                       "head_branch": "main", "head_sha": "abc123", "run_started_at": completed]
+            if runID == 20 {
+                run["event"] = "pull_request"
+                run["head_branch"] = "fixture/pr"
+                run["pull_requests"] = [["number": 56, "base": ["repo": ["url": "https://api.github.com/repos/example/repo"]]]]
+            }
             var job: [String: Any] = ["id": runID + 100, "run_id": runID, "name": job, "status": status,
                                       "runner_id": 31, "runner_name": "Fixture Runner", "started_at": completed,
                                       "steps": [["number": 1, "name": "Fixture Checkout", "status": "completed", "conclusion": "success"]]]

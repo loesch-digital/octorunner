@@ -15,7 +15,6 @@ struct OctoRunnerWorkflowUITestApp: App {
             preconditionFailure("Missing workflow UI test configuration")
         }
         preferences = AppPreferencesStore(defaults: defaults)
-        preferences.language = ProcessInfo.processInfo.environment["OCTORUNNER_WORKFLOW_UI_TEST_LANGUAGE"] == "de" ? .german : .english
         fixture = WorkflowUITestFixture(directory: URL(filePath: path))
         do { container = try fixture.container() }
         catch { preconditionFailure("Failed to create workflow UI fixture: \(error)") }

@@ -177,7 +177,7 @@ struct JobResultSeparationTests {
         let decoder = JSONDecoder()
 
         func observe(_ runID: Int, status: String, conclusion: String? = nil,
-                     at observedAt: Date, jobID: Int? = nil) throws {
+                     at observedAt: Date, jobID: Int? = nil, precedingJobID: Int? = nil) throws {
             var run: [String: Any] = ["id": runID, "run_attempt": 1, "status": status]
             var job: [String: Any] = ["id": jobID ?? runID + 100, "run_id": runID,
                                      "name": "Build", "status": status, "runner_id": 31]
@@ -187,8 +187,14 @@ struct JobResultSeparationTests {
                 job["completed_at"] = observedAt.timeIntervalSinceReferenceDate - 1
             }
             let runDTO = try decoder.decode(GitHubWorkflowRunDTO.self, from: JSONSerialization.data(withJSONObject: run))
-            let jobDTO = try decoder.decode(GitHubWorkflowJobDTO.self, from: JSONSerialization.data(withJSONObject: job))
-            try WorkflowHistoryStore.upsert(run: runDTO, jobs: [jobDTO], repository: "example/repo",
+            var jobs = [job]
+            if let precedingJobID {
+                jobs.append(["id": precedingJobID, "run_id": runID, "name": "Build",
+                             "status": "completed", "conclusion": "success", "runner_id": 31,
+                             "completed_at": now.addingTimeInterval(-16).timeIntervalSinceReferenceDate])
+            }
+            let jobDTOs = try decoder.decode([GitHubWorkflowJobDTO].self, from: JSONSerialization.data(withJSONObject: jobs))
+            try WorkflowHistoryStore.upsert(run: runDTO, jobs: jobDTOs, repository: "example/repo",
                 accountID: 7, jobsComplete: true, observedAt: observedAt, in: context)
         }
 
@@ -211,10 +217,13 @@ struct JobResultSeparationTests {
         try observe(43, status: "queued", at: initial)
         try check(running: 1, queued: 1, completed: 0, activeJob: 142, lastJob: nil)
 
-        try observe(42, status: "completed", conclusion: "failure", at: handoff)
+        try observe(42, status: "in_progress", at: now.addingTimeInterval(-15), jobID: 144, precedingJobID: 142)
+        try check(running: 1, queued: 1, completed: 0, activeJob: 144, lastJob: 142)
+
+        try observe(42, status: "completed", conclusion: "failure", at: handoff, jobID: 144, precedingJobID: 142)
         try observe(43, status: "in_progress", at: handoff)
         try observe(42, status: "in_progress", at: initial)
-        try check(running: 1, queued: 0, completed: 1, activeJob: 143, lastJob: 142)
+        try check(running: 1, queued: 0, completed: 1, activeJob: 143, lastJob: 144)
 
         try observe(43, status: "completed", conclusion: "success", at: now)
         try check(running: 0, queued: 0, completed: 2, activeJob: nil, lastJob: 143)
