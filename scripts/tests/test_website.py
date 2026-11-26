@@ -3,11 +3,14 @@
 from html.parser import HTMLParser
 import json
 from pathlib import Path
+import subprocess
+import sys
+from tempfile import TemporaryDirectory
 import unittest
 from urllib.parse import unquote, urlsplit
 
 
-WEBSITE = Path(__file__).resolve().parents[2] / "website"
+ROOT = Path(__file__).resolve().parents[2]
 
 
 class PageReferences(HTMLParser):
@@ -48,8 +51,20 @@ class PageReferences(HTMLParser):
 
 
 class WebsiteTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        directory = TemporaryDirectory()
+        cls.addClassCleanup(directory.cleanup)
+        cls.website = Path(directory.name).resolve() / "site"
+        subprocess.run([sys.executable, str(ROOT / "scripts/stage-website.py"), str(cls.website)], check=True)
+
+    def test_published_dashboard_uses_the_readme_image(self):
+        source = ROOT / "docs/assets/app-screens/dashboard.png"
+        self.assertIn(f"]({source.relative_to(ROOT)})", (ROOT / "README.md").read_text())
+        self.assertEqual((self.website / "assets/dashboard.png").read_bytes(), source.read_bytes())
+
     def test_website_references_resolve_inside_the_published_directory(self):
-        index = WEBSITE / "index.html"
+        index = self.website / "index.html"
         self.assertTrue(index.is_file(), "The Pages artifact requires an index.html")
         page = PageReferences()
         page.feed(index.read_text(encoding="utf-8"))
@@ -60,8 +75,8 @@ class WebsiteTests(unittest.TestCase):
                 if url.scheme or url.netloc:
                     continue
                 self.assertFalse(url.path.startswith("/"), "Use relative URLs for project Pages")
-                target = (WEBSITE / unquote(url.path)).resolve() if url.path else index
-                self.assertTrue(target.is_relative_to(WEBSITE), "Target escapes the Pages artifact")
+                target = (self.website / unquote(url.path)).resolve() if url.path else index
+                self.assertTrue(target.is_relative_to(self.website), "Target escapes the Pages artifact")
                 self.assertTrue(target.is_file(), "Target is missing from the Pages artifact")
                 if target == index and url.fragment:
                     self.assertIn(unquote(url.fragment), page.ids)
@@ -69,7 +84,7 @@ class WebsiteTests(unittest.TestCase):
     def test_discovery_metadata_uses_the_public_pages_url(self):
         canonical = "https://loesch-digital.github.io/octorunner/"
         page = PageReferences()
-        page.feed((WEBSITE / "index.html").read_text(encoding="utf-8"))
+        page.feed((self.website / "index.html").read_text(encoding="utf-8"))
 
         self.assertEqual(page.links.get("canonical"), [canonical])
         self.assertIn("Self-Hosted GitHub Actions Runners", page.text["title"])
@@ -78,7 +93,7 @@ class WebsiteTests(unittest.TestCase):
         self.assertEqual(page.metadata["og:description"], page.metadata["description"])
         image = page.metadata["og:image"]
         self.assertTrue(image.startswith(canonical))
-        self.assertTrue((WEBSITE / image.removeprefix(canonical)).is_file())
+        self.assertTrue((self.website / image.removeprefix(canonical)).is_file())
 
         app = json.loads(page.text["structured_data"])
         self.assertEqual(app["@type"], "SoftwareApplication")
@@ -86,7 +101,7 @@ class WebsiteTests(unittest.TestCase):
         self.assertEqual(app["description"], page.metadata["description"])
 
         self.assertEqual(page.links.get("describedby"), ["llms.txt"])
-        index = (WEBSITE / "llms.txt").read_text(encoding="utf-8")
+        index = (self.website / "llms.txt").read_text(encoding="utf-8")
         self.assertTrue(index.startswith("# OctoRunner\n\n> "))
         self.assertIn(f"]({canonical})", index)
         self.assertIn("https://raw.githubusercontent.com/loesch-digital/octorunner/main/docs/user-guide.md", index)

@@ -2,11 +2,17 @@ import CoreModels
 import Foundation
 import SwiftData
 import SwiftUI
+import TelemetryKit
 
 @MainActor
 struct DashboardPreview: View {
     let container: ModelContainer
     let language: AppLanguage
+
+    static let resourceUsage = [
+        "mac-studio-1": RunnerResourceUsage(cpuPercent: 164, residentBytes: 3_800_000_000),
+        "mac-studio-2": RunnerResourceUsage(cpuPercent: 2, residentBytes: 312_000_000)
+    ]
 
     var body: some View {
         MainShellView()

@@ -5,12 +5,18 @@ on:
     branches: [main]
     paths:
       - 'website/**'
+      - 'docs/assets/app-screens/dashboard.png'
+      - 'scripts/stage-website.py'
+      - 'README.md'
       - 'scripts/tests/test_website.py'
       - '.github/workflows/website.yml'
   push:
     branches: [main]
     paths:
       - 'website/**'
+      - 'docs/assets/app-screens/dashboard.png'
+      - 'scripts/stage-website.py'
+      - 'README.md'
       - 'scripts/tests/test_website.py'
       - '.github/workflows/website.yml'
   workflow_dispatch:
@@ -32,11 +38,15 @@ jobs:
       - name: Check local links and assets
         run: python3 -m unittest discover -s scripts/tests -p test_website.py
 
+      - name: Stage public website
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: python3 scripts/stage-website.py "$RUNNER_TEMP/octorunner-pages"
+
       - name: Upload GitHub Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
         with:
-          path: website/
+          path: ${{ runner.temp }}/octorunner-pages
 
   deploy:
     name: Deploy website to GitHub Pages

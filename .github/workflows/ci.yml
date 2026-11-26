@@ -41,6 +41,7 @@ jobs:
             echo "website_only=false" >> "$GITHUB_OUTPUT"
           elif git diff --quiet --no-renames "$BASE_SHA" "$GITHUB_SHA" -- . \
             ':(exclude)website/**' ':(exclude)docs/DESIGN.md' \
+            ':(exclude)docs/assets/app-screens/dashboard.png' ':(exclude)scripts/stage-website.py' \
             ':(exclude).github/workflows/website.yml' ':(exclude)scripts/tests/test_website.py'; then
             echo "website_only=true" >> "$GITHUB_OUTPUT"
           else
