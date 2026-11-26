@@ -1,6 +1,7 @@
 import AppKit
 @testable import AppShellFeature
 import CoreModels
+import GitHubAPI
 import SwiftData
 import SwiftUI
 import Testing
@@ -164,6 +165,68 @@ struct JobResultSeparationTests {
         workflow.statusRaw = "completed"
         #expect(LocalJobResults(entries: [current, workflow].map(WorkflowHistoryEntry.init), runners: [runner],
             accountID: 7, reviewed: [], now: now).runningJob(for: runner.id, at: now) == nil)
+    }
+
+    @Test("Workflow polling preserves a new runner assignment when an older response arrives")
+    func workflowHandoff() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let container = try OctoRunnerPersistence.makeInMemoryContainer()
+        let context = container.mainContext
+        let runner = fixtureRunner()
+        runner.status = .busy
+        let decoder = JSONDecoder()
+
+        func observe(_ runID: Int, status: String, conclusion: String? = nil,
+                     at observedAt: Date, jobID: Int? = nil, precedingJobID: Int? = nil) throws {
+            var run: [String: Any] = ["id": runID, "run_attempt": 1, "status": status]
+            var job: [String: Any] = ["id": jobID ?? runID + 100, "run_id": runID,
+                                     "name": "Build", "status": status, "runner_id": 31]
+            if let conclusion {
+                run["conclusion"] = conclusion
+                job["conclusion"] = conclusion
+                job["completed_at"] = observedAt.timeIntervalSinceReferenceDate - 1
+            }
+            let runDTO = try decoder.decode(GitHubWorkflowRunDTO.self, from: JSONSerialization.data(withJSONObject: run))
+            var jobs = [job]
+            if let precedingJobID {
+                jobs.append(["id": precedingJobID, "run_id": runID, "name": "Build",
+                             "status": "completed", "conclusion": "success", "runner_id": 31,
+                             "completed_at": now.addingTimeInterval(-16).timeIntervalSinceReferenceDate])
+            }
+            let jobDTOs = try decoder.decode([GitHubWorkflowJobDTO].self, from: JSONSerialization.data(withJSONObject: jobs))
+            try WorkflowHistoryStore.upsert(run: runDTO, jobs: jobDTOs, repository: "example/repo",
+                accountID: 7, jobsComplete: true, observedAt: observedAt, in: context)
+        }
+
+        func check(running: Int, queued: Int, completed: Int, activeJob: Int64?, lastJob: Int64?) throws {
+            let entries = try context.fetch(FetchDescriptor<JobRunEntity>()).map(WorkflowHistoryEntry.init)
+            let metrics = WorkflowHistoryMetrics(entries: entries, now: now)
+            let results = LocalJobResults(entries: entries, runners: [runner], accountID: 7, reviewed: [], now: now)
+            #expect(metrics.runningCount == running)
+            #expect(metrics.queuedCount == queued)
+            #expect(metrics.completedToday == completed)
+            #expect(results.runningWorkflowCount(at: now) == running)
+            #expect(results.runningJob(for: runner.id, at: now)?.githubJobID == activeJob)
+            #expect(results.latestByRunner[runner.id]?.githubJobID == lastJob)
+            #expect(runner.status == .busy)
+        }
+
+        let initial = now.addingTimeInterval(-20)
+        let handoff = now.addingTimeInterval(-10)
+        try observe(42, status: "in_progress", at: initial)
+        try observe(43, status: "queued", at: initial)
+        try check(running: 1, queued: 1, completed: 0, activeJob: 142, lastJob: nil)
+
+        try observe(42, status: "in_progress", at: now.addingTimeInterval(-15), jobID: 144, precedingJobID: 142)
+        try check(running: 1, queued: 1, completed: 0, activeJob: 144, lastJob: 142)
+
+        try observe(42, status: "completed", conclusion: "failure", at: handoff, jobID: 144, precedingJobID: 142)
+        try observe(43, status: "in_progress", at: handoff)
+        try observe(42, status: "in_progress", at: initial)
+        try check(running: 1, queued: 0, completed: 1, activeJob: 143, lastJob: 144)
+
+        try observe(43, status: "completed", conclusion: "success", at: now)
+        try check(running: 0, queued: 0, completed: 2, activeJob: nil, lastJob: 143)
     }
 
     private func fixtureRunner() -> RunnerEntity {

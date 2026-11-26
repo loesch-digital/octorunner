@@ -1,5 +1,9 @@
 import AppKit
+#if DEBUG
+@_spi(Testing) import AppShellFeature
+#else
 import AppShellFeature
+#endif
 import CoreModels
 import GitHubAPI
 import SwiftData
@@ -151,6 +155,12 @@ public final class OctoRunnerAppDelegate: NSObject, NSApplicationDelegate, Obser
 enum OctoRunnerEntry {
     @MainActor
     static func main() async {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment[WorkflowUITestFixture.directoryKey] != nil {
+            OctoRunnerWorkflowUITestApp.main()
+            return
+        }
+        #endif
         let arguments = Array(CommandLine.arguments.dropFirst())
         if await AppUpdateHandoff.runInstallerIfRequested(arguments: arguments) { return }
         if AppUpdateHandoff.isStartupRequest(arguments: arguments) {

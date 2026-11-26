@@ -52,9 +52,9 @@ struct WorkflowJobDetailCard: View {
                     }
                 }.font(.caption)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityHint(Text("Shows steps, runner and links for this job", bundle: .module))
         }
-        .accessibilityLabel(Text(job.name))
-        .accessibilityHint(Text("Shows steps, runner and links for this job", bundle: .module))
         .padding(14).background(OctoTheme.surface, in: .rect(cornerRadius: 10))
     }
 
