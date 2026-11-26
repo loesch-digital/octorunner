@@ -10,7 +10,7 @@ Run GitHub Actions CI/CD on your own Apple Silicon Mac. OctoRunner gives develop
 [![Latest release](https://img.shields.io/github/v/release/loesch-digital/octorunner?label=release&sort=semver)](https://github.com/loesch-digital/octorunner/releases/latest)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-![OctoRunner dashboard showing three example runners in different states](docs/assets/app-screens/dashboard.png)
+![OctoRunner dashboard showing three example runners, CPU and RAM readings, and work folder controls](docs/assets/app-screens/dashboard.png)
 
 ## Install
 

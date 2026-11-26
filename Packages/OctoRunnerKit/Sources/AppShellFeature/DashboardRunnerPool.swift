@@ -37,7 +37,7 @@ struct DashboardRunnerPool<Row: View>: View {
                 emptyContent
             } else {
                 ForEach(runners) { runner in
-                    runnerRow(runner, resourceUsage[runner.id])
+                    runnerRow(runner, usage(for: runner))
                 }
             }
         }
@@ -48,6 +48,11 @@ struct DashboardRunnerPool<Row: View>: View {
                 .strokeBorder(OctoTheme.outlineVariant.opacity(0.45), lineWidth: 1)
         }
         .task(id: targets) { await sampleResources(for: targets) }
+    }
+
+    private func usage(for runner: RunnerEntity) -> RunnerResourceUsage? {
+        if usesDashboardSampleData { return DashboardPreview.resourceUsage[runner.name] }
+        return resourceUsage[runner.id]
     }
 
     private var processTargets: [RunnerProcessTarget] {

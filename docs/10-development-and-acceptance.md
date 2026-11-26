@@ -89,3 +89,14 @@ Check these behaviors for the patch covered by this guide.
 - GitHub sign-in and runner management work with the required permissions. The app treats absent token scope headers as unknown permissions.
 
 On November 11, 2026, the Debug build succeeded with the Terminal command above. For v0.4.4, 37 Swift tests, 9 Python tests, PR and main CI, the notarized release, the Homebrew upgrade, and Gatekeeper all passed. The user then confirmed that five Dashboard requests opened exactly one window, closing and reopening worked, **Quit** worked, a normal restart skipped the Documents prompt, and all three preview toggles were disabled. Live checks were still pending for a new external folder import and continued operation of specific runners. The computer control tool still returned `cgWindowNotFound`, and the Xcode connector awaited permission through its menu bar icon. The CLI result verified the build, and the user supplied the interactive results.
+
+## Refresh the public dashboard screenshot
+
+After changing the dashboard, regenerate its screenshot from the app’s SwiftUI preview with example data. Run this from the repository root on macOS:
+
+```sh
+OCTORUNNER_DASHBOARD_SCREENSHOT="$PWD/docs/assets/app-screens/dashboard.png" \
+  swift test --package-path Packages/OctoRunnerKit --no-parallel --filter DashboardScreenshotTests
+```
+
+Review the image and commit it with the dashboard change. The README references that PNG directly. GitHub Pages stages the same PNG and redeploys when it changes. To preview the published layout locally, run `python3 scripts/stage-website.py <new-output-directory>` and serve that directory.

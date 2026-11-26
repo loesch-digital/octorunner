@@ -4,6 +4,11 @@ public struct RunnerResourceUsage: Equatable, Sendable {
     public let cpuPercent: Double?
     public let residentBytes: UInt64?
 
+    public init(cpuPercent: Double?, residentBytes: UInt64?) {
+        self.cpuPercent = cpuPercent
+        self.residentBytes = residentBytes
+    }
+
     public static func byRunner(_ processes: [InspectedRunnerProcess]) -> [UUID: Self] {
         Dictionary(grouping: processes, by: \.runner.id).mapValues { group in
             let cpu = group.compactMap(\.cpuPercent)
