@@ -15,6 +15,16 @@ public struct MainShellView: View {
     @Environment(RunnerRemoteSyncMonitor.self) private var remoteSync: RunnerRemoteSyncMonitor?
     @Environment(AppPreferencesStore.self) private var preferences: AppPreferencesStore?
     @Environment(\.usesDashboardSampleData) private var usesDashboardSampleData
+    #if DEBUG
+    @Environment(\.workflowUITestFixture) private var workflowUITestFixture
+    #endif
+
+    private var runsDashboardServices: Bool {
+        #if DEBUG
+        if workflowUITestFixture != nil { return false }
+        #endif
+        return !usesDashboardSampleData
+    }
     @Query(sort: \RunnerEntity.name) private var runners: [RunnerEntity]
     @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
 
@@ -115,7 +125,7 @@ public struct MainShellView: View {
             Text(AppLocalization.string(AppUpdatePresentation.message(.installationFailed), locale: locale))
         }
         .task {
-            guard !usesDashboardSampleData else { return }
+            guard runsDashboardServices else { return }
             let hasConnectedAccount = !accounts.isEmpty
             guard !Task.isCancelled else { return }
             if !hasConnectedAccount {
@@ -126,7 +136,7 @@ public struct MainShellView: View {
             await checkForAppUpdates(manual: false)
         }
         .task {
-            guard !usesDashboardSampleData else { return }
+            guard runsDashboardServices else { return }
             while !Task.isCancelled {
                 let snapshot = await telemetryActor.currentSnapshot()
                 guard !Task.isCancelled else { return }
@@ -203,12 +213,26 @@ public struct MainShellView: View {
         }
         guard !sources.isEmpty else { return nil }
         return WorkflowHistoryRequest(account: sources.first, sources: sources, selectedRepository: "",
-            isActive: true, refreshInterval: history.refreshIntervalSeconds, ticket: account.id)
+            isActive: true, refreshInterval: sidebarRefreshInterval(history), ticket: account.id)
+    }
+
+    private func sidebarRefreshInterval(_ preferences: WorkflowHistoryPreferences) -> Int {
+        #if DEBUG
+        if workflowUITestFixture != nil { return 1 }
+        #endif
+        return preferences.refreshIntervalSeconds
+    }
+
+    private var sidebarHistoryLoader: any WorkflowHistoryLoading {
+        #if DEBUG
+        if let workflowUITestFixture { return workflowUITestFixture }
+        #endif
+        return GitHubWorkflowHistoryLoader(includesActiveRuns: true)
     }
 
     private func refreshSidebarHistory(_ request: WorkflowHistoryRequest?) async {
         guard !Task.isCancelled, let request else { return }
-        let model = WorkflowHistoryViewModel(rateBudget: historyRateBudget, acceptResponse: { sidebarHistoryRequest == request })
+        let model = WorkflowHistoryViewModel(loader: sidebarHistoryLoader, rateBudget: historyRateBudget, acceptResponse: { sidebarHistoryRequest == request })
         while !Task.isCancelled, sidebarHistoryRequest == request {
             await model.refreshRepositories(request.sources, in: modelContext)
             guard !Task.isCancelled, model.error != .authenticationRequired else { return }
@@ -221,7 +245,8 @@ public struct MainShellView: View {
 
     @ViewBuilder private var detailContent: some View {
         if selectedSection == .queueWorkpools {
-            WorkflowJobHistoryView(rateBudget: historyRateBudget, initialRun: workflowJump, showsRunning: showsRunningWorkflows) {
+            WorkflowJobHistoryView(rateBudget: historyRateBudget, initialRun: workflowJump, showsRunning: showsRunningWorkflows,
+                                   loader: sidebarHistoryLoader) {
                 observedHistoryRepository = $0
             }
         } else if selectedSection == .launchdSettings {

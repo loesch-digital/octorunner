@@ -9,6 +9,10 @@ public struct WorkflowJobHistoryView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.locale) private var locale
     @Environment(AppPreferencesStore.self) private var preferences
+    #if DEBUG
+    @Environment(\.workflowUITestFixture) private var workflowUITestFixture
+    #endif
+
     @Query(sort: \GitHubAccountEntity.connectedAt, order: .reverse) private var accounts: [GitHubAccountEntity]
     @Query private var runners: [RunnerEntity]
     @State private var model: WorkflowHistoryViewModel
@@ -31,10 +35,10 @@ public struct WorkflowJobHistoryView: View {
         self.init(rateBudget: rateBudget, initialRun: nil, showsRunning: false)
     }
 
-    init(rateBudget: WorkflowHistoryRateBudget, initialRun: WorkflowHistoryEntry?, showsRunning: Bool, observedRepositoryChanged: @escaping (String) -> Void = { _ in }) {
+    init(rateBudget: WorkflowHistoryRateBudget, initialRun: WorkflowHistoryEntry?, showsRunning: Bool, loader: any WorkflowHistoryLoading = GitHubWorkflowHistoryLoader(includesActiveRuns: true), observedRepositoryChanged: @escaping (String) -> Void = { _ in }) {
         self.observedRepositoryChanged = observedRepositoryChanged
         self.rateBudget = rateBudget
-        _model = State(initialValue: WorkflowHistoryViewModel(rateBudget: rateBudget))
+        _model = State(initialValue: WorkflowHistoryViewModel(loader: loader, rateBudget: rateBudget))
         _selectedRun = State(initialValue: initialRun)
         _filter = State(initialValue: WorkflowHistoryFilter(status: showsRunning ? .running : .all))
     }
@@ -79,11 +83,26 @@ public struct WorkflowJobHistoryView: View {
                let selection = WorkflowRunDetailSelection(entry: run, source: .init(accountID: account.githubUserId,
                 keychainAccountKey: account.keychainAccountKey, repository: run.repository)) {
                 WorkflowRunDetailView(entry: run, selection: selection, rateBudget: rateBudget,
-                    runnerAccount: RunnerSyncAccount(account), runnerConfigurations: runnerConfigurations)
+                    model: fixtureDetailModel, runnerAccount: RunnerSyncAccount(account), runnerConfigurations: runnerConfigurations)
             }
         }
         .task(id: request) { await observe(request) }
         .onDisappear { model.invalidate() }
+    }
+
+    private var fixtureDetailModel: WorkflowRunDetailModel? {
+        #if DEBUG
+        return workflowUITestFixture?.detailModel(rateBudget: rateBudget)
+        #else
+        return nil
+        #endif
+    }
+
+    private var refreshInterval: Int {
+        #if DEBUG
+        if workflowUITestFixture != nil { return 1 }
+        #endif
+        return preferences.historyPreferences.refreshIntervalSeconds
     }
 
     private var activeAccount: GitHubAccountEntity? {
@@ -126,7 +145,7 @@ public struct WorkflowJobHistoryView: View {
         return WorkflowHistoryRequest(account: account, sources: account.map { account in sources.map {
             WorkflowHistorySelection(accountID: account.accountID, keychainAccountKey: account.keychainAccountKey, repository: $0)
         }} ?? [], selectedRepository: scopedRepository, isActive: scenePhase == .active,
-            refreshInterval: preferences.historyPreferences.refreshIntervalSeconds, ticket: refreshTicket)
+            refreshInterval: refreshInterval, ticket: refreshTicket)
     }
 
     private func sourceControls(account: WorkflowHistorySelection?) -> some View {
