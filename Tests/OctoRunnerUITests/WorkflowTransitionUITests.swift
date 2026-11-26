@@ -29,7 +29,7 @@ final class WorkflowTransitionUITests: XCTestCase {
             sidebar.staticTexts["All Runners"].click()
             XCTAssertTrue(app.buttons["PR CI · Fixture PR Build"].waitForExistence(timeout: 10))
             XCTAssertFalse(currentJob.exists)
-            let lastJob = app.descendants(matching: .any).matching(identifier: "RunnerLastCompletedJob").firstMatch
+            let lastJob = app.groups["RunnerLastCompletedJob"].firstMatch
             XCTAssertTrue(lastJob.staticTexts["Fixture Build"].exists)
             XCTAssertTrue(lastJob.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Failed")).firstMatch.exists)
 
@@ -52,7 +52,7 @@ final class WorkflowTransitionUITests: XCTestCase {
             let logLine = app.descendants(matching: .any)
                 .matching(NSPredicate(format: "label CONTAINS[c] %@ OR value CONTAINS[c] %@",
                                       "Fixture runner log line", "Fixture runner log line")).firstMatch
-            XCTAssertTrue(logLine.waitForExistence(timeout: 10))
+            XCTAssertTrue(logLine.waitForExistence(timeout: 10), app.debugDescription)
             done.click()
             XCTAssertTrue(done.waitForNonExistence(timeout: 5))
         }
@@ -61,28 +61,30 @@ final class WorkflowTransitionUITests: XCTestCase {
     private func checkWorkflowDetails(language: String, close: String, open: String, loadLog: String, github: String) throws {
         try withFixture(language: language) { app, _ in
             let currentJob = app.buttons["Main CI · Fixture Build"]
-            let dismiss = app.buttons[close]
+            let sheet = app.sheets.firstMatch
+            let dismiss = sheet.buttons[close]
             XCTAssertTrue(currentJob.waitForExistence(timeout: 15))
 
             currentJob.click()
-            try checkJob(app, loadLog: loadLog, github: github)
+            checkJob(sheet, loadLog: loadLog, github: github)
             dismiss.click()
             XCTAssertTrue(dismiss.waitForNonExistence(timeout: 5))
 
             app.buttons[open].firstMatch.click()
-            try checkJob(app, loadLog: loadLog, github: github)
+            checkJob(sheet, loadLog: loadLog, github: github)
             dismiss.click()
             XCTAssertTrue(dismiss.waitForNonExistence(timeout: 5))
         }
     }
 
-    private func checkJob(_ app: XCUIApplication, loadLog: String, github: String) throws {
-        let action = app.buttons[loadLog]
-        XCTAssertTrue(action.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.links[github].exists)
-        let disclosure = app.disclosureTriangles.firstMatch
-        XCTAssertTrue(disclosure.exists)
-        XCTAssertTrue(app.debugDescription.contains("Fixture Checkout"))
+    private func checkJob(_ sheet: XCUIElement, loadLog: String, github: String) {
+        let action = sheet.buttons[loadLog]
+        XCTAssertTrue(action.waitForExistence(timeout: 10), sheet.debugDescription)
+        XCTAssertTrue(sheet.links[github].exists, sheet.debugDescription)
+        let disclosure = sheet.disclosureTriangles.firstMatch
+        XCTAssertTrue(disclosure.exists, sheet.debugDescription)
+        XCTAssertTrue(disclosure.label.contains("Fixture Build"), disclosure.debugDescription)
+        XCTAssertTrue(sheet.staticTexts["Fixture Checkout"].exists, sheet.debugDescription)
         disclosure.click()
         XCTAssertTrue(action.waitForNonExistence(timeout: 5))
         disclosure.click()

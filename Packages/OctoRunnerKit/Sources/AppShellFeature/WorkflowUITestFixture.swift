@@ -29,7 +29,8 @@ extension EnvironmentValues {
             scopeUrl: URL(string: Self.repository)!,
             status: .busy,
             workDirectory: directory,
-            rootDirectoryPath: directory.path(percentEncoded: false)
+            rootDirectoryPath: directory.path(percentEncoded: false),
+            isImportedLocal: true
         )
         runner.githubRunnerId = 31
         context.insert(account)

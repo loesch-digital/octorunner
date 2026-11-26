@@ -76,9 +76,11 @@ struct WorkflowRunHistoryRow: View {
                         }
                     }.padding(.top, 6)
                 }
-            } label: { Text("Jobs", bundle: .module).font(.subheadline) }
-            .accessibilityLabel(Text("Jobs", bundle: .module))
-            .accessibilityHint(Text("Shows job status, assigned runner and measured duration", bundle: .module))
+            } label: {
+                Text("Jobs", bundle: .module)
+                    .font(.subheadline)
+                    .accessibilityHint(Text("Shows job status, assigned runner and measured duration", bundle: .module))
+            }
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
         .background(OctoTheme.surface, in: .rect(cornerRadius: 10))
